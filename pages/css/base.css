@@ -1,0 +1,21 @@
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    background: var(--surface-0);
+  }
+
+  h1 { font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: var(--leading-tight); }
+  h2 { font-size: var(--text-2xl); font-weight: var(--weight-semibold); line-height: var(--leading-tight); }
+  h3 { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+  h4 { font-size: var(--text-lg); font-weight: var(--weight-medium); }
+
+  small { font-size: var(--text-sm); color: var(--text-secondary); }
+  code { font-family: var(--font-mono); font-size: var(--text-sm); }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}

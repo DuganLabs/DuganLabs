@@ -1,0 +1,12 @@
+{
+  "name": "duganlabs-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "itty-router": "^5"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

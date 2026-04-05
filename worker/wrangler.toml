@@ -1,0 +1,12 @@
+name = "duganlabs"
+main = "index.js"
+compatibility_date = "2026-04-04"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "duganlabs.com/*", zone_name = "duganlabs.com" },
+  { pattern = "www.duganlabs.com/*", zone_name = "duganlabs.com" }
+]
+
+[site]
+bucket = "../pages"

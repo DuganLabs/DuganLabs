@@ -1,0 +1,15 @@
+{
+  "name": "duganlabs",
+  "private": true,
+  "description": "DuganLabs org portfolio — duganlabs.com",
+  "scripts": {
+    "dev": "pnpm exec nx run worker:dev",
+    "deploy": "pnpm exec nx run worker:deploy"
+  },
+  "devDependencies": {
+    "nx": "^20.3.2"
+  },
+  "nx": {
+    "includedScripts": []
+  }
+}

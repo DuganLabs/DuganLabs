@@ -1,0 +1,110 @@
+@layer layout {
+  .site-layout {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100dvh;
+  }
+
+  header[role="banner"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: var(--space-8);
+    padding-block: var(--space-5);
+    background: var(--surface-1);
+    border-block-end: 1px solid var(--border);
+  }
+
+  header[role="banner"] h1 {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--accent);
+  }
+
+  main {
+    flex: 1;
+    max-inline-size: 64rem;
+    margin-inline: auto;
+    padding-inline: var(--space-8);
+    padding-block: var(--space-12);
+    inline-size: 100%;
+  }
+
+  /* Hero section */
+  .hero {
+    text-align: center;
+    padding-block: var(--space-16);
+  }
+
+  .hero h2 {
+    font-size: var(--text-3xl);
+    margin-block-end: var(--space-4);
+  }
+
+  .hero p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-inline-size: 40rem;
+    margin-inline: auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  /* Project card grid */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: var(--space-6);
+  }
+
+  /* Section spacing */
+  .section {
+    margin-block-end: var(--space-16);
+  }
+
+  .section > h2 {
+    margin-block-end: var(--space-6);
+  }
+
+  /* Footer */
+  footer {
+    padding-inline: var(--space-8);
+    padding-block: var(--space-6);
+    border-block-start: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  footer a {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    header[role="banner"] {
+      padding-inline: var(--space-4);
+      padding-block: var(--space-4);
+    }
+
+    main {
+      padding-inline: var(--space-4);
+      padding-block: var(--space-8);
+    }
+
+    .hero {
+      padding-block: var(--space-8);
+    }
+
+    .hero h2 {
+      font-size: var(--text-2xl);
+    }
+
+    .project-grid {
+      grid-template-columns: 1fr;
+    }
+
+    footer {
+      padding-inline: var(--space-4);
+    }
+  }
+}

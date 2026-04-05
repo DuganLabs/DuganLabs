@@ -1,0 +1,19 @@
+node_modules/
+.wrangler/
+.dev.vars
+.DS_Store
+dist/
+*.local
+.env
+.env.*
+!.env.example
+
+# Nx
+.nx/cache
+.nx/workspace-data
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl

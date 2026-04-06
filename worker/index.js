@@ -22,6 +22,9 @@ const router = AutoRouter({
 
 router.get('/api/health', () => ({ status: 'ok', service: 'duganlabs' }));
 
+// Serve static assets through the binding so security headers apply
+router.all('*', (request, env) => env.ASSETS.fetch(request));
+
 export default {
   fetch: (request, env, ctx) => router.fetch(request, env, ctx),
 };

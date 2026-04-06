@@ -1,9 +1,9 @@
-output "worker_route_root" {
-  description = "Root domain Worker route"
-  value       = cloudflare_worker_route.root.pattern
+output "dns_root" {
+  description = "Root DNS record"
+  value       = cloudflare_record.root.hostname
 }
 
-output "worker_route_www" {
-  description = "WWW Worker route"
-  value       = cloudflare_worker_route.www.pattern
+output "dns_www" {
+  description = "WWW DNS record"
+  value       = cloudflare_record.www.hostname
 }

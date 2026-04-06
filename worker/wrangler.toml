@@ -8,5 +8,5 @@ routes = [
   { pattern = "www.duganlabs.com/*", zone_name = "duganlabs.com" }
 ]
 
-[site]
-bucket = "../pages"
+[assets]
+directory = "../pages"

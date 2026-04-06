@@ -10,3 +10,5 @@ routes = [
 
 [assets]
 directory = "../pages"
+binding = "ASSETS"
+serve_directly = false

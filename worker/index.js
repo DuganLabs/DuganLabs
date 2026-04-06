@@ -39,7 +39,7 @@ export default {
     }
 
     // Everything else served from static assets with security headers
-    const assetResponse = await env.ASSETS.fetch(request);
+    const assetResponse = await env.ASSETS.fetch(new Request(request.url, { headers: request.headers }));
     return withSecurityHeaders(assetResponse);
   },
 };

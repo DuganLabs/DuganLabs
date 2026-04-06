@@ -11,4 +11,4 @@ routes = [
 [assets]
 directory = "../pages"
 binding = "ASSETS"
-serve_directly = false
+run_worker_first = true

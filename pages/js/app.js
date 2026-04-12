@@ -10,6 +10,28 @@ function applyTheme(theme) {
   if (btn) btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
 }
 
+// ─── View Transitions ─────────────────────────────────────
+// Intercept same-origin link clicks and use the View Transitions
+// API for smooth animated page navigation when supported.
+
+function enableViewTransitions() {
+  if (!document.startViewTransition) return;
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href]');
+    if (!link) return;
+    const url = new URL(link.href, location.origin);
+    if (url.origin !== location.origin) return;
+    if (link.target === '_blank') return;
+    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+    e.preventDefault();
+    document.startViewTransition(() => {
+      location.href = url.pathname;
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const btn = $('#btn-theme-toggle');
   if (btn) {
@@ -20,4 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
       applyTheme(next);
     });
   }
+
+  enableViewTransitions();
 });

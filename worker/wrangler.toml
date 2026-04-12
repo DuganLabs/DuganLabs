@@ -8,6 +8,11 @@ routes = [
   { pattern = "www.duganlabs.com/*", zone_name = "duganlabs.com" }
 ]
 
+[[kv_namespaces]]
+binding = "BLOG"
+id = "placeholder-create-via-wrangler"
+preview_id = "placeholder-preview"
+
 [assets]
 directory = "../pages"
 binding = "ASSETS"

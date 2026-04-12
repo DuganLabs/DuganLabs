@@ -1,5 +1,5 @@
 import { AutoRouter, cors, error } from 'itty-router';
-import { marked } from 'marked';
+import { parse, parseFrontmatter } from '@basenative/markdown';
 
 const { preflight, corsify } = cors({ origin: '*' });
 
@@ -33,21 +33,16 @@ router.get('/api/health', () => ({ status: 'ok', service: 'duganlabs' }));
 
 // ─── Blog API ─────────────────────────────────────────────
 
-function parseFrontmatter(raw) {
-  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return { meta: {}, content: raw };
-  const meta = {};
-  for (const line of match[1].split('\n')) {
-    const sep = line.indexOf(':');
-    if (sep === -1) continue;
-    const key = line.slice(0, sep).trim();
-    let val = line.slice(sep + 1).trim();
-    if (val.startsWith('[') && val.endsWith(']')) {
-      val = val.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+// Frontmatter: extends @basenative/markdown's parseFrontmatter with array support for tags
+function parseBlogFrontmatter(raw) {
+  const { meta, content } = parseFrontmatter(raw);
+  // Parse bracketed array values (e.g., tags: [a, b, c])
+  for (const [key, val] of Object.entries(meta)) {
+    if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
+      meta[key] = val.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
     }
-    meta[key] = val;
   }
-  return { meta, content: match[2] };
+  return { meta, content };
 }
 
 router.get('/api/posts', async (request, env) => {
@@ -61,8 +56,8 @@ router.get('/api/posts/:slug', async (request, env) => {
   const raw = await env.BLOG.get(`post:${slug}`, 'text');
   if (!raw) return error(404, 'Post not found');
 
-  const { meta, content } = parseFrontmatter(raw);
-  const html = marked.parse(content);
+  const { meta, content } = parseBlogFrontmatter(raw);
+  const html = parse(content);
   return {
     slug,
     title: meta.title || slug,
@@ -81,7 +76,7 @@ router.post('/api/posts', async (request, env) => {
   const slug = body.slug.replace(/[^a-z0-9-]/g, '');
   await env.BLOG.put(`post:${slug}`, body.content);
 
-  const { meta } = parseFrontmatter(body.content);
+  const { meta } = parseBlogFrontmatter(body.content);
   const index = (await env.BLOG.get('posts:index', 'json')) || [];
   const existing = index.findIndex(p => p.slug === slug);
   const entry = {

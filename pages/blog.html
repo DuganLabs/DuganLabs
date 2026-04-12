@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog — DuganLabs</title>
+  <meta name="description" content="DuganLabs blog — engineering notes on BaseNative, Greenput, PendingBusiness, and web development.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23646cff'/><text x='50' y='68' font-family='system-ui,sans-serif' font-size='48' font-weight='700' fill='white' text-anchor='middle'>DL</text></svg>">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/utilities.css">
+
+  <script>
+    const t = localStorage.getItem('dl-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', t);
+    if (t === 'light') document.documentElement.style.colorScheme = 'light';
+  </script>
+</head>
+<body class="site-layout">
+
+  <header role="banner">
+    <a href="/" style="text-decoration:none;color:inherit"><h1>DuganLabs</h1></a>
+    <nav aria-label="main">
+      <a href="/">Projects</a>
+      <a href="/blog" aria-current="page">Blog</a>
+      <a href="/ecosystem">Ecosystem</a>
+    </nav>
+    <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Blog</h2>
+      <p>Engineering notes, project updates, and lessons learned.</p>
+    </section>
+
+    <section id="posts-list" aria-label="blog posts">
+      <p id="posts-loading">Loading posts...</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 DuganLabs</p>
+  </footer>
+
+  <script type="module" src="/js/blog.js"></script>
+</body>
+</html>

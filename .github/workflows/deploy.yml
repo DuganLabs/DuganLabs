@@ -34,6 +34,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve KV namespace IDs from Terraform
+        working-directory: infra
+        run: |
+          terraform init -input=false
+          BLOG_KV_ID=$(terraform output -raw blog_kv_id)
+          REGISTRY_KV_ID=$(terraform output -raw registry_kv_id)
+          sed -i "s/placeholder-create-via-wrangler/$BLOG_KV_ID/" ../worker/wrangler.toml
+          sed -i "s/placeholder-registry/$REGISTRY_KV_ID/" ../worker/wrangler.toml
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+
       - name: Deploy Worker + Pages
         run: pnpm exec nx run worker:deploy
         env:

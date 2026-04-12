@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "itty-router": "^5",
-    "marked": "^18.0.0"
+    "@basenative/markdown": "workspace:*"
   },
   "devDependencies": {
     "wrangler": "^4"

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BaseNative vs React, Angular, Svelte — DuganLabs</title>
+  <meta name="description" content="Honest comparison of BaseNative against React, Angular, and Svelte. Bundle size, build requirements, API surface, hydration, and real tradeoffs.">
+  <meta property="og:title" content="BaseNative vs React, Angular, Svelte">
+  <meta property="og:description" content="Zero-build, zero-dep signal reactivity in 122 lines. See how it compares.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://duganlabs.com/compare">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23646cff'/><text x='50' y='68' font-family='system-ui,sans-serif' font-size='48' font-weight='700' fill='white' text-anchor='middle'>DL</text></svg>">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/utilities.css">
+
+  <script>
+    const t = localStorage.getItem('dl-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', t);
+    if (t === 'light') document.documentElement.style.colorScheme = 'light';
+  </script>
+
+  <style>
+    /* ── Compare page styles ─────────────────────────────── */
+    .cmp-hero { text-align: center; padding-block: 3rem; }
+    .cmp-hero h2 { font-size: 2rem; margin-block-end: 0.75rem; }
+    .cmp-hero p { color: var(--text-secondary); max-inline-size: 42rem; margin-inline: auto; line-height: 1.625; }
+
+    .cmp-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+      gap: 1rem;
+      margin-block-end: 3rem;
+    }
+    .cmp-stat {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .cmp-stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .cmp-stat-label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-block-start: 0.25rem;
+    }
+
+    /* ── Comparison table ─────────────────────────────────── */
+    .cmp-section { margin-block-end: 3rem; }
+    .cmp-section > h3 { margin-block-end: 1rem; font-size: 1.25rem; }
+    .cmp-section > p { color: var(--text-secondary); font-size: 0.9375rem; margin-block-end: 1.5rem; line-height: 1.6; }
+
+    .cmp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cmp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .cmp-table th,
+    .cmp-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-block-end: 1px solid var(--border);
+    }
+    .cmp-table thead th {
+      background: var(--surface-2);
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
+    .cmp-table thead th:first-child { border-radius: 0.5rem 0 0 0; }
+    .cmp-table thead th:last-child { border-radius: 0 0.5rem 0 0; }
+    .cmp-table tbody td:first-child {
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .cmp-table tbody tr:hover { background: var(--surface-1); }
+    .cmp-table .highlight { color: var(--green); font-weight: 600; }
+    .cmp-table .neutral { color: var(--text-secondary); }
+    .cmp-table .caution { color: var(--amber); }
+
+    /* ── Code comparison ──────────────────────────────────── */
+    .cmp-code-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+      gap: 1rem;
+      margin-block-end: 1.5rem;
+    }
+    .cmp-code-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .cmp-code-label {
+      display: block;
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background: var(--surface-3);
+      border-block-end: 1px solid var(--border);
+    }
+    .cmp-code-block pre {
+      padding: 1rem;
+      margin: 0;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    /* ── Tradeoffs section ────────────────────────────────── */
+    .cmp-tradeoffs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: 1rem;
+    }
+    .cmp-tradeoff-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .cmp-tradeoff-card h4 {
+      margin-block-end: 0.75rem;
+      font-size: 1rem;
+    }
+    .cmp-tradeoff-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .cmp-tradeoff-card li {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      padding-block: 0.25rem;
+      line-height: 1.5;
+    }
+    .cmp-tradeoff-card li::before {
+      display: inline-block;
+      margin-inline-end: 0.5rem;
+      font-weight: 700;
+    }
+    .cmp-good li::before { content: "+"; color: var(--green); }
+    .cmp-honest li::before { content: "~"; color: var(--amber); }
+
+    /* ── Tab switcher ─────────────────────────────────────── */
+    .cmp-tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-block-end: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .cmp-tab {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease;
+    }
+    .cmp-tab:hover { color: var(--text-primary); }
+    .cmp-tab[aria-selected="true"] {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .cmp-panel { display: none; }
+    .cmp-panel[data-active] { display: block; }
+
+    @media (max-width: 768px) {
+      .cmp-hero { padding-block: 2rem; }
+      .cmp-hero h2 { font-size: 1.5rem; }
+      .cmp-stats { grid-template-columns: repeat(2, 1fr); }
+      .cmp-code-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="site-layout">
+
+  <header role="banner">
+    <a href="/" style="text-decoration:none;color:inherit"><h1>DuganLabs</h1></a>
+    <nav aria-label="main">
+      <a href="/">Projects</a>
+      <a href="/blog">Blog</a>
+      <a href="/ecosystem">Ecosystem</a>
+      <a href="/compare" aria-current="page">Compare</a>
+    </nav>
+    <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
+  </header>
+
+  <main>
+    <section class="cmp-hero">
+      <h2>How BaseNative compares</h2>
+      <p>An honest look at BaseNative alongside React, Angular, and Svelte. Where it wins, where it doesn't, and why that matters.</p>
+    </section>
+
+    <!-- ── Quick stats ──────────────────────────────────── -->
+    <section class="cmp-stats">
+      <div class="cmp-stat">
+        <div class="cmp-stat-value">122</div>
+        <div class="cmp-stat-label">Lines of reactivity core</div>
+      </div>
+      <div class="cmp-stat">
+        <div class="cmp-stat-value">0</div>
+        <div class="cmp-stat-label">Production dependencies</div>
+      </div>
+      <div class="cmp-stat">
+        <div class="cmp-stat-value">0</div>
+        <div class="cmp-stat-label">Build steps required</div>
+      </div>
+      <div class="cmp-stat">
+        <div class="cmp-stat-value">6</div>
+        <div class="cmp-stat-label">Core API primitives</div>
+      </div>
+    </section>
+
+    <!-- ── Size comparison ──────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>Bundle size</h3>
+      <p>BaseNative ships raw ES modules. No bundler, no tree-shaking needed — what you import is what runs. The entire runtime is readable in one sitting.</p>
+
+      <div class="cmp-table-wrap">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>BaseNative</th>
+              <th>React 19</th>
+              <th>Angular 19</th>
+              <th>Svelte 5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Runtime size (min+gz)</td>
+              <td class="highlight">~5 KB</td>
+              <td class="caution">~44 KB</td>
+              <td class="caution">~130 KB</td>
+              <td class="highlight">~5 KB</td>
+            </tr>
+            <tr>
+              <td>Production deps</td>
+              <td class="highlight">0</td>
+              <td class="neutral">2 (react, react-dom)</td>
+              <td class="caution">6+ (zone.js, rxjs, ...)</td>
+              <td class="highlight">0</td>
+            </tr>
+            <tr>
+              <td>Build step</td>
+              <td class="highlight">None</td>
+              <td class="caution">Required (JSX)</td>
+              <td class="caution">Required (TS + AOT)</td>
+              <td class="caution">Required (compiler)</td>
+            </tr>
+            <tr>
+              <td>Source you can read</td>
+              <td class="highlight">~700 lines</td>
+              <td class="neutral">~80K lines</td>
+              <td class="neutral">~300K+ lines</td>
+              <td class="neutral">~15K lines</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── API surface ──────────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>API surface</h3>
+      <p>Fewer primitives means less to learn, less to break, and less for AI tools to hallucinate. BaseNative's entire reactivity model fits on a whiteboard.</p>
+
+      <div class="cmp-table-wrap">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>BaseNative</th>
+              <th>React 19</th>
+              <th>Angular 19</th>
+              <th>Svelte 5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Core concepts to learn</td>
+              <td class="highlight">6</td>
+              <td class="caution">15+ hooks</td>
+              <td class="caution">30+ concepts</td>
+              <td class="highlight">~8 runes</td>
+            </tr>
+            <tr>
+              <td>Reactivity model</td>
+              <td class="neutral">Signals (push)</td>
+              <td class="neutral">Virtual DOM (pull)</td>
+              <td class="neutral">Signals (push)</td>
+              <td class="neutral">Runes/compiler (push)</td>
+            </tr>
+            <tr>
+              <td>Template syntax</td>
+              <td class="highlight">Valid HTML</td>
+              <td class="caution">JSX (not HTML)</td>
+              <td class="neutral">Extended HTML</td>
+              <td class="neutral">Custom (.svelte)</td>
+            </tr>
+            <tr>
+              <td>TypeScript</td>
+              <td class="neutral">Optional</td>
+              <td class="neutral">Optional</td>
+              <td class="caution">Required</td>
+              <td class="neutral">Optional</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Code comparison ──────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>Counter: the same app, four ways</h3>
+      <p>A reactive counter shows each framework's mental model. BaseNative uses plain HTML with signal expressions — no compilation, no special file format.</p>
+
+      <div class="cmp-tabs" role="tablist">
+        <button class="cmp-tab" role="tab" aria-selected="true" data-panel="code-bn">BaseNative</button>
+        <button class="cmp-tab" role="tab" aria-selected="false" data-panel="code-react">React</button>
+        <button class="cmp-tab" role="tab" aria-selected="false" data-panel="code-angular">Angular</button>
+        <button class="cmp-tab" role="tab" aria-selected="false" data-panel="code-svelte">Svelte</button>
+      </div>
+
+      <div id="code-bn" class="cmp-panel" data-active>
+        <div class="cmp-code-grid">
+          <div class="cmp-code-block">
+            <span class="cmp-code-label">index.html</span>
+            <pre><code>&lt;div :data="{ count: 0 }"&gt;
+  &lt;p&gt;Count: {{ count }}&lt;/p&gt;
+  &lt;button @click="count++"&gt;+1&lt;/button&gt;
+&lt;/div&gt;
+&lt;script type="module"&gt;
+  import { hydrate } from './signals.js';
+  hydrate();
+&lt;/script&gt;</code></pre>
+          </div>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--text-muted)">Valid HTML. No build. Drop a script tag and go.</p>
+      </div>
+
+      <div id="code-react" class="cmp-panel">
+        <div class="cmp-code-grid">
+          <div class="cmp-code-block">
+            <span class="cmp-code-label">Counter.jsx</span>
+            <pre><code>import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Count: {count}&lt;/p&gt;
+      &lt;button onClick={() =&gt; setCount(c =&gt; c + 1)}&gt;
+        +1
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+          </div>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--text-muted)">Requires JSX transpilation, a bundler, and react + react-dom installed.</p>
+      </div>
+
+      <div id="code-angular" class="cmp-panel">
+        <div class="cmp-code-grid">
+          <div class="cmp-code-block">
+            <span class="cmp-code-label">counter.component.ts</span>
+            <pre><code>import { Component, signal } from '@angular/core';
+
+@Component({
+  selector: 'app-counter',
+  template: `
+    &lt;p&gt;Count: {{ count() }}&lt;/p&gt;
+    &lt;button (click)="count.set(count() + 1)"&gt;
+      +1
+    &lt;/button&gt;
+  `,
+})
+export class CounterComponent {
+  count = signal(0);
+}</code></pre>
+          </div>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--text-muted)">Requires TypeScript, Angular CLI, AOT compilation, and the full Angular runtime.</p>
+      </div>
+
+      <div id="code-svelte" class="cmp-panel">
+        <div class="cmp-code-grid">
+          <div class="cmp-code-block">
+            <span class="cmp-code-label">Counter.svelte</span>
+            <pre><code>&lt;script&gt;
+  let count = $state(0);
+&lt;/script&gt;
+
+&lt;p&gt;Count: {count}&lt;/p&gt;
+&lt;button onclick={() =&gt; count++}&gt;+1&lt;/button&gt;</code></pre>
+          </div>
+        </div>
+        <p style="font-size:0.8125rem;color:var(--text-muted)">Concise, but requires the Svelte compiler — no .svelte files run natively in browsers.</p>
+      </div>
+    </section>
+
+    <!-- ── SSR & Hydration ──────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>SSR and hydration</h3>
+      <p>BaseNative includes server rendering and four built-in lazy hydration strategies out of the box. Most frameworks require extra packages or custom implementations for selective hydration.</p>
+
+      <div class="cmp-table-wrap">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>BaseNative</th>
+              <th>React 19</th>
+              <th>Angular 19</th>
+              <th>Svelte 5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SSR built-in</td>
+              <td class="highlight">Yes</td>
+              <td class="caution">Via Next.js / manual</td>
+              <td class="highlight">Yes (Universal)</td>
+              <td class="caution">Via SvelteKit</td>
+            </tr>
+            <tr>
+              <td>Lazy hydration</td>
+              <td class="highlight">4 strategies built-in</td>
+              <td class="caution">Manual / React.lazy</td>
+              <td class="neutral">@defer (partial)</td>
+              <td class="caution">Manual</td>
+            </tr>
+            <tr>
+              <td>Hydration strategies</td>
+              <td class="highlight">idle, interaction, media, viewport</td>
+              <td class="neutral">N/A</td>
+              <td class="neutral">@defer on viewport</td>
+              <td class="neutral">N/A</td>
+            </tr>
+            <tr>
+              <td>CSP-safe expressions</td>
+              <td class="highlight">Yes (no eval/Function)</td>
+              <td class="highlight">Yes (JSX compiled)</td>
+              <td class="highlight">Yes (AOT compiled)</td>
+              <td class="highlight">Yes (compiled)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── DX & Ecosystem ───────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>Developer experience</h3>
+
+      <div class="cmp-table-wrap">
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>BaseNative</th>
+              <th>React 19</th>
+              <th>Angular 19</th>
+              <th>Svelte 5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Time to first render</td>
+              <td class="highlight">Open HTML file</td>
+              <td class="caution">npx create-react-app</td>
+              <td class="caution">ng new + ng serve</td>
+              <td class="caution">npx sv create</td>
+            </tr>
+            <tr>
+              <td>Hot reload</td>
+              <td class="neutral">Browser refresh</td>
+              <td class="highlight">Fast Refresh</td>
+              <td class="highlight">HMR</td>
+              <td class="highlight">HMR</td>
+            </tr>
+            <tr>
+              <td>Ecosystem packages</td>
+              <td class="caution">Growing</td>
+              <td class="highlight">Massive</td>
+              <td class="highlight">Large</td>
+              <td class="neutral">Moderate</td>
+            </tr>
+            <tr>
+              <td>Component model</td>
+              <td class="caution">None (vanilla DOM)</td>
+              <td class="highlight">Components + hooks</td>
+              <td class="highlight">Components + DI</td>
+              <td class="highlight">Components</td>
+            </tr>
+            <tr>
+              <td>Community size</td>
+              <td class="caution">Solo project</td>
+              <td class="highlight">Millions</td>
+              <td class="highlight">Millions</td>
+              <td class="neutral">Hundreds of thousands</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Honest tradeoffs ─────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>Honest tradeoffs</h3>
+      <p>BaseNative isn't trying to replace React or Angular for every use case. Here's where it genuinely excels and where you should think twice.</p>
+
+      <div class="cmp-tradeoffs">
+        <div class="cmp-tradeoff-card cmp-good">
+          <h4 style="color:var(--green)">Where BaseNative wins</h4>
+          <ul>
+            <li>Zero build, zero deps — ship an HTML file</li>
+            <li>Entire runtime is auditable in minutes</li>
+            <li>4 built-in lazy hydration strategies</li>
+            <li>CSP-safe without compilation</li>
+            <li>Valid HTML templates that work without JS</li>
+            <li>9x smaller than React, 26x smaller than Angular</li>
+            <li>AI-friendly: 6 primitives, not 30</li>
+          </ul>
+        </div>
+
+        <div class="cmp-tradeoff-card cmp-honest">
+          <h4 style="color:var(--amber)">Where others win</h4>
+          <ul>
+            <li>No component model — composition is vanilla DOM</li>
+            <li>Ecosystem of one — no third-party component libs</li>
+            <li>No HMR — manual browser refresh during dev</li>
+            <li>Runtime expression parsing has overhead vs compiled output</li>
+            <li>Svelte matches on size and exceeds on DX polish</li>
+            <li>No React DevTools, no Angular CLI, no Svelte inspector</li>
+            <li>Solo-maintained — bus factor of one</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── When to choose ───────────────────────────────── -->
+    <section class="cmp-section">
+      <h3>When to choose BaseNative</h3>
+
+      <div class="cmp-tradeoffs">
+        <div class="cmp-tradeoff-card cmp-good">
+          <h4 style="color:var(--green)">Good fit</h4>
+          <ul>
+            <li>Content sites that need light interactivity</li>
+            <li>Projects where you want to own every line</li>
+            <li>Edge-deployed apps on Cloudflare Workers</li>
+            <li>Teams tired of build tool churn</li>
+            <li>Prototypes that need to ship in minutes</li>
+            <li>Embedded widgets in existing pages</li>
+          </ul>
+        </div>
+
+        <div class="cmp-tradeoff-card cmp-honest">
+          <h4 style="color:var(--amber)">Probably not</h4>
+          <ul>
+            <li>Large team apps that need enforced architecture</li>
+            <li>Projects requiring deep third-party integrations</li>
+            <li>Apps where HMR and devtools are critical workflow</li>
+            <li>Enterprise apps with strict hiring pool requirements</li>
+            <li>Complex SPAs with hundreds of components</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="cmp-section" style="text-align:center">
+      <h3>Try it</h3>
+      <p style="color:var(--text-secondary);margin-block-end:1rem">The entire reactivity system is 122 lines. Read it, understand it, then decide.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <a href="https://github.com/DuganLabs/basenative" style="display:inline-flex;align-items:center;padding:0.625rem 1.5rem;background:var(--accent);color:#fff;border-radius:0.5rem;text-decoration:none;font-weight:600;font-size:0.9375rem">View source</a>
+        <a href="/ecosystem" style="display:inline-flex;align-items:center;padding:0.625rem 1.5rem;background:var(--surface-3);color:var(--text-primary);border-radius:0.5rem;text-decoration:none;font-weight:600;font-size:0.9375rem;border:1px solid var(--border)">Browse packages</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 DuganLabs &middot; <a href="https://github.com/DuganLabs">GitHub</a></p>
+  </footer>
+
+  <script type="module" src="/js/compare.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

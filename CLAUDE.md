@@ -51,3 +51,20 @@ Conventional Commits. Co-Authored-By line on every commit:
 ```
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
+
+## AI Execution Pipeline / Backlog
+
+When executing autonomously, start pulling from this prioritized task list:
+
+### Epic 1: Dynamic Blog Engine **[DOGFOODING REQUIRED]**
+- **Task A**: Do **NOT** install `marked` or write bespoke logic. You must construct `@basenative/markdown` in the upstream `basenative` monorepo first.
+- **Task B**: Once linked, utilize `@basenative/markdown` here to implement the `GET /api/posts` and `GET /api/posts/:slug` endpoints.
+- **Task C**: Implement a new `/blog` and `/blog/:slug` route in the frontend using BaseNative's router pulling directly from your new package to render markdown safely.
+
+### Epic 2: Project Showcase Router Transitions
+- **Task A**: Introduce animated view transitions utilizing the native View Transitions API on the main directory page, so navigating between projects feels seamless.
+
+### Epic 3: Ecosystem Marketplace Integration [Phase 3] **[DOGFOODING REQUIRED]**
+- **Task A**: Pause. Go to the `basenative` monorepo and scaffold out `@basenative/marketplace` components, specifically a component card registry view.
+- **Task B**: Construct a new `/ecosystem` route on DuganLabs serving as the official community marketplace directory for BaseNative.
+- **Task C**: Implement a Cloudflare KV lookup on the worker backend to serve dynamic registry lists to the marketplace grid.

@@ -1,5 +1,5 @@
 import { AutoRouter, cors, error } from 'itty-router';
-import { parse, parseFrontmatter } from '@basenative/markdown';
+import { parse, parseFrontmatter } from './vendor/basenative/markdown/markdown.js';
 
 const { preflight, corsify } = cors({ origin: '*' });
 
@@ -104,6 +104,69 @@ router.delete('/api/posts/:slug', async (request, env) => {
   return { ok: true };
 });
 
+// ─── Ecosystem / Marketplace Registry ─────────────────────
+
+// Default packages seeded into KV — the BaseNative ecosystem
+const DEFAULT_PACKAGES = [
+  { name: '@basenative/runtime', description: 'Signal-based reactivity — signal(), computed(), effect(), hydrate(). ~120 lines, zero deps.', version: '1.0.0', category: 'core', tags: ['signals', 'reactivity', 'hydration'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/server', description: 'SSR engine — render(), renderToStream(), @if/@for/@switch directives, @defer streaming.', version: '1.0.0', category: 'core', tags: ['ssr', 'streaming', 'templates'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/router', description: 'SSR-aware path routing with view transitions and signal-based navigation state.', version: '1.0.0', category: 'core', tags: ['routing', 'spa', 'ssr'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/components', description: '15+ semantic UI components — buttons, forms, tables, dialogs, trees, virtual lists.', version: '1.0.0', category: 'ui', tags: ['components', 'ui', 'accessible'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/forms', description: 'Signal-based form state, field validation, schema adapters (Zod), multi-step wizards.', version: '1.0.0', category: 'forms', tags: ['forms', 'validation', 'wizard'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/auth', description: 'Session management, RBAC, password hashing, OAuth providers.', version: '1.0.0', category: 'auth', tags: ['auth', 'session', 'rbac'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/db', description: 'Query builder with SQLite, Postgres, and D1 adapters. Parameterized queries only.', version: '1.0.0', category: 'data', tags: ['database', 'sql', 'd1'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/middleware', description: 'Pipeline, CORS, rate-limit, CSRF protection, platform adapters.', version: '1.0.0', category: 'server', tags: ['middleware', 'cors', 'csrf'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/fetch', description: 'Signal-based resource fetching with cache, retry, and SSR preloading.', version: '1.0.0', category: 'data', tags: ['fetch', 'cache', 'signals'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/realtime', description: 'SSE + WebSocket + channel manager for real-time communication.', version: '1.0.0', category: 'realtime', tags: ['websocket', 'sse', 'realtime'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/i18n', description: 'ICU messages, locale detection, @t directive for template-level translation.', version: '1.0.0', category: 'i18n', tags: ['i18n', 'translation', 'locale'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/markdown', description: 'Zero-dep markdown parser — headings, lists, code blocks, tables, footnotes, frontmatter.', version: '1.0.0', category: 'content', tags: ['markdown', 'parser', 'content'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/flags', description: 'Feature flags with percentage rollouts via Cloudflare KV edge cache.', version: '1.0.0', category: 'infra', tags: ['feature-flags', 'edge', 'kv'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/marketplace', description: 'Community component marketplace — registry client, installer, theme manager.', version: '1.0.0', category: 'ecosystem', tags: ['marketplace', 'registry', 'community'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/cli', description: 'Project scaffolding via `npx create-basenative` — templates, generators, dev server.', version: '1.0.0', category: 'tooling', tags: ['cli', 'scaffold', 'generator'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+];
+
+router.get('/api/ecosystem', async (request, env) => {
+  // Try KV first, fall back to defaults
+  let packages = await env.REGISTRY.get('packages:list', 'json');
+  if (!packages) {
+    packages = DEFAULT_PACKAGES;
+    await env.REGISTRY.put('packages:list', JSON.stringify(packages));
+  }
+
+  const url = new URL(request.url);
+  const category = url.searchParams.get('category');
+  const q = url.searchParams.get('q')?.toLowerCase();
+
+  let filtered = packages;
+  if (category) {
+    filtered = filtered.filter(p => p.category === category);
+  }
+  if (q) {
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.tags.some(t => t.toLowerCase().includes(q))
+    );
+  }
+
+  return { packages: filtered, total: filtered.length };
+});
+
+router.get('/api/ecosystem/categories', async (request, env) => {
+  let packages = await env.REGISTRY.get('packages:list', 'json');
+  if (!packages) packages = DEFAULT_PACKAGES;
+
+  const categoryMap = {};
+  for (const pkg of packages) {
+    const cat = pkg.category || 'other';
+    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+  }
+
+  return Object.entries(categoryMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+});
+
 // ─── Export ───────────────────────────────────────────────
 
 export default {
@@ -114,6 +177,12 @@ export default {
     if (url.pathname.startsWith('/api/')) {
       const response = await router.fetch(request, env, ctx);
       return withSecurityHeaders(response);
+    }
+
+    // SPA routing: serve ecosystem page
+    if (url.pathname === '/ecosystem' || url.pathname === '/ecosystem/') {
+      const ecoPage = await env.ASSETS.fetch(new Request(new URL('/ecosystem.html', url.origin), { headers: request.headers }));
+      return withSecurityHeaders(ecoPage);
     }
 
     // SPA routing: serve blog pages for /blog paths

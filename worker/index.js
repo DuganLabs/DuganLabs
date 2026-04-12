@@ -179,6 +179,12 @@ export default {
       return withSecurityHeaders(response);
     }
 
+    // SPA routing: serve compare page
+    if (url.pathname === '/compare' || url.pathname === '/compare/') {
+      const comparePage = await env.ASSETS.fetch(new Request(new URL('/compare.html', url.origin), { headers: request.headers }));
+      return withSecurityHeaders(comparePage);
+    }
+
     // SPA routing: serve ecosystem page
     if (url.pathname === '/ecosystem' || url.pathname === '/ecosystem/') {
       const ecoPage = await env.ASSETS.fetch(new Request(new URL('/ecosystem.html', url.origin), { headers: request.headers }));

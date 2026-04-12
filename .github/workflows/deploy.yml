@@ -34,6 +34,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.9'
+
       - name: Resolve KV namespace IDs from Terraform
         working-directory: infra
         run: |

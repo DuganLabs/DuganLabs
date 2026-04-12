@@ -31,6 +31,10 @@
 
   <header role="banner">
     <h1>DuganLabs</h1>
+    <nav aria-label="main">
+      <a href="/" aria-current="page">Projects</a>
+      <a href="/blog">Blog</a>
+    </nav>
     <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
   </header>
 
@@ -44,7 +48,7 @@
       <h2>Projects</h2>
       <div class="project-grid">
 
-        <div class="project-card">
+        <div class="project-card" style="--vt-name:card-basenative">
           <h3>BaseNative</h3>
           <p>A lightweight signal-based web runtime. Function-call reactivity, zero build step, SSR-ready. The foundation under every DuganLabs site.</p>
           <div class="links">
@@ -53,7 +57,7 @@
           </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card" style="--vt-name:card-greenput">
           <h3>GreenPut</h3>
           <p>CRM for home service contractors. Manage leads, jobs, estimates, and invoices — built on Cloudflare Workers, D1, and Pages.</p>
           <div class="links">
@@ -62,7 +66,7 @@
           </div>
         </div>
 
-        <div class="project-card">
+        <div class="project-card" style="--vt-name:card-pendingbusiness">
           <h3>PendingBusiness</h3>
           <p>Personal treasury OS. Optimizes tax withholding, captures float yield, schedules bills at the last responsible moment, and eliminates debt by APR.</p>
           <div class="links">

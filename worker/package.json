@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "itty-router": "^5"
+    "itty-router": "^5",
+    "@basenative/markdown": "workspace:*"
   },
   "devDependencies": {
     "wrangler": "^4"

@@ -1,0 +1,73 @@
+name: ci (reusable)
+
+# Reusable workflow: lint + typecheck + test for any DuganLabs project.
+# Caller passes optional commands; sensible defaults assume @basenative/eslint-config
+# and @basenative/tsconfig consumers with `pnpm` scripts named lint/typecheck/test.
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: "20"
+      package-manager:
+        type: string
+        default: "pnpm"        # pnpm | npm | bun
+      lint-command:
+        type: string
+        default: "lint"
+      typecheck-command:
+        type: string
+        default: "typecheck"
+      test-command:
+        type: string
+        default: "test"
+      run-lint:
+        type: boolean
+        default: true
+      run-typecheck:
+        type: boolean
+        default: true
+      run-test:
+        type: boolean
+        default: true
+    secrets:
+      DOPPLER_TOKEN:
+        required: false   # only required if test/lint commands need secrets
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install dependencies
+        run: |
+          case "${{ inputs.package-manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            npm)  npm ci ;;
+            bun)  curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install --frozen-lockfile ;;
+          esac
+
+      - name: Lint
+        if: inputs.run-lint
+        run: ${{ inputs.package-manager }} run ${{ inputs.lint-command }}
+
+      - name: Typecheck
+        if: inputs.run-typecheck
+        run: ${{ inputs.package-manager }} run ${{ inputs.typecheck-command }}
+
+      - name: Test
+        if: inputs.run-test
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: ${{ inputs.package-manager }} run ${{ inputs.test-command }}

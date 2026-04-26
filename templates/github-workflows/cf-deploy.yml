@@ -1,0 +1,86 @@
+name: cf-deploy (reusable)
+
+# Reusable workflow: Cloudflare Pages deploy.
+# Cloudflare credentials are sourced from Doppler at call-time — the workflow
+# itself knows nothing of any project's account id or API token.
+#
+# Required Doppler secrets (in the project's Doppler config):
+#   CLOUDFLARE_API_TOKEN   – Pages:Edit + (optionally) D1:Edit scope
+#   CLOUDFLARE_ACCOUNT_ID  – the project's Cloudflare account id
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        type: string
+        required: true
+      build-command:
+        type: string
+        default: "build"
+      build-output-dir:
+        type: string
+        default: "dist"
+      branch:
+        type: string
+        default: "main"
+      node-version:
+        type: string
+        default: "20"
+      package-manager:
+        type: string
+        default: "pnpm"        # pnpm | npm | bun
+      environment:
+        type: string
+        default: "production"
+      environment-url:
+        type: string
+        default: ""
+    secrets:
+      DOPPLER_TOKEN:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.environment-url }}
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Install dependencies
+        run: |
+          case "${{ inputs.package-manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            npm)  npm ci ;;
+            bun)  curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install --frozen-lockfile ;;
+          esac
+
+      - name: Build
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: doppler run -- ${{ inputs.package-manager }} run ${{ inputs.build-command }}
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          doppler run -- npx wrangler pages deploy ${{ inputs.build-output-dir }} \
+            --project-name=${{ inputs.project-name }} \
+            --branch=${{ inputs.branch }} \
+            --commit-dirty=true

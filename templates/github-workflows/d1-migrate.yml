@@ -1,0 +1,68 @@
+name: d1-migrate (reusable)
+
+# Reusable workflow: apply Cloudflare D1 migrations.
+# Idempotent — runs every SQL file in `migrations-glob` against `database`.
+# All ALTER/CREATE statements should be `IF NOT EXISTS` or otherwise safe to re-run.
+# Cloudflare credentials sourced from Doppler at call time.
+
+on:
+  workflow_call:
+    inputs:
+      database:
+        type: string
+        required: true
+      migrations-glob:
+        type: string
+        default: "migrations/*.sql"
+      node-version:
+        type: string
+        default: "20"
+      package-manager:
+        type: string
+        default: "pnpm"
+    secrets:
+      DOPPLER_TOKEN:
+        required: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Install dependencies
+        run: |
+          case "${{ inputs.package-manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            npm)  npm ci ;;
+            bun)  curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install --frozen-lockfile ;;
+          esac
+
+      - name: Apply migrations (idempotent)
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          shopt -s nullglob
+          files=( ${{ inputs.migrations-glob }} )
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No migration files matched ${{ inputs.migrations-glob }} — skipping."
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "→ applying $f"
+            doppler run -- npx wrangler d1 execute ${{ inputs.database }} --remote --file="$f"
+          done

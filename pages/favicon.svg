@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>DuganLabs</title>
+  <rect width="32" height="32" rx="6" fill="#060912"/>
+  <path d="M9 9h7a7 7 0 0 1 0 14H9z" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="22" cy="9" r="2" fill="#3b82f6"/>
+</svg>

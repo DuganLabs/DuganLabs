@@ -169,9 +169,56 @@ router.get('/api/ecosystem/categories', async (request, env) => {
 
 // ─── Export ───────────────────────────────────────────────
 
+function escapeXml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+const SITE_ORIGIN = 'https://duganlabs.com';
+
+async function buildSitemap(env) {
+  const staticUrls = [
+    { loc: `${SITE_ORIGIN}/`, changefreq: 'weekly', priority: '1.0' },
+    { loc: `${SITE_ORIGIN}/blog`, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${SITE_ORIGIN}/ecosystem`, changefreq: 'weekly', priority: '0.8' },
+    { loc: `${SITE_ORIGIN}/compare`, changefreq: 'monthly', priority: '0.8' },
+  ];
+  const posts = (await env.BLOG.get('posts:index', 'json')) || [];
+  const postUrls = posts.map(p => ({
+    loc: `${SITE_ORIGIN}/blog/${p.slug}`,
+    lastmod: p.date || undefined,
+    changefreq: 'monthly',
+    priority: '0.7',
+  }));
+  const urls = [...staticUrls, ...postUrls];
+  const body = urls.map(u => {
+    const parts = [`    <loc>${escapeXml(u.loc)}</loc>`];
+    if (u.lastmod) parts.push(`    <lastmod>${escapeXml(u.lastmod)}</lastmod>`);
+    if (u.changefreq) parts.push(`    <changefreq>${u.changefreq}</changefreq>`);
+    if (u.priority) parts.push(`    <priority>${u.priority}</priority>`);
+    return `  <url>\n${parts.join('\n')}\n  </url>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Sitemap (dynamic — pulls blog posts from KV)
+    if (url.pathname === '/sitemap.xml') {
+      const xml = await buildSitemap(env);
+      return withSecurityHeaders(new Response(xml, {
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      }));
+    }
 
     // API routes go through the router
     if (url.pathname.startsWith('/api/')) {

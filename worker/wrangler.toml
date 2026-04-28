@@ -10,13 +10,11 @@ routes = [
 
 [[kv_namespaces]]
 binding = "BLOG"
-id = "placeholder-create-via-wrangler"
-preview_id = "placeholder-preview"
+id = "6abd29c8014f4b70add446dc20cd9c06"
 
 [[kv_namespaces]]
 binding = "REGISTRY"
-id = "placeholder-registry"
-preview_id = "placeholder-registry-preview"
+id = "f47c0f5887f54a45ab4ef1f2f75a6b62"
 
 [assets]
 directory = "../pages"

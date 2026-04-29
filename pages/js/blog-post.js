@@ -57,6 +57,9 @@ effect(() => {
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = document.title;
 
+  const canonical = document.getElementById('canonical-link');
+  if (canonical) canonical.setAttribute('href', `https://duganlabs.com/blog/${p.slug}`);
+
   article.innerHTML = `
     <header style="margin-bottom:var(--space-6)">
       <p style="margin:0 0 var(--space-2)"><a href="/blog">&larr; Back to blog</a></p>

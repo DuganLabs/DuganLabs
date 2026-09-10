@@ -80,6 +80,39 @@
     text-decoration: underline;
   }
 
+  /* Collapsed mobile nav: below 640px, hide the inline nav behind a
+     hamburger toggle instead of letting the 4 links wrap into cramped
+     rows next to the brand and theme toggle. #main-nav's open/closed
+     state is driven by the .is-open class, toggled from pages/js/app.js.
+     The .nav-toggle display toggle itself lives in components.css, not
+     here — see the comment there for why. */
+  @media (max-width: 640px) {
+    header[role="banner"] {
+      flex-wrap: wrap;
+      row-gap: var(--space-3);
+    }
+
+    nav[aria-label="main"] {
+      display: none;
+      order: 5;
+      flex-basis: 100%;
+      flex-direction: column;
+      border-block-start: 1px solid var(--border);
+      padding-block-start: var(--space-2);
+    }
+
+    nav[aria-label="main"].is-open {
+      display: flex;
+    }
+
+    nav[aria-label="main"] a {
+      display: flex;
+      align-items: center;
+      min-block-size: 44px;
+      padding-inline: var(--space-2);
+    }
+  }
+
   @media (max-width: 768px) {
     header[role="banner"] {
       padding-inline: var(--space-4);

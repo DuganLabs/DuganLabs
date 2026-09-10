@@ -7,7 +7,7 @@
     "deploy": "pnpm exec nx run worker:deploy"
   },
   "devDependencies": {
-    "nx": "^22.7.0"
+    "nx": "^23.2.0"
   },
   "nx": {
     "includedScripts": []

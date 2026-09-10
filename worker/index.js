@@ -45,11 +45,13 @@ function parseBlogFrontmatter(raw) {
   return { meta, content };
 }
 
-router.get('/api/posts', async (request, env) => {
+async function getPostsIndex(env) {
   const index = await env.BLOG.get('posts:index', 'json');
   if (!index) return [];
   return index.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-});
+}
+
+router.get('/api/posts', async (request, env) => getPostsIndex(env));
 
 router.get('/api/posts/:slug', async (request, env) => {
   const slug = request.params.slug;
@@ -121,17 +123,33 @@ const DEFAULT_PACKAGES = [
   { name: '@basenative/i18n', description: 'ICU messages, locale detection, @t directive for template-level translation.', version: '1.0.0', category: 'i18n', tags: ['i18n', 'translation', 'locale'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
   { name: '@basenative/markdown', description: 'Zero-dep markdown parser — headings, lists, code blocks, tables, footnotes, frontmatter.', version: '1.0.0', category: 'content', tags: ['markdown', 'parser', 'content'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
   { name: '@basenative/flags', description: 'Feature flags with percentage rollouts via Cloudflare KV edge cache.', version: '1.0.0', category: 'infra', tags: ['feature-flags', 'edge', 'kv'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
-  { name: '@basenative/marketplace', description: 'Community component marketplace — registry client, installer, theme manager.', version: '1.0.0', category: 'ecosystem', tags: ['marketplace', 'registry', 'community'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
+  { name: '@basenative/marketplace', description: 'Component marketplace — registry client, installer, theme manager.', version: '1.0.0', category: 'ecosystem', tags: ['marketplace', 'registry', 'installer'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
   { name: '@basenative/cli', description: 'Project scaffolding via `npx create-basenative` — templates, generators, dev server.', version: '1.0.0', category: 'tooling', tags: ['cli', 'scaffold', 'generator'], downloads: 0, repo: 'https://github.com/DuganLabs/BaseNative' },
 ];
 
-router.get('/api/ecosystem', async (request, env) => {
+async function getPackages(env) {
   // Try KV first, fall back to defaults
   let packages = await env.REGISTRY.get('packages:list', 'json');
   if (!packages) {
     packages = DEFAULT_PACKAGES;
     await env.REGISTRY.put('packages:list', JSON.stringify(packages));
   }
+  return packages;
+}
+
+function computeCategoryCounts(packages) {
+  const categoryMap = {};
+  for (const pkg of packages) {
+    const cat = pkg.category || 'other';
+    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+  }
+  return Object.entries(categoryMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+router.get('/api/ecosystem', async (request, env) => {
+  const packages = await getPackages(env);
 
   const url = new URL(request.url);
   const category = url.searchParams.get('category');
@@ -153,18 +171,8 @@ router.get('/api/ecosystem', async (request, env) => {
 });
 
 router.get('/api/ecosystem/categories', async (request, env) => {
-  let packages = await env.REGISTRY.get('packages:list', 'json');
-  if (!packages) packages = DEFAULT_PACKAGES;
-
-  const categoryMap = {};
-  for (const pkg of packages) {
-    const cat = pkg.category || 'other';
-    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-  }
-
-  return Object.entries(categoryMap)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
+  const packages = await getPackages(env);
+  return computeCategoryCounts(packages);
 });
 
 // ─── Export ───────────────────────────────────────────────
@@ -205,6 +213,86 @@ async function buildSitemap(env) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
 }
 
+// ─── SSR: render real content into the static shells ───────
+// These mirror the markup the client-side pages/js/blog.js and
+// pages/js/ecosystem.js build, so non-JS clients (and first paint
+// for everyone) get the real content instead of "Loading…".
+
+function renderPostCardHtml(p) {
+  return `
+    <a href="/blog/${escapeXml(p.slug)}" class="post-card" style="display:block;text-decoration:none;color:inherit;padding:var(--space-4);border:1px solid var(--surface-3);border-radius:var(--radius-2);margin-bottom:var(--space-3);">
+      <h3 style="margin:0 0 var(--space-1)">${escapeXml(p.title)}</h3>
+      ${p.date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${escapeXml(p.date)}</time>` : ''}
+      ${p.tags?.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${p.tags.map(t => `#${escapeXml(t)}`).join(' ')}</p>` : ''}
+      ${p.excerpt ? `<p style="margin:var(--space-2) 0 0;color:var(--text-secondary)">${escapeXml(p.excerpt)}</p>` : ''}
+    </a>`;
+}
+
+function renderPostsListHtml(posts) {
+  if (!posts.length) return '<p>No posts yet. Check back soon.</p>';
+  return posts.map(renderPostCardHtml).join('');
+}
+
+function renderPackageCardHtml(pkg) {
+  const tags = (pkg.tags || []).map(t => `<span data-bn="pkg-tag">${escapeXml(t)}</span>`).join('');
+  const repoLink = pkg.repo
+    ? `<a href="${escapeXml(pkg.repo)}" target="_blank" rel="noopener">${escapeXml(pkg.name)}</a>`
+    : escapeXml(pkg.name);
+  return `<article data-bn="pkg-card">
+  <div data-bn="pkg-header">
+    <h4 data-bn="pkg-name">${repoLink}</h4>
+    ${pkg.category ? `<span data-bn="pkg-category">${escapeXml(pkg.category)}</span>` : ''}
+  </div>
+  ${pkg.description ? `<p data-bn="pkg-desc">${escapeXml(pkg.description)}</p>` : ''}
+  ${tags ? `<div data-bn="pkg-tags">${tags}</div>` : ''}
+  <div data-bn="pkg-stats">
+    ${pkg.version ? `<span>v${escapeXml(pkg.version)}</span>` : ''}
+  </div>
+</article>`;
+}
+
+function renderPackagesGridHtml(packages) {
+  if (!packages.length) return '<p class="eco-empty">No packages found.</p>';
+  return packages.map(renderPackageCardHtml).join('');
+}
+
+function renderCategoryButtonsHtml(categories) {
+  return categories.map(cat =>
+    `<button class="eco-cat-btn" aria-pressed="false" data-category="${escapeXml(cat.name)}">${escapeXml(cat.name)} (${cat.count})</button>`
+  ).join('');
+}
+
+async function renderBlogPage(env, shellResponse) {
+  const posts = await getPostsIndex(env);
+  let html = await shellResponse.text();
+  html = html
+    .replace('<section id="posts-list" aria-label="blog posts">', '<section id="posts-list" aria-label="blog posts" data-ssr="1">')
+    .replace('<p id="posts-loading">Loading posts...</p>', renderPostsListHtml(posts));
+  const headers = new Headers(shellResponse.headers);
+  headers.delete('content-length');
+  return new Response(html, { status: shellResponse.status, headers });
+}
+
+async function renderEcosystemPage(env, shellResponse) {
+  const packages = await getPackages(env);
+  const categories = computeCategoryCounts(packages);
+  let html = await shellResponse.text();
+  html = html
+    .replace('<section class="eco-grid" id="eco-grid" aria-label="Package listing">', '<section class="eco-grid" id="eco-grid" aria-label="Package listing" data-ssr="1">')
+    .replace('<p class="eco-empty">Loading packages...</p>', renderPackagesGridHtml(packages))
+    .replace(
+      '<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>',
+      `<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>${renderCategoryButtonsHtml(categories)}`
+    )
+    .replace(
+      '<p class="eco-count" id="eco-count"></p>',
+      `<p class="eco-count" id="eco-count">${packages.length} package${packages.length !== 1 ? 's' : ''}</p>`
+    );
+  const headers = new Headers(shellResponse.headers);
+  headers.delete('content-length');
+  return new Response(html, { status: shellResponse.status, headers });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -232,16 +320,18 @@ export default {
       return withSecurityHeaders(comparePage);
     }
 
-    // SPA routing: serve ecosystem page
+    // SSR: serve ecosystem page with the package grid rendered server-side
     if (url.pathname === '/ecosystem' || url.pathname === '/ecosystem/') {
       const ecoPage = await env.ASSETS.fetch(new Request(new URL('/ecosystem.html', url.origin), { headers: request.headers }));
-      return withSecurityHeaders(ecoPage);
+      const rendered = await renderEcosystemPage(env, ecoPage);
+      return withSecurityHeaders(rendered);
     }
 
-    // SPA routing: serve blog pages for /blog paths
+    // SSR: serve blog index with the post list rendered server-side
     if (url.pathname === '/blog' || url.pathname === '/blog/') {
       const blogPage = await env.ASSETS.fetch(new Request(new URL('/blog.html', url.origin), { headers: request.headers }));
-      return withSecurityHeaders(blogPage);
+      const rendered = await renderBlogPage(env, blogPage);
+      return withSecurityHeaders(rendered);
     }
     if (url.pathname.startsWith('/blog/')) {
       const postPage = await env.ASSETS.fetch(new Request(new URL('/blog-post.html', url.origin), { headers: request.headers }));

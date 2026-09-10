@@ -10,9 +10,9 @@ excerpt: A look at what's shipping in Q2 2026 — marketplace, real-time APIs, a
 
 As BaseNative grows, we're focusing on three key areas: **discoverability**, **real-time communication**, and **developer experience**. Here's what's coming.
 
-### Community Marketplace (Live Now)
+### Package Marketplace (Live Now)
 
-The **@basenative/marketplace** package is now available. It provides a registry client and component installer so you can discover and install community-built components directly into your projects.
+The **@basenative/marketplace** package is now available. It provides a registry client and component installer so you can discover and install BaseNative components directly into your projects.
 
 ```javascript
 import { installComponent } from '@basenative/marketplace';

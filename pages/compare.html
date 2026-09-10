@@ -215,7 +215,12 @@
 
   <header role="banner">
     <a href="/" style="text-decoration:none;color:inherit"><h1>DuganLabs</h1></a>
-    <nav aria-label="main">
+    <button type="button" class="nav-toggle" id="btn-nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle navigation menu">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+    <nav aria-label="main" id="main-nav">
       <a href="/">Projects</a>
       <a href="/blog">Blog</a>
       <a href="/ecosystem">Ecosystem</a>

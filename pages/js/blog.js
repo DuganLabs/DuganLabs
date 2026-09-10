@@ -57,19 +57,5 @@ if (!isSSR) {
   loadPosts();
 }
 
-// Theme toggle (shared with app.js pattern)
-const btn = document.getElementById('btn-theme-toggle');
-if (btn) {
-  const update = () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    btn.textContent = current === 'dark' ? 'Light' : 'Dark';
-  };
-  update();
-  btn.addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    document.documentElement.style.colorScheme = next;
-    localStorage.setItem('dl-theme', next);
-    update();
-  });
-}
+// Theme toggle + mobile nav are handled by /js/app.js, loaded alongside this
+// script (see pages/blog.html).

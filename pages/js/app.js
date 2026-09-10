@@ -10,6 +10,37 @@ function applyTheme(theme) {
   if (btn) btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
 }
 
+// ─── Mobile nav ─────────────────────────────────────────────
+// Below 640px (see pages/css/layout.css) #main-nav is hidden behind the
+// hamburger button; toggle its .is-open class + aria-expanded, and close
+// on Escape or on navigating away (link click).
+
+function initMobileNav() {
+  const toggle = $('#btn-nav-toggle');
+  const nav = document.getElementById('main-nav');
+  if (!toggle || !nav) return;
+
+  const setOpen = (open) => {
+    nav.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+
+  toggle.addEventListener('click', () => {
+    setOpen(!nav.classList.contains('is-open'));
+  });
+
+  nav.addEventListener('click', (e) => {
+    if (e.target.closest('a')) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && nav.classList.contains('is-open')) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+}
+
 // ─── View Transitions ─────────────────────────────────────
 // Intercept same-origin link clicks and use the View Transitions
 // API for smooth animated page navigation when supported.
@@ -43,5 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  initMobileNav();
   enableViewTransitions();
 });

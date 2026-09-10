@@ -161,7 +161,8 @@ export function parse(source, options = {}) {
       }
       const code = escapeHtml(codeLines.join('\n'));
       const langAttr = lang ? ` class="language-${escapeHtml(lang)}"` : '';
-      blocks.push(`<pre><code${langAttr}>${code}</code></pre>`);
+      // tabindex="0" makes the scrollable code block keyboard-focusable/scrollable
+      blocks.push(`<pre tabindex="0"><code${langAttr}>${code}</code></pre>`);
       continue;
     }
 

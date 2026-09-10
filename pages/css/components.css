@@ -77,6 +77,175 @@
     transition: background var(--duration-fast) var(--ease);
   }
 
+  /* ── Prose (rendered blog post body) ──────────────────────
+     reset.css zeroes margins and sets list-style:none globally,
+     so blog post markdown needs its own vertical rhythm, restored
+     list markers, and code-block overflow handling. */
+  .prose {
+    color: var(--text-primary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .prose > * + * {
+    margin-block-start: var(--space-4);
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    line-height: var(--leading-tight);
+    margin-block-start: var(--space-8);
+    margin-block-end: var(--space-2);
+  }
+
+  .prose > :first-child {
+    margin-block-start: 0;
+  }
+
+  .prose p {
+    color: var(--text-primary);
+  }
+
+  .prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .prose ul,
+  .prose ol {
+    padding-inline-start: var(--space-6);
+  }
+
+  .prose ul {
+    list-style: disc;
+  }
+
+  .prose ol {
+    list-style: decimal;
+  }
+
+  .prose li + li {
+    margin-block-start: var(--space-1);
+  }
+
+  .prose blockquote {
+    padding-inline-start: var(--space-4);
+    border-inline-start: 3px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .prose img {
+    max-inline-size: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .prose hr {
+    border: none;
+    border-block-start: 1px solid var(--border);
+    margin-block: var(--space-8);
+  }
+
+  .prose code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding-inline: 0.35em;
+    padding-block: 0.1em;
+  }
+
+  .prose pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    overflow-x: auto;
+    max-inline-size: 100%;
+  }
+
+  .prose pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: var(--text-sm);
+  }
+
+  .prose pre:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    max-inline-size: 100%;
+  }
+
+  .prose th,
+  .prose td {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    text-align: start;
+  }
+
+  /* ── Mobile nav toggle (hamburger) ────────────────────────
+     The generic `button {}` rule above sets `display: inline-flex`
+     on every button, including this one. It lives in this same
+     @layer, so a `display` set on `.nav-toggle` in an *earlier*
+     layer (e.g. layout.css) can never win here regardless of
+     specificity — layer order beats specificity. So the show/hide
+     toggle has to live in this layer too, where `.nav-toggle`'s
+     class selector outranks the generic `button` type selector. */
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    inline-size: 44px;
+    block-size: 44px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    transition: background var(--duration-fast) var(--ease),
+                border-color var(--duration-fast) var(--ease);
+  }
+
+  @media (max-width: 640px) {
+    .nav-toggle {
+      display: inline-flex;
+    }
+  }
+
+  .nav-toggle:hover {
+    background: var(--surface-3);
+    border-color: var(--border-focus);
+  }
+
+  .nav-toggle-bar {
+    display: block;
+    inline-size: 20px;
+    block-size: 2px;
+    border-radius: 1px;
+    background: var(--text-primary);
+    transition: transform var(--duration-fast) var(--ease),
+                opacity var(--duration-fast) var(--ease);
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
   /* ── Theme toggle button ───────────────────────────────── */
   #btn-theme-toggle {
     background: transparent;

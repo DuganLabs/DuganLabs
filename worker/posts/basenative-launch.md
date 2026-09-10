@@ -28,7 +28,7 @@ We believe in explicit, transparent code. No hidden dependencies means faster lo
 
 ### Get Started
 
-Documentation and examples are available at [basenative.dev](https://basenative.dev). Start with the CLI scaffolder to bootstrap a new project.
+Documentation and examples are available at [basenative.com](https://basenative.com). Start with the CLI scaffolder to bootstrap a new project.
 
 ```bash
 npx create-basenative@latest my-app

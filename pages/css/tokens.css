@@ -116,7 +116,7 @@
     /* Text palette — light */
     --text-primary: #0C0B09;
     --text-secondary: #5C554B;
-    --text-muted: #8C8474;
+    --text-muted: #655d4f; /* raised for WCAG AA 4.5:1+ against surface-0..3 */
 
     /* Accent palette — same hues, adjusted for light bg */
     --green: #059669;
@@ -130,8 +130,8 @@
     --purple: #7c3aed;
     --purple-dim: #ede9fe;
 
-    /* Brand accent — darkened for contrast on paper */
-    --brand: #B86E00;
+    /* Brand accent — darkened for contrast on paper (WCAG AA 4.5:1+ against surface-0..2) */
+    --brand: #8a5200;
     --brand-dim: #FBE9CF;
 
     /* Semantic colors — light */

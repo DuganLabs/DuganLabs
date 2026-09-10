@@ -109,5 +109,15 @@ categoriesContainer?.addEventListener('click', (e) => {
 
 // ── Init ─────────────────────────────────────────────────
 
-loadCategories();
-loadPackages();
+// The worker server-renders the package grid and category buttons into
+// #eco-grid / #eco-categories before the response ever reaches the browser
+// (see worker/index.js renderEcosystemPage). When that happened, the grid
+// carries data-ssr="1" and already has the real content and category
+// buttons — re-fetching on load would just flash "Loading packages..." and
+// duplicate the category buttons. Search and category-click filtering
+// still work either way since those call loadPackages() directly.
+const isSSR = grid?.dataset.ssr === '1';
+if (!isSSR) {
+  loadCategories();
+  loadPackages();
+}

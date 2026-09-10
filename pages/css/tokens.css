@@ -4,16 +4,16 @@
   :root,
   :root[data-theme="dark"] {
     /* Surface palette */
-    --surface-0: #060912;
-    --surface-1: #0a0e17;
-    --surface-2: #111827;
-    --surface-3: #1a2332;
-    --surface-4: #243044;
+    --surface-0: #0C0B09;
+    --surface-1: #121110;
+    --surface-2: #1A1815;
+    --surface-3: #24211D;
+    --surface-4: #302C27;
 
     /* Text palette */
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --text-primary: #F0EDE4;
+    --text-secondary: #A89F8F;
+    --text-muted: #7A7062;
 
     /* Accent palette */
     --green: #10b981;
@@ -27,15 +27,19 @@
     --purple: #a855f7;
     --purple-dim: #581c87;
 
+    /* Brand accent — DuganLabs preset (@basenative/favicon `duganlabs`) */
+    --brand: #E8920A;
+    --brand-dim: #4A2E05;
+
     /* Semantic colors */
-    --accent: var(--blue);
-    --accent-dim: var(--blue-dim);
+    --accent: var(--brand);
+    --accent-dim: var(--brand-dim);
     --warning: var(--amber);
     --danger: var(--red);
     --info: var(--blue);
-    --border: #1e293b;
-    --border-subtle: #334155;
-    --border-focus: var(--blue);
+    --border: #26221E;
+    --border-subtle: #3A342D;
+    --border-focus: var(--accent);
 
     /* Spacing scale (4px base) */
     --space-1: 0.25rem;
@@ -88,7 +92,7 @@
     --duration-normal: 250ms;
 
     /* Focus */
-    --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--blue);
+    --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--accent);
 
     /* States */
     --disabled-opacity: 0.5;
@@ -103,16 +107,16 @@
 
   :root[data-theme="light"] {
     /* Surface palette — light */
-    --surface-0: #f8fafc;
-    --surface-1: #ffffff;
-    --surface-2: #f1f5f9;
-    --surface-3: #e2e8f0;
-    --surface-4: #cbd5e1;
+    --surface-0: #F7F4EC;
+    --surface-1: #FFFDF8;
+    --surface-2: #F0EDE4;
+    --surface-3: #E3DFD4;
+    --surface-4: #CFC9BB;
 
     /* Text palette — light */
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
+    --text-primary: #0C0B09;
+    --text-secondary: #5C554B;
+    --text-muted: #8C8474;
 
     /* Accent palette — same hues, adjusted for light bg */
     --green: #059669;
@@ -126,10 +130,14 @@
     --purple: #7c3aed;
     --purple-dim: #ede9fe;
 
+    /* Brand accent — darkened for contrast on paper */
+    --brand: #B86E00;
+    --brand-dim: #FBE9CF;
+
     /* Semantic colors — light */
-    --border: #e2e8f0;
-    --border-subtle: #cbd5e1;
-    --border-focus: var(--blue);
+    --border: #E3DFD4;
+    --border-subtle: #CFC9BB;
+    --border-focus: var(--accent);
 
     /* Shadows — lighter on white */
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
@@ -137,6 +145,6 @@
     --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.12);
 
     /* Focus ring */
-    --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--blue);
+    --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--accent);
   }
 }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0B09">
+  <meta name="color-scheme" content="dark light">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="DuganLabs">
+  <title>Page not found — DuganLabs</title>
+  <meta name="description" content="This page doesn't exist on DuganLabs.">
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://duganlabs.com/404.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="mask-icon" href="/favicon.svg" color="#0C0B09">
+  <link rel="manifest" href="/manifest.json">
+
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/utilities.css">
+
+  <script>
+    const t = localStorage.getItem('dl-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', t);
+    if (t === 'light') document.documentElement.style.colorScheme = 'light';
+  </script>
+</head>
+<body class="site-layout">
+
+  <header role="banner">
+    <a href="/" style="text-decoration:none;color:inherit"><h1>DuganLabs</h1></a>
+    <button type="button" class="nav-toggle" id="btn-nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle navigation menu">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+    <nav aria-label="main" id="main-nav">
+      <a href="/">Projects</a>
+      <a href="/blog">Blog</a>
+      <a href="/ecosystem">Ecosystem</a>
+      <a href="/compare">Compare</a>
+    </nav>
+    <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>404 — Page not found</h2>
+      <p>The page you're looking for doesn't exist, or it moved. Try one of the links below.</p>
+    </section>
+
+    <section class="section">
+      <div class="project-grid">
+        <div class="project-card">
+          <h3>Home</h3>
+          <p>Back to the DuganLabs project directory.</p>
+          <div class="links">
+            <a href="/">Go home</a>
+          </div>
+        </div>
+        <div class="project-card">
+          <h3>Blog</h3>
+          <p>Engineering notes and project updates.</p>
+          <div class="links">
+            <a href="/blog">Read the blog</a>
+          </div>
+        </div>
+        <div class="project-card">
+          <h3>Ecosystem</h3>
+          <p>The BaseNative package marketplace directory.</p>
+          <div class="links">
+            <a href="/ecosystem">Browse ecosystem</a>
+          </div>
+        </div>
+        <div class="project-card">
+          <h3>Compare</h3>
+          <p>See how BaseNative stacks up against other frameworks.</p>
+          <div class="links">
+            <a href="/compare">View comparison</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 DuganLabs &middot; <a href="https://github.com/DuganLabs">GitHub</a></p>
+  </footer>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

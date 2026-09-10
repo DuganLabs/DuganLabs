@@ -4,7 +4,13 @@ import { parse, parseFrontmatter } from './vendor/basenative/markdown/markdown.j
 const { preflight, corsify } = cors({ origin: '*' });
 
 const SECURITY_HEADERS = {
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'",
+  // script-src / connect-src additions allow Cloudflare Web Analytics, which the
+  // zone auto-injects (https://static.cloudflareinsights.com/beacon.min.js) and
+  // which posts metrics to https://cloudflareinsights.com. No nonce: 'unsafe-inline'
+  // already permits inline scripts, so a nonce would need removing unsafe-inline and
+  // threading a per-request nonce into every inline <script> across 5 HTML pages for
+  // no net security gain while unsafe-inline remains — skipped, see PR body.
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com",
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',

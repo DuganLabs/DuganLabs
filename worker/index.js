@@ -31,6 +31,18 @@ function withSecurityHeaders(response) {
   });
 }
 
+// Branded 404: fetch the static 404 page from ASSETS and return it with a
+// real 404 status, instead of letting the Assets binding's blank 404 (or a
+// soft-200 "not found" shell) reach the client.
+async function notFound(env, origin, requestHeaders) {
+  const asset = await env.ASSETS.fetch(new Request(new URL('/404.html', origin), { headers: requestHeaders }));
+  return new Response(asset.body, {
+    status: 404,
+    statusText: 'Not Found',
+    headers: asset.headers,
+  });
+}
+
 const router = AutoRouter({ before: [preflight], finally: [corsify] });
 
 // ─── Health ───────────────────────────────────────────────
@@ -299,6 +311,52 @@ async function renderEcosystemPage(env, shellResponse) {
   return new Response(html, { status: shellResponse.status, headers });
 }
 
+// SSR a single post into the blog-post.html shell: swap in the real
+// <title>, meta description, canonical link, Open Graph / Twitter tags,
+// and the rendered article body — marking the article data-ssr="1" so
+// pages/js/blog-post.js knows to leave the DOM alone (mirrors renderBlogPage
+// / renderEcosystemPage above). Returns null when the slug doesn't exist so
+// the caller can serve a real 404 instead of a 200 shell.
+async function renderPostPage(env, slug, shellResponse) {
+  const raw = await env.BLOG.get(`post:${slug}`, 'text');
+  if (!raw) return null;
+
+  const { meta, content } = parseBlogFrontmatter(raw);
+  const title = meta.title || slug;
+  const date = meta.date || null;
+  const tags = Array.isArray(meta.tags) ? meta.tags : [];
+  const description = meta.excerpt || content.slice(0, 160).replace(/\n/g, ' ');
+  const html = parse(content);
+  const pageTitle = `${title} — DuganLabs`;
+  const url = `https://duganlabs.com/blog/${slug}`;
+
+  const articleHtml = `
+    <header style="margin-bottom:var(--space-6)">
+      <p style="margin:0 0 var(--space-2)"><a href="/blog">&larr; Back to blog</a></p>
+      <h2 style="margin:0 0 var(--space-2)">${escapeXml(title)}</h2>
+      ${date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${escapeXml(date)}</time>` : ''}
+      ${tags.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${tags.map(t => `#${escapeXml(t)}`).join(' ')}</p>` : ''}
+    </header>
+    <div class="prose" data-ssr="1">${html}</div>`;
+
+  let out = await shellResponse.text();
+  out = out
+    .replace('<title id="page-title">Post — DuganLabs</title>', `<title id="page-title">${escapeXml(pageTitle)}</title>`)
+    .replace('<meta name="description" content="DuganLabs blog post">', `<meta name="description" content="${escapeXml(description)}">`)
+    .replace('<link rel="canonical" id="canonical-link" href="https://duganlabs.com/blog">', `<link rel="canonical" id="canonical-link" href="${escapeXml(url)}">`)
+    .replace('<meta property="og:title" id="og-title" content="Post — DuganLabs">', `<meta property="og:title" id="og-title" content="${escapeXml(pageTitle)}">`)
+    .replace('<meta property="og:description" id="og-description" content="DuganLabs blog post">', `<meta property="og:description" id="og-description" content="${escapeXml(description)}">`)
+    .replace('<meta property="og:url" id="og-url" content="https://duganlabs.com/blog">', `<meta property="og:url" id="og-url" content="${escapeXml(url)}">`)
+    .replace('<meta name="twitter:title" id="twitter-title" content="Post — DuganLabs">', `<meta name="twitter:title" id="twitter-title" content="${escapeXml(pageTitle)}">`)
+    .replace('<meta name="twitter:description" id="twitter-description" content="DuganLabs blog post">', `<meta name="twitter:description" id="twitter-description" content="${escapeXml(description)}">`)
+    .replace('<article id="post-article">', '<article id="post-article" data-ssr="1">')
+    .replace('<p id="post-loading">Loading post...</p>', articleHtml);
+
+  const headers = new Headers(shellResponse.headers);
+  headers.delete('content-length');
+  return new Response(out, { status: 200, headers });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -339,13 +397,26 @@ export default {
       const rendered = await renderBlogPage(env, blogPage);
       return withSecurityHeaders(rendered);
     }
+    // SSR: serve a single blog post with its content rendered server-side.
+    // A missing slug returns a real 404 (branded 404 page, HTTP 404) instead
+    // of a 200 "Post not found." shell.
     if (url.pathname.startsWith('/blog/')) {
+      const slug = url.pathname.replace(/^\/blog\//, '').replace(/\/$/, '');
       const postPage = await env.ASSETS.fetch(new Request(new URL('/blog-post.html', url.origin), { headers: request.headers }));
-      return withSecurityHeaders(postPage);
+      const rendered = slug ? await renderPostPage(env, slug, postPage) : null;
+      if (!rendered) {
+        return withSecurityHeaders(await notFound(env, url.origin, request.headers));
+      }
+      return withSecurityHeaders(rendered);
     }
 
-    // Everything else served from static assets with security headers
+    // Everything else served from static assets with security headers.
+    // A 404 from the Assets binding (unknown path) gets the branded 404
+    // page instead of the binding's blank fallback.
     const assetResponse = await env.ASSETS.fetch(new Request(request.url, { headers: request.headers }));
+    if (assetResponse.status === 404) {
+      return withSecurityHeaders(await notFound(env, url.origin, request.headers));
+    }
     return withSecurityHeaders(assetResponse);
   },
 };

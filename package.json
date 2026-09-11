@@ -5,7 +5,8 @@
   "description": "DuganLabs org portfolio \u2014 duganlabs.com",
   "scripts": {
     "dev": "pnpm exec nx run worker:dev",
-    "deploy": "pnpm exec nx run worker:deploy"
+    "deploy": "pnpm exec nx run worker:deploy",
+    "test": "node --test \"tests/**/*.test.mjs\""
   },
   "devDependencies": {
     "nx": "^23.2.0"

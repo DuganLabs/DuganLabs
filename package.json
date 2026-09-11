@@ -1,7 +1,8 @@
 {
   "name": "duganlabs",
+  "packageManager": "pnpm@10.18.3",
   "private": true,
-  "description": "DuganLabs org portfolio — duganlabs.com",
+  "description": "DuganLabs org portfolio \u2014 duganlabs.com",
   "scripts": {
     "dev": "pnpm exec nx run worker:dev",
     "deploy": "pnpm exec nx run worker:deploy"

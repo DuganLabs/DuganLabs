@@ -1,3 +1,12 @@
+import { renderPackageCard } from '../vendor/basenative/marketplace/card.js';
+
+// The card markup comes from @basenative/marketplace — the package this page
+// exists to dogfood — not from a copy of it kept here. worker/index.js imports
+// the same module for SSR. headingLevel: 3 puts the package names under this
+// page's <h1> and its "Packages" heading without skipping a level; the default
+// (4) is upstream's.
+const PKG_CARD_OPTIONS = { headingLevel: 3 };
+
 const BASE = '/api';
 const grid = document.getElementById('eco-grid');
 const countEl = document.getElementById('eco-count');
@@ -54,35 +63,7 @@ function renderGrid(packages) {
 
   if (countEl) countEl.textContent = `${packages.length} package${packages.length !== 1 ? 's' : ''}`;
 
-  grid.innerHTML = packages.map(pkg => renderCard(pkg)).join('');
-}
-
-function renderCard(pkg) {
-  const tags = (pkg.tags || [])
-    .map(t => `<span data-bn="pkg-tag">${esc(t)}</span>`)
-    .join('');
-
-  const repoLink = pkg.repo
-    ? `<a href="${esc(pkg.repo)}" target="_blank" rel="noopener">${esc(pkg.name)}</a>`
-    : esc(pkg.name);
-
-  return `<article data-bn="pkg-card">
-  <div data-bn="pkg-header">
-    <h4 data-bn="pkg-name">${repoLink}</h4>
-    ${pkg.category ? `<span data-bn="pkg-category">${esc(pkg.category)}</span>` : ''}
-  </div>
-  ${pkg.description ? `<p data-bn="pkg-desc">${esc(pkg.description)}</p>` : ''}
-  ${tags ? `<div data-bn="pkg-tags">${tags}</div>` : ''}
-  <div data-bn="pkg-stats">
-    ${pkg.version ? `<span>v${esc(pkg.version)}</span>` : ''}
-  </div>
-</article>`;
-}
-
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+  grid.innerHTML = packages.map(pkg => renderPackageCard(pkg, PKG_CARD_OPTIONS)).join('');
 }
 
 // ── Events ───────────────────────────────────────────────

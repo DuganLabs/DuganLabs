@@ -31,6 +31,13 @@
     --brand: #E8920A;
     --brand-dim: #4A2E05;
 
+    /* Foreground for anything painted ON --accent. The brand amber is a light
+       colour: white text on it measures 2.46:1, well under WCAG AA's 4.5:1, so
+       every control that uses --accent as a *background* has to pull its text
+       colour from here rather than hardcoding #fff. Near-black on #E8920A
+       measures 7.40:1. Checked by tests/tokens-contrast.test.js. */
+    --on-accent: #1A1508;
+
     /* Semantic colors */
     --accent: var(--brand);
     --accent-dim: var(--brand-dim);
@@ -118,10 +125,14 @@
     --text-secondary: #5C554B;
     --text-muted: #655d4f; /* raised for WCAG AA 4.5:1+ against surface-0..3 */
 
-    /* Accent palette — same hues, adjusted for light bg */
-    --green: #059669;
+    /* Accent palette — same hues, darkened far enough to clear WCAG AA 4.5:1
+       as *text* on the light surfaces (--surface-0 #F7F4EC, --surface-2
+       #F0EDE4), which is how they are used. The previous #059669 / #d97706
+       measured 3.43:1 and 2.90:1 on paper — they read as colour, not as text.
+       Checked by tests/tokens-contrast.test.js. */
+    --green: #047857;
     --green-dim: #d1fae5;
-    --amber: #d97706;
+    --amber: #9a5b00;
     --amber-dim: #fef3c7;
     --red: #dc2626;
     --red-dim: #fee2e2;
@@ -133,6 +144,10 @@
     /* Brand accent — darkened for contrast on paper (WCAG AA 4.5:1+ against surface-0..2) */
     --brand: #8a5200;
     --brand-dim: #FBE9CF;
+
+    /* The light-theme brand is dark enough that the ON-accent foreground flips
+       to paper white: #FFFDF8 on #8a5200 measures 6.33:1. */
+    --on-accent: #FFFDF8;
 
     /* Semantic colors — light */
     --border: #E3DFD4;

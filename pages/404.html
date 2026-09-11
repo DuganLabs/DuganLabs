@@ -27,13 +27,15 @@
   <script>
     const t = localStorage.getItem('dl-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     document.documentElement.setAttribute('data-theme', t);
-    if (t === 'light') document.documentElement.style.colorScheme = 'light';
+    document.documentElement.style.colorScheme = t;
   </script>
 </head>
 <body class="site-layout">
 
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header role="banner">
-    <a href="/" style="text-decoration:none;color:inherit"><h1>DuganLabs</h1></a>
+    <a href="/" class="brand"><span class="wordmark">DuganLabs</span></a>
     <button type="button" class="nav-toggle" id="btn-nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle navigation menu">
       <span class="nav-toggle-bar"></span>
       <span class="nav-toggle-bar"></span>
@@ -48,13 +50,14 @@
     <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
   </header>
 
-  <main>
+  <main id="main" tabindex="-1">
     <section class="hero">
-      <h2>404 — Page not found</h2>
+      <h1>404 — Page not found</h1>
       <p>The page you're looking for doesn't exist, or it moved. Try one of the links below.</p>
     </section>
 
     <section class="section">
+      <h2 class="sr-only">Where to go instead</h2>
       <div class="project-grid">
         <div class="project-card">
           <h3>Home</h3>

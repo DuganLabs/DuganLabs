@@ -1,4 +1,5 @@
 import { signal, effect } from './signals.js';
+import { renderPostsList } from './post-view.js';
 
 // The worker server-renders the post list into #posts-list before it ever
 // reaches the browser (see worker/index.js renderBlogPage). When that
@@ -38,20 +39,9 @@ if (!isSSR) {
       return;
     }
 
-    const list = posts();
-    if (list.length === 0) {
-      container.innerHTML = '<p>No posts yet. Check back soon.</p>';
-      return;
-    }
-
-    container.innerHTML = list.map(p => `
-      <a href="/blog/${p.slug}" class="post-card" style="display:block;text-decoration:none;color:inherit;padding:var(--space-4);border:1px solid var(--surface-3);border-radius:var(--radius-2);margin-bottom:var(--space-3);">
-        <h3 style="margin:0 0 var(--space-1)">${p.title}</h3>
-        ${p.date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${p.date}</time>` : ''}
-        ${p.tags?.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${p.tags.map(t => `#${t}`).join(' ')}</p>` : ''}
-        ${p.excerpt ? `<p style="margin:var(--space-2) 0 0;color:var(--text-secondary)">${p.excerpt}</p>` : ''}
-      </a>
-    `).join('');
+    // Same renderer the Worker uses for SSR (pages/js/post-view.js), so the
+    // two trees cannot disagree about markup or about escaping.
+    container.innerHTML = renderPostsList(posts());
   });
 
   loadPosts();

@@ -5,6 +5,14 @@ import { $ } from './dom.js';
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  // Set color-scheme on BOTH branches. The pre-paint script in each page's
+  // <head> writes an inline color-scheme, and an inline style can only be
+  // overridden by another inline style — so clearing it here by assigning the
+  // new theme is what keeps UA-painted chrome (scrollbars, the <input
+  // type="search"> clear affordance, native focus rings) in step with the
+  // page. Setting it only on the way into light left color-scheme:light
+  // stuck on a #0C0B09 page for the rest of the session.
+  document.documentElement.style.colorScheme = theme;
   localStorage.setItem('dl-theme', theme);
   const btn = $('#btn-theme-toggle');
   if (btn) btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
@@ -55,6 +63,10 @@ function enableViewTransitions() {
     if (url.origin !== location.origin) return;
     if (link.target === '_blank') return;
     if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+    // In-page fragment (the skip link, any future anchor): let the browser
+    // move focus and scroll. Navigating to url.pathname would drop the hash
+    // and reload the page, which is exactly what a skip link must not do.
+    if (url.hash && url.pathname === location.pathname) return;
 
     e.preventDefault();
     document.startViewTransition(() => {

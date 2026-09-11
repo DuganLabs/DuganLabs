@@ -935,17 +935,23 @@
   }
 
   /* The foundation reads as the foundation: a solid accent edge along the
-     bottom tier, fading upward through the stack. */
+     bottom tier, fading upward through the stack.
+
+     One hue at three alphas rather than --accent / --accent-dim /
+     --border-subtle: those three are unrelated colours, and in the light
+     theme --accent-dim (#FBE9CF) is paler than --border-subtle (#CFC9BB),
+     which inverted the fade — the middle tier looked less emphasised than
+     the top one. */
   .eco-tier[data-tier="platform"] {
     border-inline-start: 3px solid var(--accent);
   }
 
   .eco-tier[data-tier="packages"] {
-    border-inline-start: 3px solid var(--accent-dim);
+    border-inline-start: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
   }
 
   .eco-tier[data-tier="products"] {
-    border-inline-start: 3px solid var(--border-subtle);
+    border-inline-start: 3px solid color-mix(in srgb, var(--accent) 18%, transparent);
   }
 
   /* The layer number, ghosted. Decorative — aria-hidden in the markup —

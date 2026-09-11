@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@basenative/markdown": "^0.1.1",
     "itty-router": "^5"
   },
   "devDependencies": {

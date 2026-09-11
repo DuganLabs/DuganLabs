@@ -1,5 +1,5 @@
 import { AutoRouter, cors, error } from 'itty-router';
-import { parse } from './vendor/basenative/markdown/markdown.js';
+import { parse } from '@basenative/markdown';
 import { parseBlogFrontmatter, readingMinutes, indexEntry } from './blog-content.js';
 // The SSR tree renders through exactly the modules the browser renders
 // through — no second copy of the markup lives in this file. See the header

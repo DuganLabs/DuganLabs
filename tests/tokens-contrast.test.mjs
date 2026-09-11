@@ -73,6 +73,34 @@ describe('light-theme text accents are readable on paper', () => {
   }
 });
 
+describe('body text is readable on every surface it is painted on', () => {
+  // The gap this closes: the suite checked the accent colours and the
+  // on-accent foreground, but never the three text tokens themselves — and
+  // the dark theme's --text-muted was under AA on all four surfaces while
+  // every test passed. It is the colour of the footer, the blog dates and
+  // reading times, the package version lines and the "Source: private"
+  // notes, so it is body text by every use it has.
+  //
+  // --surface-4 is excluded because nothing outside tokens.css paints it;
+  // add it here the day something does.
+  const TEXT = ['--text-primary', '--text-secondary', '--text-muted'];
+  const SURFACES = ['--surface-0', '--surface-1', '--surface-2', '--surface-3'];
+
+  for (const theme of Object.keys(PALETTES)) {
+    for (const token of TEXT) {
+      for (const surface of SURFACES) {
+        it(`${theme}: ${token} on ${surface} clears AA`, () => {
+          const ratio = ratioOf(theme, token, surface);
+          assert.ok(
+            ratio >= AA,
+            `${token} on ${surface} is ${ratio}:1 in the ${theme} theme, needs ${AA}:1`,
+          );
+        });
+      }
+    }
+  }
+});
+
 describe('contrast helper', () => {
   it('matches the WCAG reference values', () => {
     assert.equal(contrastRatio('#ffffff', '#000000'), 21);

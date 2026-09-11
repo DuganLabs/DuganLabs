@@ -13,7 +13,14 @@
     /* Text palette */
     --text-primary: #F0EDE4;
     --text-secondary: #A89F8F;
-    --text-muted: #7A7062;
+    /* Raised from #7A7062, which measured 4.05:1 on --surface-0 and 3.30:1
+       on --surface-3 — under WCAG AA's 4.5:1 on every surface in this theme.
+       The light theme's --text-muted had already been raised for exactly
+       this; the dark one, which is the default, had not. It is the colour of
+       the site footer, the "Source: private" notes, every blog date and
+       reading time, and the package version lines. Now 4.59:1 at worst.
+       Checked by tests/tokens-contrast.test.mjs. */
+    --text-muted: #928878;
 
     /* Accent palette */
     --green: #10b981;

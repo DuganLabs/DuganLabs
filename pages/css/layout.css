@@ -45,6 +45,40 @@
     min-block-size: 44px;
     padding-inline: var(--space-2);
     border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: color var(--duration-fast) var(--ease);
+  }
+
+  nav[aria-label="main"] a:hover {
+    color: var(--text-primary);
+  }
+
+  /* Every page has carried aria-current on its own nav link and nothing has
+     ever drawn it — the attribute was announced by a screen reader and
+     invisible to everyone else. "page" is the page you are on; "true" is the
+     section you are inside (a post marks Blog that way). */
+  nav[aria-label="main"] a[aria-current] {
+    color: var(--text-primary);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* Drawn as a pseudo-element rather than a box-shadow or a border: base.css
+     paints :focus-visible with box-shadow and this layer comes after it, so
+     a box-shadow here would win over the focus ring and the current nav item
+     would be the one link on the page with no visible focus. A border would
+     change the link's height. */
+  nav[aria-label="main"] a[aria-current="page"] {
+    position: relative;
+  }
+
+  nav[aria-label="main"] a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    inset-inline: var(--space-2);
+    inset-block-end: 9px;
+    block-size: 2px;
+    border-radius: 1px;
+    background: var(--accent);
   }
 
   main {
@@ -71,9 +105,17 @@
   .hero p {
     font-size: var(--text-lg);
     color: var(--text-secondary);
-    max-inline-size: 40rem;
+    max-inline-size: 44rem;
     margin-inline: auto;
     line-height: var(--leading-relaxed);
+  }
+
+  /* The hero paragraph is --text-secondary, so a link inside it would be the
+     same colour as the sentence around it and read as plain text. */
+  .hero p a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   /* Project card grid */

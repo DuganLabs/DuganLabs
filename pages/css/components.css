@@ -164,6 +164,11 @@
   .prose {
     color: var(--text-primary);
     line-height: var(--leading-relaxed);
+    /* Measure. <main> is 64rem wide, and an article body set to the full
+       width of it runs to ~120 characters a line — roughly half again the
+       45-75 that prose is readable at. The post column (.post) carries the
+       same cap so the header, the body and the footer nav share one edge. */
+    max-inline-size: 68ch;
   }
 
   .prose > * + * {
@@ -175,15 +180,53 @@
   .prose h3,
   .prose h4 {
     line-height: var(--leading-tight);
-    margin-block-start: var(--space-8);
-    margin-block-end: var(--space-2);
+    margin-block-start: var(--space-10);
+    margin-block-end: var(--space-3);
+    /* @basenative/markdown gives every heading an id, so they are link
+       targets; without this the sticky-free header still lands them flush
+       against the viewport edge. */
+    scroll-margin-block-start: var(--space-8);
+  }
+
+  /* The markdown body's own headings sit under the post title, so its top
+     level is <h2>. Separating it makes the sections of a long post findable
+     by eye instead of only by size. */
+  .prose h2 {
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--border);
+  }
+
+  /* Except the first one: .post-header already draws a rule under the title,
+     and a post that opens with a heading was stacking two of them a few
+     pixels apart. */
+  .prose > h2:first-child {
+    padding-block-start: 0;
+    border-block-start: none;
+  }
+
+  .prose h3 {
+    color: var(--text-primary);
   }
 
   .prose > :first-child {
     margin-block-start: 0;
   }
 
+  /* Standfirst: a post that opens with a paragraph rather than a heading is
+     opening with its summary, so that paragraph is set a step larger. Keyed
+     off :first-child, not :first-of-type — otherwise the paragraph after a
+     post's opening <h2> gets the treatment for no reason. */
+  .prose > p:first-child {
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+  }
+
   .prose p {
+    color: var(--text-primary);
+  }
+
+  .prose strong {
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
   }
 
@@ -191,11 +234,17 @@
     color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+
+  .prose a:hover {
+    text-decoration-thickness: 2px;
   }
 
   .prose ul,
   .prose ol {
     padding-inline-start: var(--space-6);
+    color: var(--text-primary);
   }
 
   .prose ul {
@@ -206,14 +255,22 @@
     list-style: decimal;
   }
 
+  .prose li::marker {
+    color: var(--text-muted);
+  }
+
   .prose li + li {
-    margin-block-start: var(--space-1);
+    margin-block-start: var(--space-2);
   }
 
   .prose blockquote {
-    padding-inline-start: var(--space-4);
-    border-inline-start: 3px solid var(--border);
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--accent);
+    border-start-end-radius: var(--radius-md);
+    border-end-end-radius: var(--radius-md);
+    background: var(--surface-1);
     color: var(--text-secondary);
+    font-style: italic;
   }
 
   .prose img {
@@ -224,7 +281,7 @@
   .prose hr {
     border: none;
     border-block-start: 1px solid var(--border);
-    margin-block: var(--space-8);
+    margin-block: var(--space-10);
   }
 
   .prose code {
@@ -233,15 +290,21 @@
     border-radius: var(--radius-sm);
     padding-inline: 0.35em;
     padding-block: 0.1em;
+    /* Long identifiers in running text were the one thing that could push a
+       phone-width column wider than the viewport. */
+    overflow-wrap: break-word;
   }
 
   .prose pre {
-    background: var(--surface-2);
+    background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: var(--space-4);
     overflow-x: auto;
     max-inline-size: 100%;
+    tab-size: 2;
+    /* @basenative/markdown emits <pre tabindex="0"> so a keyboard can scroll
+       a wide block; the focus ring below is what makes that visible. */
   }
 
   .prose pre code {
@@ -249,6 +312,9 @@
     border: none;
     padding: 0;
     font-size: var(--text-sm);
+    /* The block scrolls; the code inside it must not wrap or re-break. */
+    overflow-wrap: normal;
+    white-space: pre;
   }
 
   .prose pre:focus-visible {
@@ -256,10 +322,14 @@
     box-shadow: var(--focus-ring);
   }
 
+  /* display:block turns the table into a scroll container so a wide table
+     cannot widen the page. It costs the table its column sizing, which is
+     the trade every alternative here also makes without the containment. */
   .prose table {
     display: block;
     overflow-x: auto;
     max-inline-size: 100%;
+    font-size: var(--text-sm);
   }
 
   .prose th,
@@ -267,6 +337,11 @@
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--border);
     text-align: start;
+  }
+
+  .prose th {
+    background: var(--surface-2);
+    font-weight: var(--weight-semibold);
   }
 
   /* ── Mobile nav toggle (hamburger) ────────────────────────
@@ -424,91 +499,666 @@
     animation: vt-fade-in 200ms ease-in;
   }
 
+  /* ── Tag chips ─────────────────────────────────────────────
+     Shared by the post cards and the post header. These were "#one #two"
+     run together in a single <p>; as chips the boundary between one tag and
+     the next is visible rather than inferred from the hash. Not links —
+     there is no tag archive to point them at, and a chip that looks
+     clickable and is not is worse than one that does not. */
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+  }
+
+  .tag {
+    padding-block: 2px;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Blog index ────────────────────────────────────────────
+     The feed keeps the same measure as a post body, so moving from /blog to
+     a post does not change where the text column starts. */
+  .post-feed {
+    max-inline-size: 48rem;
+    margin-inline: auto;
+  }
+
+  .post-count {
+    margin-block-end: var(--space-4);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .post-loading {
+    color: var(--text-muted);
+  }
+
+  .post-list {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .post-item {
+    display: grid;
+  }
+
   /* ── Blog post cards ───────────────────────────────────────
      Was a style="" attribute duplicated verbatim in pages/js/post-view.js's
      two former copies (the client renderer and the Worker's). One of the
      duplicated declarations referenced var(--radius-2), a token this design
      system has never defined, so the cards rendered with square corners.
      Here the rule is cached with the stylesheet and the radius token is one
-     that exists. */
+     that exists.
+
+     position: relative anchors the stretched link below — the card is an
+     <article>, not an <a>, so that a screen reader gets a link named after
+     the post instead of one named after the whole card. */
   .post-card {
-    display: block;
-    padding: var(--space-4);
-    border: 1px solid var(--surface-3);
-    border-radius: var(--radius-md);
-    margin-block-end: var(--space-3);
-    color: inherit;
-    text-decoration: none;
-    transition: border-color var(--duration-fast) var(--ease);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+    transition: border-color var(--duration-fast) var(--ease),
+                background var(--duration-fast) var(--ease),
+                transform var(--duration-fast) var(--ease);
   }
 
   .post-card:hover {
     border-color: var(--accent);
+    background: var(--surface-2);
+    transform: translateY(-2px);
   }
 
   .post-card-title {
-    margin-block-end: var(--space-1);
     font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
   }
 
-  .post-card-date,
-  .post-header-date {
+  .post-card-link {
+    color: var(--text-primary);
+  }
+
+  /* The whole card is the pointer target, without the card itself being a
+     link. inset:0 covers the padding box of .post-card, which is the
+     positioned ancestor. */
+  .post-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .post-card:hover .post-card-link {
+    color: var(--accent);
+  }
+
+  /* base.css puts the focus ring on the focused element itself; here the
+     focused element is a title-sized anchor sitting inside a much larger
+     target, and ringing just the words misrepresents what Enter will
+     activate. Move the ring onto the overlay so it frames the card. */
+  .post-card-link:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .post-card-link:focus-visible::after {
+    box-shadow: var(--focus-ring);
+  }
+
+  .post-card-meta,
+  .post-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
     color: var(--text-muted);
     font-size: var(--text-sm);
   }
 
-  .post-card-tags,
-  .post-header-tags {
-    margin-block-start: var(--space-1);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
+  .meta-sep {
+    color: var(--border-subtle);
+  }
+
+  .meta-date,
+  .meta-reading {
+    color: var(--text-muted);
   }
 
   .post-card-excerpt {
-    margin-block-start: var(--space-2);
+    margin-block-start: var(--space-3);
     color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
   }
 
-  /* ── Blog post header ──────────────────────────────────── */
-  .post-header {
-    margin-block-end: var(--space-6);
+  /* Pinned to the bottom edge so it lands in the same place on every card in
+     a column, whatever length the excerpt above it runs to. */
+  .post-card-cue {
+    margin-block-start: auto;
+    padding-block-start: var(--space-4);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
   }
 
-  .post-header-back {
-    margin-block-end: var(--space-2);
+  .post-card:hover .post-card-cue {
+    color: var(--accent);
   }
 
-  .post-header-title {
-    margin-block-end: var(--space-2);
+  .post-card-cue-arrow {
+    display: inline-block;
+    transition: transform var(--duration-fast) var(--ease);
   }
 
-  /* ── /ecosystem page ───────────────────────────────────────
-     Moved out of an 3.2KB inline <style> block in ecosystem.html: this is
-     cached with the stylesheet instead of re-downloading on every view, and
-     it satisfies BaseNative axiom 2 (all CSS in cascade layers). */
-  .eco-hero {
-    text-align: center;
+  .post-card:hover .post-card-cue-arrow {
+    transform: translateX(3px);
+  }
+
+  /* ── Empty states ──────────────────────────────────────────
+     "No posts yet. Check back soon." was a bare sentence in the flow of the
+     page, indistinguishable from a paragraph that had failed to load. */
+  .empty-state {
     padding-block: var(--space-12);
+    padding-inline: var(--space-6);
+    border: 1px dashed var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+    text-align: center;
   }
 
-  .eco-hero h1 {
-    font-size: var(--text-3xl);
-    margin-block-end: var(--space-3);
+  .empty-state-title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: var(--text-primary);
   }
 
-  .eco-hero p {
-    color: var(--text-secondary);
-    max-inline-size: 40rem;
+  .empty-state-body {
+    max-inline-size: 34rem;
+    margin-block-start: var(--space-3);
     margin-inline: auto;
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
   }
 
-  .eco-controls {
+  .empty-state-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
     justify-content: center;
+    margin-block-start: var(--space-6);
+  }
+
+  /* ── Link styled as a button ───────────────────────────────
+     An <a> that is an action rather than a destination in running text. The
+     44px floor is the touch target; the generic button {} rule cannot apply
+     because this is not a <button>. */
+  .button-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    transition: opacity var(--duration-fast) var(--ease),
+                background var(--duration-fast) var(--ease),
+                border-color var(--duration-fast) var(--ease);
+  }
+
+  .button-link:hover {
+    opacity: 0.88;
+  }
+
+  .button-link[data-variant="quiet"] {
+    background: transparent;
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+  }
+
+  .button-link[data-variant="quiet"]:hover {
+    opacity: 1;
+    border-color: var(--accent);
+    background: var(--surface-2);
+  }
+
+  /* ── Single post ───────────────────────────────────────────
+     One column for the header, the body and the footer nav. Matched to
+     .prose's 68ch measure, in rem so the header and nav — which are not
+     prose — line up with it. */
+  .post {
+    max-inline-size: 44rem;
+    margin-inline: auto;
+  }
+
+  .post-header {
     margin-block-end: var(--space-8);
+    padding-block-end: var(--space-6);
+    border-block-end: 1px solid var(--border);
+  }
+
+  /* Was an inline-styled <p> holding a bare "← Back to blog". 44px tall and
+     pulled back by its own inline padding so the text edge still aligns with
+     the title below it. */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 44px;
+    margin-block-end: var(--space-2);
+    margin-inline-start: calc(-1 * var(--space-2));
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    transition: color var(--duration-fast) var(--ease);
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .back-link-arrow {
+    transition: transform var(--duration-fast) var(--ease);
+  }
+
+  .back-link:hover .back-link-arrow {
+    transform: translateX(-3px);
+  }
+
+  .post-header-title {
+    margin-block-end: var(--space-3);
+  }
+
+  .post-header-meta {
+    margin-block-start: 0;
+  }
+
+  /* ── Newer / older post nav ────────────────────────────────
+     "Previous" and "next" are ambiguous on a reverse-chronological index —
+     they could mean either direction in time or either direction in the
+     list. These say which. */
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-block-start: var(--space-12);
+    padding-block-start: var(--space-8);
+    border-block-start: 1px solid var(--border);
+  }
+
+  .post-nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-block-size: 44px;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+    transition: border-color var(--duration-fast) var(--ease),
+                background var(--duration-fast) var(--ease);
+  }
+
+  .post-nav-link:hover {
+    border-color: var(--accent);
+    background: var(--surface-2);
+  }
+
+  .post-nav-link[data-dir="older"] {
+    text-align: end;
+    align-items: flex-end;
+  }
+
+  .post-nav-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .post-nav-link[data-dir="older"] .post-nav-label {
+    flex-direction: row-reverse;
+  }
+
+  .post-nav-arrow {
+    transition: transform var(--duration-fast) var(--ease);
+  }
+
+  .post-nav-link[data-dir="newer"]:hover .post-nav-arrow {
+    transform: translateX(-3px);
+  }
+
+  .post-nav-link[data-dir="older"]:hover .post-nav-arrow {
+    transform: translateX(3px);
+  }
+
+  .post-nav-title {
+    color: var(--text-primary);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-tight);
+  }
+
+  .post-nav-link:hover .post-nav-title {
+    color: var(--accent);
+  }
+
+  /* Holds the empty half of the grid when a post has only one neighbour, so
+     an "Older post" link stays on the right rather than sliding left into
+     the space where "Newer post" would have been. */
+  .post-nav-blank {
+    display: block;
+  }
+
+  @media (max-width: 640px) {
+    .post-nav {
+      grid-template-columns: 1fr;
+    }
+
+    /* One per row: both should read left-aligned, or the second looks like
+       it belongs to a column that is not there. */
+    .post-nav-link[data-dir="older"] {
+      text-align: start;
+      align-items: flex-start;
+    }
+
+    .post-nav-link[data-dir="older"] .post-nav-label {
+      flex-direction: row;
+    }
+
+    .post-nav-blank {
+      display: none;
+    }
+  }
+
+  /* ── Section lede ──────────────────────────────────────────
+     A sentence of orientation under a section heading. layout.css gives
+     `.section > h2` a space-6 bottom margin, which is the gap before the
+     section's *content*; when a lede follows the heading it is part of the
+     heading block, so it closes that gap and takes the margin itself. */
+  .section > h2 + .section-lede {
+    margin-block-start: calc(-1 * var(--space-4));
+    margin-block-end: var(--space-6);
+    max-inline-size: 46rem;
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .section-lede a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* ── /ecosystem: the layer diagram ─────────────────────────
+     The page's first job is to say what the ecosystem *is* before it lists
+     any packages. Three stacked tiers, products on top, platform at the
+     bottom, each one visibly sitting on the next. */
+  .eco-stack {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .eco-tier {
+    position: relative;
+    padding: var(--space-6);
+    padding-inline-start: var(--space-12);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+  }
+
+  /* 3rem of left gutter for the layer numeral is a tenth of a 390px column.
+     Below that width the numeral moves into the flow above the heading. */
+  @media (max-width: 640px) {
+    .eco-tier {
+      padding-inline-start: var(--space-5);
+    }
+  }
+
+  /* The foundation reads as the foundation: a solid accent edge along the
+     bottom tier, fading upward through the stack. */
+  .eco-tier[data-tier="platform"] {
+    border-inline-start: 3px solid var(--accent);
+  }
+
+  .eco-tier[data-tier="packages"] {
+    border-inline-start: 3px solid var(--accent-dim);
+  }
+
+  .eco-tier[data-tier="products"] {
+    border-inline-start: 3px solid var(--border-subtle);
+  }
+
+  /* The layer number, ghosted. Decorative — aria-hidden in the markup —
+     because the tier's <h3> already names it. */
+  .eco-tier-index {
+    position: absolute;
+    inset-block-start: var(--space-5);
+    inset-inline-start: var(--space-4);
+    color: var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+  }
+
+  @media (max-width: 640px) {
+    .eco-tier-index {
+      position: static;
+      margin-block-end: var(--space-2);
+      font-size: var(--text-xl);
+    }
+  }
+
+  .eco-tier h3 {
+    color: var(--text-primary);
+    margin-block-end: var(--space-2);
+  }
+
+  .eco-tier-desc {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    max-inline-size: 48rem;
+  }
+
+  /* The names in a tier: set in mono because they are proper nouns from the
+     stack rather than prose. */
+  .eco-tier-items {
+    margin-block-start: var(--space-3);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
+  }
+
+  .eco-tier-sep {
+    color: var(--border-subtle);
+  }
+
+  .eco-tier-more {
+    margin-block-start: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .eco-tier-more a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    margin-inline-start: calc(-1 * var(--space-2));
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-weight: var(--weight-medium);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .eco-tier-more a:hover {
+    color: var(--text-primary);
+  }
+
+  /* ── /ecosystem: the products ──────────────────────────────
+     Each product's place in the ecosystem, not its pitch — the pitch is on
+     the Projects page and this must not be a second copy of it. */
+  /* Two columns, not auto-fill: there are four products, and auto-fill at
+     this content width gave three across with the fourth stranded alone on
+     a second row. */
+  .eco-products {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  @media (max-width: 768px) {
+    .eco-products {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .eco-product {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+  }
+
+  /* BaseNative is not a peer of the other three on this page — it is the
+     layer they stand on — so it is marked rather than listed identically. */
+  .eco-product[data-role="foundation"] {
+    border-color: var(--accent);
+  }
+
+  .eco-product h3 {
+    color: var(--accent);
+  }
+
+  .eco-product-role {
+    margin-block-start: var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .eco-product-desc {
+    margin-block-start: var(--space-3);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+  }
+
+  .eco-product-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-start: auto;
+    padding-block-start: var(--space-4);
+    /* Pull the first target back by its own inline padding so the row's text
+       edge lines up with the description above it — same treatment as the
+       project cards. */
+    margin-inline-start: calc(-1 * var(--space-3));
+  }
+
+  .eco-product-links a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color var(--duration-fast) var(--ease);
+  }
+
+  .eco-product-links a:hover {
+    color: var(--text-primary);
+  }
+
+  .eco-product-links .links-note {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-3);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* ── /ecosystem: shared conventions ────────────────────────
+     A <dl>, because that is what it is: six terms and what each one means
+     across every project. */
+  /* min(100%, 20rem), not 20rem: an auto-fill track has a floor, and a 20rem
+     floor is wider than a 320px viewport's content box — the grid overflowed
+     the page by 16px there. min() lets the single column collapse to
+     whatever room it has. */
+  .eco-conventions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-4);
+  }
+
+  .eco-convention {
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-1);
+  }
+
+  .eco-convention dt {
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .eco-convention dd {
+    margin-block-start: var(--space-2);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+  }
+
+  .eco-convention code {
+    padding-inline: 0.3em;
+    border-radius: var(--radius-sm);
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+
+  /* ── /ecosystem: the package registry ──────────────────────
+     Moved out of a 3.2KB inline <style> block in ecosystem.html: this is
+     cached with the stylesheet instead of re-downloading on every view, and
+     it satisfies BaseNative axiom 2 (all CSS in cascade layers). It is now
+     one section of the page rather than the whole of it, so the controls are
+     aligned to the content column instead of centred in the viewport. */
+  .eco-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-end: var(--space-4);
   }
 
   /* Grows into the row it sits in instead of standing at a fixed 16rem —
@@ -536,8 +1186,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    justify-content: center;
-    margin-block-end: var(--space-8);
+    margin-block-end: var(--space-4);
   }
 
   .eco-cat-btn {
@@ -573,20 +1222,24 @@
      two-line descriptions. */
   .eco-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
     gap: var(--space-4);
   }
 
   .eco-count {
-    text-align: center;
     font-size: var(--text-sm);
     color: var(--text-muted);
     margin-block-end: var(--space-4);
   }
 
+  /* Spans the grid it lives inside, so "no results" sits centred under the
+     filters rather than shrunk into the first 17.5rem column. */
   .eco-empty {
+    grid-column: 1 / -1;
     text-align: center;
     padding: var(--space-12) var(--space-4);
+    border: 1px dashed var(--border-subtle);
+    border-radius: var(--radius-lg);
     color: var(--text-muted);
   }
 

@@ -43,36 +43,36 @@ jobs:
         working-directory: worker
         run: npx wrangler deploy --dry-run --outdir=.wrangler-dry
 
+  # Thin caller: delegates to DuganLabs/.github's org-wide cf-worker-deploy.yml
+  # instead of a bespoke install+deploy job. Doppler isn't set up for this
+  # repo yet, so Cloudflare credentials flow through the documented
+  # direct-secret fallback (see DuganLabs/.github's DOPPLER.md).
+  #
+  # TODO: once DuganLabs/.github's Doppler-or-direct-fallback PR merges and
+  # is tagged, switch the `uses:` ref below from the branch name to that tag.
   deploy:
     name: Deploy to Cloudflare
     needs: check
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    uses: DuganLabs/.github/.github/workflows/cf-worker-deploy.yml@ci/doppler-fallback-and-worker-deploy
+    with:
+      working-directory: "."
+      deploy-command: "pnpm exec nx run worker:deploy"
+      node-version: "22"
+      package-manager: pnpm
+      environment: production
+    secrets:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  summary:
+    name: Deployment summary
+    needs: deploy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Deploy Worker + Pages
-        run: pnpm exec nx run worker:deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Deployment summary
-        run: |
-          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "Worker \`duganlabs\` deployed to Cloudflare" >> $GITHUB_STEP_SUMMARY
+      - run: |
+          echo "## Deployment Complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "Worker \`duganlabs\` deployed to Cloudflare" >> "$GITHUB_STEP_SUMMARY"

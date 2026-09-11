@@ -142,6 +142,31 @@ describe('outbound links', () => {
   });
 });
 
+describe('site chrome', () => {
+  // /ecosystem's footer used to read "Built with BaseNative" — the giveaway
+  // that the page had been written as a BaseNative property that happened to
+  // be hosted on duganlabs.com. Every page signs off as the same site.
+  for (const [name, html] of Object.entries(PAGES)) {
+    it(`${name} carries the DuganLabs footer`, () => {
+      const footer = html.match(/<footer>([\s\S]*?)<\/footer>/);
+      assert.ok(footer, `${name} has no footer`);
+      assert.match(footer[1], /DuganLabs/, `${name}'s footer does not name the site`);
+    });
+
+    it(`${name} marks where the reader is in the nav`, () => {
+      const nav = html.match(/<nav aria-label="main"[^>]*>([\s\S]*?)<\/nav>/);
+      assert.ok(nav, `${name} has no main nav`);
+      const markup = nav[1].replace(/<!--[\s\S]*?-->/g, '');
+      const current = [...markup.matchAll(/aria-current="(page|true)"/g)];
+      // 404 is not one of the nav destinations, so it marks none. A post
+      // marks Blog with "true" rather than "page": it is in that section but
+      // it is not that page.
+      const expected = name === '404.html' ? 0 : 1;
+      assert.equal(current.length, expected, `${name} has ${current.length} aria-current links`);
+    });
+  }
+});
+
 describe('inline styles', () => {
   for (const [name, html] of Object.entries(PAGES)) {
     it(`${name} ships no style attribute and no inline <style> block`, () => {

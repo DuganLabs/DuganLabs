@@ -1,9 +1,12 @@
 import { AutoRouter, cors, error } from 'itty-router';
-import { parse, parseFrontmatter } from './vendor/basenative/markdown/markdown.js';
+import { parse } from './vendor/basenative/markdown/markdown.js';
+import { parseBlogFrontmatter, readingMinutes, indexEntry } from './blog-content.js';
 // The SSR tree renders through exactly the modules the browser renders
 // through — no second copy of the markup lives in this file. See the header
 // comment in pages/js/post-view.js for what went wrong when it did.
-import { renderPostsList, renderPostHeader } from '../pages/js/post-view.js';
+import {
+  renderPostsList, renderPostHeader, renderPostNav, neighbours,
+} from '../pages/js/post-view.js';
 import { renderPackageCard } from '../pages/vendor/basenative/marketplace/card.js';
 
 const { preflight, corsify } = cors({ origin: '*' });
@@ -56,21 +59,30 @@ router.get('/api/health', () => ({ status: 'ok', service: 'duganlabs' }));
 
 // ─── Blog API ─────────────────────────────────────────────
 
-// Frontmatter: extends @basenative/markdown's parseFrontmatter with array support for tags
-function parseBlogFrontmatter(raw) {
-  const { meta, content } = parseFrontmatter(raw);
-  // Parse bracketed array values (e.g., tags: [a, b, c])
-  for (const [key, val] of Object.entries(meta)) {
-    if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
-      meta[key] = val.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
-    }
-  }
-  return { meta, content };
-}
-
+/**
+ * The post index, newest first.
+ *
+ * Entries written before /blog showed a reading time have no `minutes`, and
+ * the field cannot be derived from the index alone — it needs the post body.
+ * Rather than leave those posts permanently without the chip, or make every
+ * /blog request read every post, the gap is filled once: the missing bodies
+ * are read, the repaired index is written back, and every later request is a
+ * single KV read again. A post whose body has gone missing is recorded as 0
+ * minutes so it is not re-read on every request forever.
+ */
 async function getPostsIndex(env) {
   const index = await env.BLOG.get('posts:index', 'json');
   if (!index) return [];
+
+  const missing = index.filter(p => typeof p.minutes !== 'number');
+  if (missing.length) {
+    await Promise.all(missing.map(async (entry) => {
+      const raw = await env.BLOG.get(`post:${entry.slug}`, 'text');
+      entry.minutes = raw ? readingMinutes(parseBlogFrontmatter(raw).content) : 0;
+    }));
+    await env.BLOG.put('posts:index', JSON.stringify(index));
+  }
+
   return index.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 }
 
@@ -89,6 +101,7 @@ router.get('/api/posts/:slug', async (request, env) => {
     date: meta.date || null,
     tags: Array.isArray(meta.tags) ? meta.tags : [],
     excerpt: meta.excerpt || content.slice(0, 160).replace(/\n/g, ' '),
+    minutes: readingMinutes(content),
     html,
   };
 });
@@ -101,16 +114,9 @@ router.post('/api/posts', async (request, env) => {
   const slug = body.slug.replace(/[^a-z0-9-]/g, '');
   await env.BLOG.put(`post:${slug}`, body.content);
 
-  const { meta } = parseBlogFrontmatter(body.content);
   const index = (await env.BLOG.get('posts:index', 'json')) || [];
   const existing = index.findIndex(p => p.slug === slug);
-  const entry = {
-    slug,
-    title: meta.title || slug,
-    date: meta.date || new Date().toISOString().split('T')[0],
-    tags: Array.isArray(meta.tags) ? meta.tags : [],
-    excerpt: meta.excerpt || body.content.slice(0, 160).replace(/\n/g, ' '),
-  };
+  const entry = indexEntry(slug, body.content);
   if (existing >= 0) {
     index[existing] = entry;
   } else {
@@ -255,7 +261,7 @@ async function buildSitemap(env) {
 const PKG_CARD_OPTIONS = { headingLevel: 3 };
 
 function renderPackagesGridHtml(packages) {
-  if (!packages.length) return '<p class="eco-empty">No packages found.</p>';
+  if (!packages.length) return '<p class="eco-empty">No packages match that search.</p>';
   return packages.map(pkg => renderPackageCard(pkg, PKG_CARD_OPTIONS)).join('');
 }
 
@@ -269,7 +275,7 @@ async function renderBlogPage(env, shellResponse) {
   const posts = await getPostsIndex(env);
   let html = await shellResponse.text();
   html = html
-    .replace('<section id="posts-list" aria-label="blog posts">', '<section id="posts-list" aria-label="blog posts" data-ssr="1">')
+    .replace('<section class="post-feed" id="posts-list" aria-label="Blog posts">', '<section class="post-feed" id="posts-list" aria-label="Blog posts" data-ssr="1">')
     .replace('<p id="posts-loading">Loading posts...</p>', renderPostsList(posts));
   const headers = new Headers(shellResponse.headers);
   headers.delete('content-length');
@@ -281,7 +287,7 @@ async function renderEcosystemPage(env, shellResponse) {
   const categories = computeCategoryCounts(packages);
   let html = await shellResponse.text();
   html = html
-    .replace('<section class="eco-grid" id="eco-grid" aria-label="Package listing">', '<section class="eco-grid" id="eco-grid" aria-label="Package listing" data-ssr="1">')
+    .replace('<div class="eco-grid" id="eco-grid">', '<div class="eco-grid" id="eco-grid" data-ssr="1">')
     .replace('<p class="eco-empty">Loading packages...</p>', renderPackagesGridHtml(packages))
     .replace(
       '<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>',
@@ -310,13 +316,21 @@ async function renderPostPage(env, slug, shellResponse) {
   const title = meta.title || slug;
   const date = meta.date || null;
   const tags = Array.isArray(meta.tags) ? meta.tags : [];
+  const minutes = readingMinutes(content);
   const description = meta.excerpt || content.slice(0, 160).replace(/\n/g, ' ');
   const html = parse(content);
   const pageTitle = `${title} — DuganLabs`;
   const url = `https://duganlabs.com/blog/${slug}`;
 
-  const articleHtml = `${renderPostHeader({ title, date, tags })}
-    <div class="prose" data-ssr="1">${html}</div>`;
+  // The index is already in KV and this page is being built anyway, so the
+  // newer/older links cost one extra read rather than a second request from
+  // the browser. The client fallback in pages/js/blog-post.js fetches the
+  // same index and calls the same two functions.
+  const index = await getPostsIndex(env);
+
+  const articleHtml = `${renderPostHeader({ title, date, tags, minutes })}
+    <div class="prose">${html}</div>
+    ${renderPostNav(neighbours(index, slug))}`;
 
   let out = await shellResponse.text();
   out = out
@@ -328,7 +342,7 @@ async function renderPostPage(env, slug, shellResponse) {
     .replace('<meta property="og:url" id="og-url" content="https://duganlabs.com/blog">', `<meta property="og:url" id="og-url" content="${escapeXml(url)}">`)
     .replace('<meta name="twitter:title" id="twitter-title" content="Post — DuganLabs">', `<meta name="twitter:title" id="twitter-title" content="${escapeXml(pageTitle)}">`)
     .replace('<meta name="twitter:description" id="twitter-description" content="DuganLabs blog post">', `<meta name="twitter:description" id="twitter-description" content="${escapeXml(description)}">`)
-    .replace('<article id="post-article">', '<article id="post-article" data-ssr="1">')
+    .replace('<article class="post" id="post-article">', '<article class="post" id="post-article" data-ssr="1">')
     .replace('<p id="post-loading">Loading post...</p>', articleHtml);
 
   const headers = new Headers(shellResponse.headers);

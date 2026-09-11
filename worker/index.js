@@ -206,12 +206,20 @@ function escapeXml(s) {
 
 const SITE_ORIGIN = 'https://duganlabs.com';
 
+/**
+ * Where /compare went. The page asserts measurable facts about BaseNative's
+ * source, so it now lives in that repository, where a build step derives each
+ * number and fails if the page and the code disagree.
+ */
+const COMPARE_DESTINATION = 'https://basenative.com/compare';
+
 async function buildSitemap(env) {
+  // /compare is deliberately absent: it is a 301 to BaseNative now, and listing
+  // a redirect in a sitemap asks crawlers to index a URL that is not canonical.
   const staticUrls = [
     { loc: `${SITE_ORIGIN}/`, changefreq: 'weekly', priority: '1.0' },
     { loc: `${SITE_ORIGIN}/blog`, changefreq: 'weekly', priority: '0.9' },
     { loc: `${SITE_ORIGIN}/ecosystem`, changefreq: 'weekly', priority: '0.8' },
-    { loc: `${SITE_ORIGIN}/compare`, changefreq: 'monthly', priority: '0.8' },
   ];
   const posts = (await env.BLOG.get('posts:index', 'json')) || [];
   const postUrls = posts.map(p => ({
@@ -378,10 +386,16 @@ export default {
       return withSecurityHeaders(response);
     }
 
-    // SPA routing: serve compare page
+    // The framework comparison moved to the BaseNative site. It makes measurable
+    // claims about that repository's source — runtime size, dependency count,
+    // API surface — and those are derived and CI-verified there, so they cannot
+    // go stale the way they did while the page lived here. Permanent, so the
+    // inbound links and bookmarks still pointing at this path transfer instead
+    // of 404ing.
     if (url.pathname === '/compare' || url.pathname === '/compare/') {
-      const comparePage = await env.ASSETS.fetch(new Request(new URL('/compare.html', url.origin), { headers: request.headers }));
-      return withSecurityHeaders(comparePage);
+      return withSecurityHeaders(
+        Response.redirect(`${COMPARE_DESTINATION}${url.search}`, 301),
+      );
     }
 
     // SSR: serve ecosystem page with the package grid rendered server-side

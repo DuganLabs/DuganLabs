@@ -92,18 +92,12 @@
       row-gap: var(--space-3);
       /* space-between spread three visible children (brand, toggle, theme)
          evenly, which parked the hamburger in the middle of the header.
-         Pin the brand left and let the two controls sit together at the
-         right edge, with the hamburger outermost as convention expects. */
+         Pin the brand left; the hamburger is then the only control left in
+         the bar, so it sits hard against the right edge. The theme toggle
+         moves inside the menu — see components.css, which has to own its
+         `display` because layer order beats specificity. */
       justify-content: flex-start;
       column-gap: var(--space-3);
-    }
-
-    header[role="banner"] h1 {
-      margin-inline-end: auto;
-    }
-
-    header[role="banner"] #btn-theme-toggle {
-      order: 3;
     }
 
     .nav-toggle {

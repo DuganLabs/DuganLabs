@@ -35,9 +35,15 @@ jobs:
       - name: Syntax-check worker and page scripts
         run: |
           node --check worker/index.js
-          for f in pages/js/*.js; do
+          for f in pages/js/*.js pages/vendor/basenative/*/*.js; do
             node --check "$f"
           done
+
+      # node:test, no test-runner dependency — nothing to add to the lockfile.
+      # `node --test tests/` discovers every *.test.mjs under tests/, so a new
+      # file cannot be silently left out of a hand-maintained list.
+      - name: Unit tests
+        run: pnpm test
 
       - name: Wrangler dry-run build (no credentials required)
         working-directory: worker

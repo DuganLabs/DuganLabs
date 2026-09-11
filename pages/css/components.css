@@ -1,6 +1,57 @@
 @layer components {
+  /* ── Skip link ─────────────────────────────────────────────
+     First focusable thing on every page. Off-screen until focused, so a
+     keyboard user can jump the 5-6 header controls (and, on /ecosystem, the
+     search box and 13 filter chips) instead of tabbing through them on every
+     page. pages/js/app.js has to leave same-page fragment links alone for
+     this to work — see enableViewTransitions(). */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    inset-block-start: calc(-1 * var(--space-16));
+    z-index: var(--z-toast);
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: var(--weight-semibold);
+    transition: inset-block-start var(--duration-fast) var(--ease);
+  }
+
+  .skip-link:focus-visible,
+  .skip-link:focus {
+    inset-block-start: var(--space-2);
+  }
+
+  /* <main> takes focus from the skip link; it should not paint a focus ring
+     around the entire page when it does. */
+  main:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* ── Header wordmark ───────────────────────────────────────
+     The site name is not a page heading (see layout.css). On every page but
+     the home page it is wrapped in a link back to /. */
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    color: inherit;
+    text-decoration: none;
+  }
+
   /* ── Project cards ─────────────────────────────────────── */
   .project-card {
+    /* Column flex so .links can be pinned to the bottom edge. The cards are
+       equal-height grid items, but the link row used to sit directly under a
+       description of whatever length, which staggered it by 22.7px across a
+       single desktop row. */
+    display: flex;
+    flex-direction: column;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -30,18 +81,47 @@
     display: flex;
     gap: var(--space-3);
     flex-wrap: wrap;
+    align-items: center;
+    /* Bottom-align the row across every card in a grid row. */
+    margin-block-start: auto;
   }
 
+  /* 44x44 minimum touch target: these are the only outbound action on a card
+     and they were 27x21 / 48x21. */
   .project-card .links a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-3);
     font-size: var(--text-sm);
     color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
+    border-radius: var(--radius-sm);
     transition: color var(--duration-fast) var(--ease);
   }
 
   .project-card .links a:hover {
     color: var(--text-primary);
+  }
+
+  /* The padded target starts 12px left of its text; pulling the first item
+     back by the same amount keeps the row's text edge aligned with the
+     heading and description above it, without closing the gap between two
+     adjacent targets. */
+  .project-card .links > :first-child {
+    margin-inline-start: calc(-1 * var(--space-3));
+  }
+
+  /* Stands in for a "Source" link the public cannot follow. A private repo
+     serves GitHub's 404 to an anonymous visitor, so linking it at all would
+     hand every visitor a dead end; saying so is the honest version. */
+  .project-card .links .links-note {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
   }
 
   /* ── Badges ────────────────────────────────────────────── */
@@ -314,10 +394,13 @@
     }
   }
 
-  /* ── View Transitions ─────────────────────────────────── */
-  .project-card {
-    view-transition-name: var(--vt-name);
-  }
+  /* ── View Transitions ─────────────────────────────────────
+     Keyed off data-vt rather than an inline `style="--vt-name:…"` custom
+     property, so the home page ships no style attributes at all. */
+  .project-card[data-vt="basenative"] { view-transition-name: card-basenative; }
+  .project-card[data-vt="greenput"] { view-transition-name: card-greenput; }
+  .project-card[data-vt="pendingbusiness"] { view-transition-name: card-pendingbusiness; }
+  .project-card[data-vt="t4bs"] { view-transition-name: card-t4bs; }
 
   .hero {
     view-transition-name: hero;
@@ -339,5 +422,282 @@
 
   ::view-transition-new(root) {
     animation: vt-fade-in 200ms ease-in;
+  }
+
+  /* ── Blog post cards ───────────────────────────────────────
+     Was a style="" attribute duplicated verbatim in pages/js/post-view.js's
+     two former copies (the client renderer and the Worker's). One of the
+     duplicated declarations referenced var(--radius-2), a token this design
+     system has never defined, so the cards rendered with square corners.
+     Here the rule is cached with the stylesheet and the radius token is one
+     that exists. */
+  .post-card {
+    display: block;
+    padding: var(--space-4);
+    border: 1px solid var(--surface-3);
+    border-radius: var(--radius-md);
+    margin-block-end: var(--space-3);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--duration-fast) var(--ease);
+  }
+
+  .post-card:hover {
+    border-color: var(--accent);
+  }
+
+  .post-card-title {
+    margin-block-end: var(--space-1);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+  }
+
+  .post-card-date,
+  .post-header-date {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .post-card-tags,
+  .post-header-tags {
+    margin-block-start: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+  }
+
+  .post-card-excerpt {
+    margin-block-start: var(--space-2);
+    color: var(--text-secondary);
+  }
+
+  /* ── Blog post header ──────────────────────────────────── */
+  .post-header {
+    margin-block-end: var(--space-6);
+  }
+
+  .post-header-back {
+    margin-block-end: var(--space-2);
+  }
+
+  .post-header-title {
+    margin-block-end: var(--space-2);
+  }
+
+  /* ── /ecosystem page ───────────────────────────────────────
+     Moved out of an 3.2KB inline <style> block in ecosystem.html: this is
+     cached with the stylesheet instead of re-downloading on every view, and
+     it satisfies BaseNative axiom 2 (all CSS in cascade layers). */
+  .eco-hero {
+    text-align: center;
+    padding-block: var(--space-12);
+  }
+
+  .eco-hero h1 {
+    font-size: var(--text-3xl);
+    margin-block-end: var(--space-3);
+  }
+
+  .eco-hero p {
+    color: var(--text-secondary);
+    max-inline-size: 40rem;
+    margin-inline: auto;
+  }
+
+  .eco-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    justify-content: center;
+    margin-block-end: var(--space-8);
+  }
+
+  /* Grows into the row it sits in instead of standing at a fixed 16rem —
+     that left 102px (28.5%) of a 358px phone column empty. */
+  .eco-search {
+    flex: 1 1 16rem;
+    max-inline-size: 28rem;
+    min-block-size: 44px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  .eco-search:focus {
+    outline: 2px solid var(--accent);
+    border-color: var(--accent);
+  }
+
+  .eco-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+    margin-block-end: var(--space-8);
+  }
+
+  .eco-cat-btn {
+    min-block-size: 44px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    border-radius: 2rem;
+    font-size: var(--text-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease),
+                border-color var(--duration-fast) var(--ease),
+                color var(--duration-fast) var(--ease);
+  }
+
+  .eco-cat-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  /* --on-accent, not #fff: white on the dark theme's #E8920A measures
+     2.46:1. See tokens.css. */
+  .eco-cat-btn[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+
+  /* 17.5rem, not 20rem: at the 960px content width 3 x 320 + 2 x 16 = 992px
+     did not fit, so 15 packages rendered as two 472px columns holding
+     two-line descriptions. */
+  .eco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+    gap: var(--space-4);
+  }
+
+  .eco-count {
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin-block-end: var(--space-4);
+  }
+
+  .eco-empty {
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+    color: var(--text-muted);
+  }
+
+  /* ── Marketplace package cards ─────────────────────────────
+     packageCardStyles() from @basenative/marketplace 0.2.2
+     (packages/marketplace/src/card.js), transcribed verbatim minus the
+     hardcoded hsl() fallbacks — this design system always defines the tokens
+     — so it can be served as a cached stylesheet rather than injected. The
+     markup contract it styles comes from the vendored renderPackageCard();
+     see pages/vendor/basenative/marketplace/card.js. Local patches are
+     marked below and should be sent upstream. */
+  [data-bn="pkg-card"] {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: border-color 150ms ease, transform 150ms ease;
+  }
+
+  [data-bn="pkg-card"]:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  [data-bn="pkg-header"] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-end: 0.5rem;
+    /* DuganLabs patch (upstream this): the category badge is white-space:
+       nowrap and the package name has no break opportunity, so neither could
+       give way and the header overflowed its content box — 13px over at
+       390px, 51px at 320px, where the badge left the card entirely. Wrapping
+       drops the badge to its own line for the longest names rather than
+       splitting "@basenative/components" across two lines. */
+    flex-wrap: wrap;
+  }
+
+  [data-bn="pkg-name"] {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.3;
+    /* DuganLabs patch (upstream this): a flex item's automatic minimum size
+       is its min-content width, so without these the name could not shrink
+       at all. break-word is the last resort for the narrowest phones, where
+       even a line of its own is not wide enough for the longest name. */
+    min-inline-size: 0;
+    overflow-wrap: break-word;
+  }
+
+  [data-bn="pkg-name"] a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  [data-bn="pkg-name"] a:hover {
+    text-decoration: underline;
+  }
+
+  [data-bn="pkg-category"] {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    background: var(--surface-3);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+  }
+
+  [data-bn="pkg-desc"] {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-block-end: 0.75rem;
+    line-height: 1.5;
+  }
+
+  [data-bn="pkg-tags"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-block-end: 0.75rem;
+  }
+
+  [data-bn="pkg-tag"] {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--surface-3);
+    color: var(--text-secondary);
+  }
+
+  [data-bn="pkg-stats"] {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-block-end: 0.5rem;
+  }
+
+  /* DuganLabs patch (upstream this): renderPackageCard emits a
+     data-bn="pkg-stat" on every stat, and packageCardStyles() declares no
+     rule for it — markup in the contract that nothing styles. */
+  [data-bn="pkg-stat"] {
+    white-space: nowrap;
+  }
+
+  [data-bn="pkg-author"] {
+    font-size: 0.75rem;
+    color: var(--text-muted);
   }
 }

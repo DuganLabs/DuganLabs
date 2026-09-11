@@ -38,13 +38,15 @@
   <script>
     const t = localStorage.getItem('dl-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     document.documentElement.setAttribute('data-theme', t);
-    if (t === 'light') document.documentElement.style.colorScheme = 'light';
+    document.documentElement.style.colorScheme = t;
   </script>
 </head>
 <body class="site-layout">
 
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header role="banner">
-    <h1>DuganLabs</h1>
+    <span class="wordmark">DuganLabs</span>
     <button type="button" class="nav-toggle" id="btn-nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle navigation menu">
       <span class="nav-toggle-bar"></span>
       <span class="nav-toggle-bar"></span>
@@ -59,9 +61,9 @@
     <button id="btn-theme-toggle" type="button" aria-label="Toggle theme">Dark</button>
   </header>
 
-  <main>
+  <main id="main" tabindex="-1">
     <section class="hero">
-      <h2>Building tools for real problems</h2>
+      <h1>Building tools for real problems</h1>
       <p>DuganLabs is a solo engineering shop focused on practical software — signal-based web runtimes, contractor CRMs, and personal finance automation.</p>
     </section>
 
@@ -69,7 +71,7 @@
       <h2>Projects</h2>
       <div class="project-grid">
 
-        <div class="project-card" style="--vt-name:card-basenative">
+        <div class="project-card" data-vt="basenative">
           <h3>BaseNative</h3>
           <p>A lightweight signal-based web runtime. Function-call reactivity, zero build step, SSR-ready. The foundation under every DuganLabs site.</p>
           <div class="links">
@@ -78,25 +80,30 @@
           </div>
         </div>
 
-        <div class="project-card" style="--vt-name:card-greenput">
+        <!-- GreenPut and PendingBusiness are private repositories: a "Source"
+             link would serve GitHub's 404 to every anonymous visitor, which is
+             two of the four cards on the site's primary page. Stating that the
+             source is private is the honest version; turn these back into
+             links the day the repos go public. -->
+        <div class="project-card" data-vt="greenput">
           <h3>GreenPut</h3>
           <p>CRM for home service contractors. Manage leads, jobs, estimates, and invoices — built on Cloudflare Workers, D1, and Pages.</p>
           <div class="links">
             <a href="https://greenput.com">Site</a>
-            <a href="https://github.com/DuganLabs/GreenPut">Source</a>
+            <span class="links-note">Source: private</span>
           </div>
         </div>
 
-        <div class="project-card" style="--vt-name:card-pendingbusiness">
+        <div class="project-card" data-vt="pendingbusiness">
           <h3>PendingBusiness</h3>
           <p>Personal treasury OS. Optimizes tax withholding, captures float yield, schedules bills at the last responsible moment, and eliminates debt by APR.</p>
           <div class="links">
             <a href="https://pendingbusiness.com">Site</a>
-            <a href="https://github.com/DuganLabs/PendingBusiness">Source</a>
+            <span class="links-note">Source: private</span>
           </div>
         </div>
 
-        <div class="project-card" style="--vt-name:card-t4bs">
+        <div class="project-card" data-vt="t4bs">
           <h3>T4BS</h3>
           <p>One subject. One phrase. No mercy. A word puzzle game with poker mechanics — per-tile wagers, cascade rewards, and an all-in shove that ends the round.</p>
           <div class="links">

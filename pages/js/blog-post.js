@@ -1,4 +1,5 @@
 import { signal, effect } from './signals.js';
+import { escapeHtml, renderPostHeader } from './post-view.js';
 
 // The worker server-renders the post into #post-article before it ever
 // reaches the browser (see worker/index.js renderPostPage). When that
@@ -59,7 +60,7 @@ if (!isSSR) {
 
     const err = errorMsg();
     if (err) {
-      article.innerHTML = `<p>${err}</p><p><a href="/blog">&larr; Back to blog</a></p>`;
+      article.innerHTML = `<p>${escapeHtml(err)}</p><p><a href="/blog">&larr; Back to blog</a></p>`;
       return;
     }
 
@@ -73,15 +74,11 @@ if (!isSSR) {
     const canonical = document.getElementById('canonical-link');
     if (canonical) canonical.setAttribute('href', `https://duganlabs.com/blog/${p.slug}`);
 
-    article.innerHTML = `
-      <header style="margin-bottom:var(--space-6)">
-        <p style="margin:0 0 var(--space-2)"><a href="/blog">&larr; Back to blog</a></p>
-        <h2 style="margin:0 0 var(--space-2)">${p.title}</h2>
-        ${p.date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${p.date}</time>` : ''}
-        ${p.tags?.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${p.tags.map(t => `#${t}`).join(' ')}</p>` : ''}
-      </header>
-      <div class="prose">${p.html}</div>
-    `;
+    // Same renderer the Worker uses for SSR (pages/js/post-view.js). p.html is
+    // the markdown body, already rendered to HTML by @basenative/markdown on
+    // the server — it is the one value that is deliberately not escaped.
+    article.innerHTML = `${renderPostHeader(p)}
+      <div class="prose">${p.html}</div>`;
   });
 
   loadPost();

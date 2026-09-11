@@ -1,5 +1,7 @@
 {
   "name": "duganlabs-pages",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "_comment": "type: module states what these files already are — the browser loads every one of them with <script type=\"module\">, the Worker bundles two of them, and tests/ imports them. Without it Node treats a .js file here as CommonJS and only guesses otherwise.",
+  "type": "module"
 }

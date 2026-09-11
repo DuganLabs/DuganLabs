@@ -268,6 +268,52 @@
     border-color: var(--border-focus);
   }
 
+  /* Below 640px the theme toggle moves inside the hamburger menu, leaving the
+     brand and the hamburger as the only things in the bar — so the hamburger
+     sits hard against the right edge instead of sharing it with a second
+     control.
+
+     `display` has to be set here rather than in layout.css: `button {
+     display: inline-flex }` earlier in this layer would beat anything the
+     layout layer says, at any specificity, because layer order outranks it.
+     Same reason .nav-toggle's own show/hide lives in this file.
+
+     #main-nav precedes the button in source order, so the general sibling
+     combinator can reveal it when the menu opens — no JS change needed, the
+     existing .is-open class drives both. */
+  @media (max-width: 640px) {
+    /* Push the hamburger to the right edge from its own side rather than with
+       `margin-inline-end: auto` on the brand. Five of the six pages wrap the
+       brand's <h1> in an <a>, so the <h1> is not the flex item and an auto
+       margin on it distributes nothing — which is why the hamburger stayed
+       stranded mid-header after the previous attempt at this. Pushing from
+       the hamburger works whatever the brand is wrapped in. */
+    .nav-toggle {
+      margin-inline-start: auto;
+    }
+
+    #btn-theme-toggle {
+      display: none;
+    }
+
+    /* Matches nav[aria-label="main"] a in layout.css — same size, colour and
+       44px target — so it reads as one more row of the menu rather than a
+       button that wandered in. */
+    nav[aria-label="main"].is-open ~ #btn-theme-toggle {
+      display: inline-flex;
+      order: 6;
+      flex-basis: 100%;
+      justify-content: flex-start;
+      min-block-size: 44px;
+      padding-inline: var(--space-2);
+      border: 0;
+      border-block-start: 1px solid var(--border);
+      border-radius: 0;
+      font-size: inherit;
+      color: var(--text-primary);
+    }
+  }
+
   /* ── View Transitions ─────────────────────────────────── */
   .project-card {
     view-transition-name: var(--vt-name);

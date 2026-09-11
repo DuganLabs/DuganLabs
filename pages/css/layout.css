@@ -90,6 +90,24 @@
     header[role="banner"] {
       flex-wrap: wrap;
       row-gap: var(--space-3);
+      /* space-between spread three visible children (brand, toggle, theme)
+         evenly, which parked the hamburger in the middle of the header.
+         Pin the brand left and let the two controls sit together at the
+         right edge, with the hamburger outermost as convention expects. */
+      justify-content: flex-start;
+      column-gap: var(--space-3);
+    }
+
+    header[role="banner"] h1 {
+      margin-inline-end: auto;
+    }
+
+    header[role="banner"] #btn-theme-toggle {
+      order: 3;
+    }
+
+    .nav-toggle {
+      order: 4;
     }
 
     nav[aria-label="main"] {

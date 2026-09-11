@@ -9,7 +9,21 @@ DuganLabs is the org portfolio site for Warren Dugan's projects. It showcases Ba
 1. **No build step** — Vanilla JS ES modules, plain CSS, static HTML. BaseNative for signals.
 2. **No framework except BaseNative** — itty-router on the worker, BaseNative on the frontend.
 3. **No CSS frameworks** — Custom properties + plain CSS only.
-4. **Static site only** — No database, no auth, no API. Just HTML served by a Worker.
+4. **Static pages, dynamic edges** — The pages are static HTML with no build
+   step. The Worker that serves them also serves `/api/*` and reads two KV
+   namespaces (`BLOG`, `REGISTRY`) for the blog and the package registry. There
+   is still no relational database and no auth. This used to read "no database,
+   no auth, no API", which the blog and the ecosystem page have contradicted
+   since they shipped.
+5. **Shared code comes from BaseNative** — anything a second DuganLabs product
+   would also want is a published `@basenative/*` package consumed from GitHub
+   Packages, not a file copied into `vendor/`. A vendored snapshot silently
+   stops receiving fixes: `worker/vendor/basenative/markdown/` was a 270-line
+   copy that had no table support, so every markdown table in a blog post
+   rendered as raw pipe characters until it was replaced with the real
+   `@basenative/markdown`. `pages/vendor/` is the one legitimate exception —
+   the browser cannot install from a registry, and this repo has no build
+   step.
 
 ## Workspace Structure
 
@@ -23,12 +37,17 @@ duganlabs/
 │   │   └── app.js         # Theme toggle + nav
 │   ├── vendor/
 │   │   └── basenative/
-│   │       └── runtime/signals.js   # BaseNative signal primitives
-│   └── index.html         # Landing page
+│   │       ├── runtime/signals.js     # BaseNative signal primitives
+│   │       └── marketplace/card.js    # package card renderer
+│   ├── index.html         # Landing page (Projects)
+│   ├── blog.html          # /blog
+│   ├── blog-post.html     # /blog/:slug shell
+│   └── ecosystem.html     # /ecosystem
 └── worker/
-    ├── index.js           # Cloudflare Worker — static file serving + health endpoint
-    ├── wrangler.toml      # Cloudflare config
-    └── package.json       # Worker dependencies
+    ├── index.js           # Worker — assets, /api/*, SSR into the page shells
+    ├── blog-content.js    # frontmatter + post helpers (@basenative/markdown)
+    ├── wrangler.toml      # Cloudflare config, KV bindings
+    └── package.json       # @basenative/markdown, itty-router
 ```
 
 ## Infrastructure
@@ -74,15 +93,34 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
 When executing autonomously, start pulling from this prioritized task list:
 
-### Epic 1: Dynamic Blog Engine **[DOGFOODING REQUIRED]**
-- **Task A**: Do **NOT** install `marked` or write bespoke logic. You must construct `@basenative/markdown` in the upstream `basenative` monorepo first.
-- **Task B**: Once linked, utilize `@basenative/markdown` here to implement the `GET /api/posts` and `GET /api/posts/:slug` endpoints.
-- **Task C**: Implement a new `/blog` and `/blog/:slug` route in the frontend using BaseNative's router pulling directly from your new package to render markdown safely.
+### Epic 1: Dynamic Blog Engine — **shipped**
+
+`@basenative/markdown` exists upstream and is consumed here as a real dependency
+from GitHub Packages (`worker/package.json`). `GET /api/posts`,
+`GET /api/posts/:slug`, `/blog` and `/blog/:slug` all work, server-rendered into
+the page shells with a `data-ssr="1"` handshake so the client script leaves the
+DOM alone.
+
+Still open: `worker/seed-blog.js` cannot actually run. It calls `readFileSync`
+inside a Worker, and the `wrangler execute` its docstring names is not a real
+command. Posts are seeded through `POST /api/posts` in the meantime.
 
 ### Epic 2: Project Showcase Router Transitions
 - **Task A**: Introduce animated view transitions utilizing the native View Transitions API on the main directory page, so navigating between projects feels seamless.
 
-### Epic 3: Ecosystem Marketplace Integration [Phase 3] **[DOGFOODING REQUIRED]**
-- **Task A**: Pause. Go to the `basenative` monorepo and scaffold out `@basenative/marketplace` components, specifically a component card registry view.
-- **Task B**: Construct a new `/ecosystem` route on DuganLabs serving as the official community marketplace directory for BaseNative.
-- **Task C**: Implement a Cloudflare KV lookup on the worker backend to serve dynamic registry lists to the marketplace grid.
+### Epic 3: Ecosystem — **shipped, and its brief was wrong**
+
+`/ecosystem` exists. It is **not** "the official community marketplace directory
+for BaseNative", and must not be turned back into one. The owner's words on
+seeing that version: *"Dugan Labs ecosystem is also basically just another Base
+Native page."*
+
+It is a page about **the DuganLabs ecosystem** — the three layers (products →
+shared packages → platform), what each product contributes, and the conventions
+they share. The `@basenative/*` registry is one section near the bottom, served
+from the `REGISTRY` KV namespace, not the subject of the page. `/` (Projects)
+says what the products are; `/ecosystem` says how they are built and what they
+share. Keep that distinction.
+
+Still open here: nothing. Do not re-scaffold `@basenative/marketplace` — it
+exists, and `pages/vendor/basenative/marketplace/card.js` consumes it.

@@ -7,7 +7,7 @@
 // `meta.tags.split(',')` on a value that is still the literal string
 // "[basenative, ecosystem]" at that point, so every seeded post got a first
 // tag of "[basenative" and a last tag of "ecosystem]".
-import { parseFrontmatter } from './vendor/basenative/markdown/markdown.js';
+import { parseFrontmatter } from '@basenative/markdown';
 
 /**
  * @basenative/markdown's parseFrontmatter, extended with array support so

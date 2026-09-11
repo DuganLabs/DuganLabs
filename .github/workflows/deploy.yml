@@ -29,15 +29,26 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
+      # NODE_AUTH_TOKEN: the Worker consumes @basenative/markdown from GitHub
+      # Packages (.npmrc), and without a read:packages token the install 401s.
+      # The deploy job already receives it; this job installs too, so it needs
+      # it for the same reason.
       - name: Install dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm install --frozen-lockfile
 
       # worker/*.js, not just index.js: the Worker's content helpers live in
       # sibling modules now (worker/blog-content.js), and a syntax error in
       # one of those is the same outage as one in index.js.
+      #
+      # `shopt -s nullglob`, because a pattern that matches nothing otherwise
+      # expands to itself and `node --check` fails on a filename that does not
+      # exist — which is what happened the moment worker/vendor/ was deleted.
       - name: Syntax-check worker and page scripts
         run: |
-          for f in worker/*.js worker/vendor/basenative/*/*.js pages/js/*.js pages/vendor/basenative/*/*.js; do
+          shopt -s nullglob
+          for f in worker/*.js pages/js/*.js pages/vendor/basenative/*/*.js; do
             node --check "$f"
           done
 

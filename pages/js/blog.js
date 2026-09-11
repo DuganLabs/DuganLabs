@@ -15,8 +15,13 @@ if (!isSSR) {
   const posts = signal([]);
   const loading = signal(true);
 
-  const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const BASE = isDev ? 'http://localhost:8787/api' : '/api';
+  // Same origin, always. The Worker serves these pages and /api/* from one
+  // origin in every environment, `wrangler dev` included — the old
+  // localhost:8787 special case pointed the dev fallback at a port nothing
+  // listens on unless the worker happens to have been started there, so this
+  // branch silently rendered "no posts" locally. pages/js/ecosystem.js never
+  // had the special case.
+  const BASE = '/api';
 
   const loadPosts = async () => {
     try {
@@ -35,7 +40,7 @@ if (!isSSR) {
     if (!container) return;
 
     if (loading()) {
-      container.innerHTML = '<p>Loading posts...</p>';
+      container.innerHTML = '<p class="post-loading">Loading posts...</p>';
       return;
     }
 

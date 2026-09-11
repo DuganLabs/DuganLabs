@@ -6,7 +6,10 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
-import { parseFrontmatter } from './vendor/basenative/markdown/markdown.js';
+// The same entry builder the live POST /api/posts route uses. This file used
+// to derive the index entry itself and got tags wrong — see the header of
+// worker/blog-content.js.
+import { indexEntry, parseBlogFrontmatter } from './blog-content.js';
 
 const __dirname = join(fileURLToPath(import.meta.url), '..');
 
@@ -22,20 +25,14 @@ export async function seed(env) {
   for (const filename of POSTS) {
     const filepath = join(__dirname, 'posts', filename);
     const raw = readFileSync(filepath, 'utf-8');
-    const { meta, content } = parseFrontmatter(raw);
-    const slug = meta.slug || filename.replace(/\.md$/, '');
+    const { meta } = parseBlogFrontmatter(raw);
+    const entry = indexEntry(meta.slug || filename.replace(/\.md$/, ''), raw);
 
     // Store raw post
-    await env.BLOG.put(`post:${slug}`, raw);
+    await env.BLOG.put(`post:${entry.slug}`, raw);
 
     // Add to index
-    index.push({
-      slug,
-      title: meta.title || slug,
-      date: meta.date || new Date().toISOString().split('T')[0],
-      tags: meta.tags ? meta.tags.split(',').map(s => s.trim()) : [],
-      excerpt: meta.excerpt || content.slice(0, 160).replace(/\n/g, ' '),
-    });
+    index.push(entry);
   }
 
   // Store index

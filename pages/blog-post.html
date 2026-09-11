@@ -54,7 +54,9 @@
     </button>
     <nav aria-label="main" id="main-nav">
       <a href="/">Projects</a>
-      <a href="/blog">Blog</a>
+      <!-- aria-current="true", not "page": a post is inside the Blog section
+           but it is not /blog itself, and "page" would claim it is. -->
+      <a href="/blog" aria-current="true">Blog</a>
       <a href="/ecosystem">Ecosystem</a>
       <a href="https://basenative.com/compare">Compare</a>
     </nav>
@@ -62,7 +64,7 @@
   </header>
 
   <main id="main" tabindex="-1">
-    <article id="post-article">
+    <article class="post" id="post-article">
       <p id="post-loading">Loading post...</p>
     </article>
   </main>

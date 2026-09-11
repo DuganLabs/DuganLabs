@@ -8,11 +8,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="DuganLabs">
-  <title>BaseNative Ecosystem — DuganLabs</title>
-  <meta name="description" content="Browse the BaseNative package ecosystem — core runtime, components, forms, auth, database, and developer tooling.">
+  <title>Ecosystem &mdash; DuganLabs</title>
+  <meta name="description" content="How the DuganLabs products fit together: the runtime underneath them, the packages they share, and the platform they all deploy to.">
   <link rel="canonical" href="https://duganlabs.com/ecosystem">
-  <meta property="og:title" content="BaseNative Ecosystem — DuganLabs">
-  <meta property="og:description" content="Browse the BaseNative package ecosystem — core runtime, components, forms, auth, database, and developer tooling.">
+  <meta property="og:title" content="Ecosystem &mdash; DuganLabs">
+  <meta property="og:description" content="How the DuganLabs products fit together: the runtime underneath them, the packages they share, and the platform they all deploy to.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://duganlabs.com/ecosystem">
   <meta property="og:image" content="https://duganlabs.com/og-default.png">
@@ -20,8 +20,8 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="DuganLabs — Building tools for real problems.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="BaseNative Ecosystem — DuganLabs">
-  <meta name="twitter:description" content="Browse the BaseNative package ecosystem — core runtime, components, forms, auth, database, and developer tooling.">
+  <meta name="twitter:title" content="Ecosystem &mdash; DuganLabs">
+  <meta name="twitter:description" content="How the DuganLabs products fit together: the runtime underneath them, the packages they share, and the platform they all deploy to.">
   <meta name="twitter:image" content="https://duganlabs.com/og-default.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -63,29 +63,125 @@
   </header>
 
   <main id="main" tabindex="-1">
-    <section class="eco-hero">
-      <h1>BaseNative Ecosystem</h1>
-      <p>Browse the full package registry — from core runtime primitives to UI components, authentication, database adapters, and developer tooling. All packages are built and maintained by the BaseNative team.</p>
+    <section class="hero">
+      <h1>The DuganLabs ecosystem</h1>
+      <p><a href="/">Projects</a> is the list of what DuganLabs builds. This is how those things are built &mdash; one runtime underneath all of them, one shared package layer in the middle, one platform they all deploy to.</p>
     </section>
 
-    <section class="eco-controls">
-      <input id="eco-search" class="eco-search" type="search" placeholder="Search packages..." aria-label="Search packages">
+    <!-- Layer 1. The shape of the thing, before any of the parts. -->
+    <section class="section" aria-labelledby="h-stack">
+      <h2 id="h-stack">Three layers</h2>
+      <p class="section-lede">Read it bottom-up: the platform is fixed, the shared layer is the work, and the products are what is left once the shared layer has taken everything it can.</p>
+      <ul class="eco-stack">
+        <li class="eco-tier" data-tier="products">
+          <p class="eco-tier-index" aria-hidden="true">3</p>
+          <h3>Products</h3>
+          <p class="eco-tier-desc">The part that is genuinely different per product: the domain, the data model, the customer. Four of them today.</p>
+          <p class="eco-tier-items">BaseNative <span class="eco-tier-sep" aria-hidden="true">&middot;</span> GreenPut <span class="eco-tier-sep" aria-hidden="true">&middot;</span> PendingBusiness <span class="eco-tier-sep" aria-hidden="true">&middot;</span> T4BS</p>
+        </li>
+        <li class="eco-tier" data-tier="packages">
+          <p class="eco-tier-index" aria-hidden="true">2</p>
+          <h3>Shared packages</h3>
+          <p class="eco-tier-desc">Every capability a second product would also need &mdash; reactivity, routing, rendering, forms, auth, data access &mdash; is a published package rather than a file copied between repos. The registry is further down this page.</p>
+          <p class="eco-tier-more"><a href="#packages">Browse the package layer</a></p>
+        </li>
+        <li class="eco-tier" data-tier="platform">
+          <p class="eco-tier-index" aria-hidden="true">1</p>
+          <h3>Platform</h3>
+          <p class="eco-tier-desc">One deployment target and one toolchain for everything: Cloudflare Workers at the edge, an Nx + pnpm monorepo, plain CSS in cascade layers, no build step in the browser.</p>
+          <p class="eco-tier-items">Cloudflare Workers <span class="eco-tier-sep" aria-hidden="true">&middot;</span> Nx <span class="eco-tier-sep" aria-hidden="true">&middot;</span> pnpm <span class="eco-tier-sep" aria-hidden="true">&middot;</span> GitHub Actions</p>
+        </li>
+      </ul>
     </section>
 
-    <section class="eco-categories" id="eco-categories" aria-label="Filter by category">
-      <button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>
+    <!-- Layer 2. What each product contributes that the others cannot. -->
+    <section class="section" aria-labelledby="h-products">
+      <h2 id="h-products">What each product adds</h2>
+      <p class="section-lede">Deliberately not a second copy of the <a href="/">Projects</a> page: this is each product&rsquo;s place in the ecosystem rather than its pitch.</p>
+      <ul class="eco-products">
+        <li class="eco-product" data-role="foundation">
+          <h3>BaseNative</h3>
+          <p class="eco-product-role">The foundation</p>
+          <p class="eco-product-desc">The signal-based runtime and the package library the rest of this page is about. It is the only product that is also infrastructure &mdash; when something here needs a capability twice, it ends up in BaseNative and the copy gets deleted.</p>
+          <p class="eco-product-links"><a href="https://basenative.com">Site</a><a href="https://github.com/DuganLabs/BaseNative">Source</a></p>
+        </li>
+        <li class="eco-product" data-role="product">
+          <h3>GreenPut</h3>
+          <p class="eco-product-role">Consent-mediated lead portability</p>
+          <p class="eco-product-desc">A lead belongs to the homeowner who created it, not to whoever bought it first. GreenPut moves leads between home-service contractors on the homeowner&rsquo;s consent, with the CRM around it &mdash; jobs, estimates, invoices &mdash; as the reason anyone stays.</p>
+          <p class="eco-product-links"><a href="https://greenput.com">Site</a><span class="links-note">Source: private</span></p>
+        </li>
+        <li class="eco-product" data-role="product">
+          <h3>PendingBusiness</h3>
+          <p class="eco-product-role">Personal treasury OS</p>
+          <p class="eco-product-desc">Tax withholding, float yield, bill timing and debt payoff as one optimisation rather than four apps. The hardest scheduling and money-movement problems in the ecosystem, which is why the primitives it needs tend to surface in BaseNative first.</p>
+          <p class="eco-product-links"><a href="https://pendingbusiness.com">Site</a><span class="links-note">Source: private</span></p>
+        </li>
+        <li class="eco-product" data-role="product">
+          <h3>T4BS</h3>
+          <p class="eco-product-role">The stress test</p>
+          <p class="eco-product-desc">A word puzzle with poker mechanics &mdash; per-tile wagers, cascades, an all-in shove. It is the product with real-time state and animation budgets, so it is where the runtime&rsquo;s rendering path gets found out.</p>
+          <p class="eco-product-links"><a href="https://t4bs.com">Site</a><a href="https://github.com/DuganLabs/t4bs">Source</a></p>
+        </li>
+      </ul>
     </section>
 
-    <h2 class="sr-only">Packages</h2>
-    <p class="eco-count" id="eco-count"></p>
+    <!-- Layer 3. The rules that make the shared layer possible at all. -->
+    <section class="section" aria-labelledby="h-conventions">
+      <h2 id="h-conventions">Shared conventions</h2>
+      <p class="section-lede">The reason a package can move between these products without a port: they already agree on everything below.</p>
+      <dl class="eco-conventions">
+        <div class="eco-convention">
+          <dt>Runtime</dt>
+          <dd>BaseNative signals. Function-call reactivity, SSR-aware, no framework underneath it.</dd>
+        </div>
+        <div class="eco-convention">
+          <dt>Shared code</dt>
+          <dd>Lives in BaseNative and is consumed from there. Extracting something and leaving the original copy behind does not count.</dd>
+        </div>
+        <div class="eco-convention">
+          <dt>Styling</dt>
+          <dd>Design tokens and plain CSS in cascade layers. No CSS framework, no inline style attributes, no per-page style blocks.</dd>
+        </div>
+        <div class="eco-convention">
+          <dt>Delivery</dt>
+          <dd>Cloudflare Workers, with static assets served by the same Worker that renders the dynamic parts.</dd>
+        </div>
+        <div class="eco-convention">
+          <dt>Secrets</dt>
+          <dd>Doppler, injected in the pipeline. Nothing secret is ever committed, and no project keeps its own store.</dd>
+        </div>
+        <div class="eco-convention">
+          <dt>CI</dt>
+          <dd>Reusable workflows from the org&rsquo;s <code>.github</code> repository, so a pipeline fix lands once for every project.</dd>
+        </div>
+      </dl>
+    </section>
 
-    <section class="eco-grid" id="eco-grid" aria-label="Package listing">
-      <p class="eco-empty">Loading packages...</p>
+    <!-- Layer 4. The registry itself: one layer of the story, not the page. -->
+    <section class="section" id="packages" aria-labelledby="h-packages">
+      <h2 id="h-packages">The shared layer, package by package</h2>
+      <p class="section-lede">Every published package in the middle tier. Search by name, description or tag, or filter to a category.</p>
+
+      <div class="eco-controls">
+        <label class="sr-only" for="eco-search">Search packages</label>
+        <input id="eco-search" class="eco-search" type="search" placeholder="Search packages…" autocomplete="off">
+      </div>
+
+      <div class="eco-categories" id="eco-categories" role="group" aria-label="Filter packages by category">
+        <button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>
+      </div>
+
+      <p class="eco-count" id="eco-count"></p>
+
+      <div class="eco-grid" id="eco-grid">
+        <p class="eco-empty">Loading packages...</p>
+      </div>
     </section>
   </main>
 
   <footer>
-    <p>Built with <a href="https://github.com/DuganLabs/BaseNative">BaseNative</a></p>
+    <p>&copy; 2026 DuganLabs &middot; <a href="https://github.com/DuganLabs">GitHub</a></p>
   </footer>
 
   <script type="module" src="/js/ecosystem.js"></script>

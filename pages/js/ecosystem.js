@@ -56,7 +56,7 @@ function renderGrid(packages) {
   if (!grid) return;
 
   if (packages.length === 0) {
-    grid.innerHTML = '<p class="eco-empty">No packages found.</p>';
+    grid.innerHTML = '<p class="eco-empty">No packages match that search.</p>';
     if (countEl) countEl.textContent = '';
     return;
   }

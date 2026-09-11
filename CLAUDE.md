@@ -31,6 +31,24 @@ duganlabs/
     └── package.json       # Worker dependencies
 ```
 
+## Infrastructure
+
+Terraform (`infra/`, `.github/workflows/terraform.yml`) was retired 2026-09-10 — org-wide
+decision, retired everywhere as a control plane. CI + `wrangler` are now the only source
+of truth for provisioning. The R2 state bucket (`duganlabs-tf`) still exists but is no
+longer used by anything in this repo; it's on the owner's cleanup list, not deleted by
+this change.
+
+- Worker `duganlabs` + routes `duganlabs.com/*`, `www.duganlabs.com/*` —
+  `worker/wrangler.toml`.
+- KV `duganlabs-blog` (binding `BLOG`) and `duganlabs-registry` (binding `REGISTRY`) —
+  `worker/wrangler.toml`. The namespace IDs there are the ones Terraform originally
+  created; CI only binds to them, it never creates or destroys a namespace.
+- Apex/`www` DNS records for `duganlabs.com` (proxied A records) — previously
+  Terraform-managed (`infra/dns.tf`, now deleted). They keep working because the
+  Cloudflare-side record already exists, but nothing in this repo recreates them if
+  they're ever removed.
+
 ## BaseNative Signal API
 
 BaseNative signals use function-call syntax (not property access):

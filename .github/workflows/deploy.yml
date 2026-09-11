@@ -48,13 +48,14 @@ jobs:
   # repo yet, so Cloudflare credentials flow through the documented
   # direct-secret fallback (see DuganLabs/.github's DOPPLER.md).
   #
-  # TODO: once DuganLabs/.github's Doppler-or-direct-fallback PR merges and
-  # is tagged, switch the `uses:` ref below from the branch name to that tag.
+  # Pinned to @main now that the reusable workflow has merged there. It was
+  # pinned to the feature branch while that PR was open; a merged feature
+  # branch can be deleted at any time, and this deploy would stop resolving.
   deploy:
     name: Deploy to Cloudflare
     needs: check
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    uses: DuganLabs/.github/.github/workflows/cf-worker-deploy.yml@ci/doppler-fallback-and-worker-deploy
+    uses: DuganLabs/.github/.github/workflows/cf-worker-deploy.yml@main
     with:
       working-directory: "."
       deploy-command: "pnpm exec nx run worker:deploy"

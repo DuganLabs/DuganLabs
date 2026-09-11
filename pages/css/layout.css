@@ -10,15 +10,41 @@
     align-items: center;
     justify-content: space-between;
     padding-inline: var(--space-8);
-    padding-block: var(--space-5);
+    /* space-3, not space-5: the nav links below are now 44px tall targets, so
+       the header keeps roughly its old height (72px → 69px) instead of
+       growing by the difference. */
+    padding-block: var(--space-3);
     background: var(--surface-1);
     border-block-end: 1px solid var(--border);
   }
 
-  header[role="banner"] h1 {
+  /* The wordmark is the site name, not the page heading — it is a <span>, and
+     each page's real <h1> is its own first heading. See components.css for
+     why .brand's anchor reset lives there. */
+  header[role="banner"] .wordmark {
     font-size: var(--text-xl);
     font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
     color: var(--accent);
+  }
+
+  /* Desktop nav. Without this the four links were separated only by the
+     whitespace between the <a> tags — 5.1px — and each was a 19px-tall
+     target with no padding at all. The @media (max-width: 640px) block below
+     already gave the collapsed menu 44px rows; this is the same treatment for
+     the case that was missed. */
+  nav[aria-label="main"] {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  nav[aria-label="main"] a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
   }
 
   main {
@@ -36,6 +62,7 @@
     padding-block: var(--space-16);
   }
 
+  .hero h1,
   .hero h2 {
     font-size: var(--text-3xl);
     margin-block-end: var(--space-4);
@@ -140,6 +167,7 @@
       padding-block: var(--space-8);
     }
 
+    .hero h1,
     .hero h2 {
       font-size: var(--text-2xl);
     }

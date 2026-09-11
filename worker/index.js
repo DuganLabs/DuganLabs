@@ -1,5 +1,10 @@
 import { AutoRouter, cors, error } from 'itty-router';
 import { parse, parseFrontmatter } from './vendor/basenative/markdown/markdown.js';
+// The SSR tree renders through exactly the modules the browser renders
+// through — no second copy of the markup lives in this file. See the header
+// comment in pages/js/post-view.js for what went wrong when it did.
+import { renderPostsList, renderPostHeader } from '../pages/js/post-view.js';
+import { renderPackageCard } from '../pages/vendor/basenative/marketplace/card.js';
 
 const { preflight, corsify } = cors({ origin: '*' });
 
@@ -240,46 +245,18 @@ async function buildSitemap(env) {
 }
 
 // ─── SSR: render real content into the static shells ───────
-// These mirror the markup the client-side pages/js/blog.js and
-// pages/js/ecosystem.js build, so non-JS clients (and first paint
-// for everyone) get the real content instead of "Loading…".
+// The markup itself comes from the same modules pages/js/blog.js and
+// pages/js/ecosystem.js render through, so non-JS clients (and first paint
+// for everyone) get the real content instead of "Loading…" and the two trees
+// cannot drift.
 
-function renderPostCardHtml(p) {
-  return `
-    <a href="/blog/${escapeXml(p.slug)}" class="post-card" style="display:block;text-decoration:none;color:inherit;padding:var(--space-4);border:1px solid var(--surface-3);border-radius:var(--radius-2);margin-bottom:var(--space-3);">
-      <h3 style="margin:0 0 var(--space-1)">${escapeXml(p.title)}</h3>
-      ${p.date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${escapeXml(p.date)}</time>` : ''}
-      ${p.tags?.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${p.tags.map(t => `#${escapeXml(t)}`).join(' ')}</p>` : ''}
-      ${p.excerpt ? `<p style="margin:var(--space-2) 0 0;color:var(--text-secondary)">${escapeXml(p.excerpt)}</p>` : ''}
-    </a>`;
-}
-
-function renderPostsListHtml(posts) {
-  if (!posts.length) return '<p>No posts yet. Check back soon.</p>';
-  return posts.map(renderPostCardHtml).join('');
-}
-
-function renderPackageCardHtml(pkg) {
-  const tags = (pkg.tags || []).map(t => `<span data-bn="pkg-tag">${escapeXml(t)}</span>`).join('');
-  const repoLink = pkg.repo
-    ? `<a href="${escapeXml(pkg.repo)}" target="_blank" rel="noopener">${escapeXml(pkg.name)}</a>`
-    : escapeXml(pkg.name);
-  return `<article data-bn="pkg-card">
-  <div data-bn="pkg-header">
-    <h4 data-bn="pkg-name">${repoLink}</h4>
-    ${pkg.category ? `<span data-bn="pkg-category">${escapeXml(pkg.category)}</span>` : ''}
-  </div>
-  ${pkg.description ? `<p data-bn="pkg-desc">${escapeXml(pkg.description)}</p>` : ''}
-  ${tags ? `<div data-bn="pkg-tags">${tags}</div>` : ''}
-  <div data-bn="pkg-stats">
-    ${pkg.version ? `<span>v${escapeXml(pkg.version)}</span>` : ''}
-  </div>
-</article>`;
-}
+// Must match pages/js/ecosystem.js — the level that keeps /ecosystem's
+// outline in sequence under its <h1> and its "Packages" heading.
+const PKG_CARD_OPTIONS = { headingLevel: 3 };
 
 function renderPackagesGridHtml(packages) {
   if (!packages.length) return '<p class="eco-empty">No packages found.</p>';
-  return packages.map(renderPackageCardHtml).join('');
+  return packages.map(pkg => renderPackageCard(pkg, PKG_CARD_OPTIONS)).join('');
 }
 
 function renderCategoryButtonsHtml(categories) {
@@ -293,7 +270,7 @@ async function renderBlogPage(env, shellResponse) {
   let html = await shellResponse.text();
   html = html
     .replace('<section id="posts-list" aria-label="blog posts">', '<section id="posts-list" aria-label="blog posts" data-ssr="1">')
-    .replace('<p id="posts-loading">Loading posts...</p>', renderPostsListHtml(posts));
+    .replace('<p id="posts-loading">Loading posts...</p>', renderPostsList(posts));
   const headers = new Headers(shellResponse.headers);
   headers.delete('content-length');
   return new Response(html, { status: shellResponse.status, headers });
@@ -338,13 +315,7 @@ async function renderPostPage(env, slug, shellResponse) {
   const pageTitle = `${title} — DuganLabs`;
   const url = `https://duganlabs.com/blog/${slug}`;
 
-  const articleHtml = `
-    <header style="margin-bottom:var(--space-6)">
-      <p style="margin:0 0 var(--space-2)"><a href="/blog">&larr; Back to blog</a></p>
-      <h2 style="margin:0 0 var(--space-2)">${escapeXml(title)}</h2>
-      ${date ? `<time style="color:var(--text-muted);font-size:var(--text-sm)">${escapeXml(date)}</time>` : ''}
-      ${tags.length ? `<p style="margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--text-secondary)">${tags.map(t => `#${escapeXml(t)}`).join(' ')}</p>` : ''}
-    </header>
+  const articleHtml = `${renderPostHeader({ title, date, tags })}
     <div class="prose" data-ssr="1">${html}</div>`;
 
   let out = await shellResponse.text();

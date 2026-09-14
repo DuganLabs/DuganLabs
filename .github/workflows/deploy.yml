@@ -1,10 +1,12 @@
+# MANUAL-ONLY. Every workflow in this org runs on workflow_dispatch and
+# nothing else: no push, no pull_request, no schedule. The owner runs it
+# from the Actions tab when he wants GitHub minutes spent; everything it
+# does also runs on a developer machine via scripts/pipeline.sh (checks)
+# and the deploy scripts, from the same Doppler config. (2026-09-14)
 name: DuganLabs CI/CD
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '22'
@@ -73,7 +75,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare
     needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
     uses: DuganLabs/.github/.github/workflows/cf-worker-deploy.yml@main
     with:
       working-directory: "."

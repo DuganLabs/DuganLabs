@@ -1,0 +1,4 @@
+# Pins `doppler run` to this repo's project and config (duganlabs/repository).
+setup:
+  project: duganlabs
+  config: repository

@@ -17,8 +17,8 @@ importers:
   worker:
     dependencies:
       '@basenative/markdown':
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^2.3.0
+        version: 2.3.0
       itty-router:
         specifier: ^5
         version: 5.0.24
@@ -29,8 +29,8 @@ importers:
 
 packages:
 
-  '@basenative/markdown@0.1.1':
-    resolution: {integrity: sha512-QE1TkCxZzDN+E5Ex2k1t34SjDqtcFXMzkEJR6VzeMXid2KSCksyMXB0NIFqgSIxmFlf0GKXUb8EPYZAREt2vcw==, tarball: https://npm.pkg.github.com/download/@basenative/markdown/0.1.1/e0d59042b920d2498aa682ba069aab854ae37668}
+  '@basenative/markdown@2.3.0':
+    resolution: {integrity: sha512-m+vT8z3FAkYYiGiIXbhrz/xGVjWxATHmLD9Muhzap6REMPCIgxLjHCBGIyFvSj6YsJLTACA8WRYpBhj7lx6OAQ==}
 
   '@clack/core@1.4.3':
     resolution: {integrity: sha512-/kr3UWNtdJfxZtPgDqUOmG2pvwlmcLGheex5yiZKdwbzZJxhV+HMNR9QNmyY5cGwTNV6LrR7Jtp+KjhUAP1qBQ==}
@@ -1085,7 +1085,7 @@ packages:
 
 snapshots:
 
-  '@basenative/markdown@0.1.1': {}
+  '@basenative/markdown@2.3.0': {}
 
   '@clack/core@1.4.3':
     dependencies:

@@ -1,7 +1,7 @@
 // Per-app content contract (apps/<domain>/content.json). Validated at build
 // (nx run <app>:check) and again when the Worker starts, so a malformed file
 // fails CI instead of shipping a broken page.
-export const CONSENT_VERSION = 'v0-draft';
+export const CONSENT_VERSION = 'v1';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const SOURCE = /^[a-z0-9][a-z0-9-]{1,40}$/;

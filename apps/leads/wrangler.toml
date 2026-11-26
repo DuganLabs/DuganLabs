@@ -12,7 +12,7 @@ enabled = true
 [[d1_databases]]
 binding = "DB"
 database_name = "dl-leads"
-database_id = "00000000-0000-0000-0000-000000000000" # TODO(phase3): created by infra/cloudflare (not applied)
+database_id = "18f13f55-ba7d-4323-ac39-0b67e5703d79"
 migrations_dir = "migrations"
 
 # Secrets (Doppler duganlabs/repository -> `wrangler secret bulk` at deploy):
@@ -24,5 +24,5 @@ name = "dl-leads-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "dl-leads-staging"
-database_id = "00000000-0000-0000-0000-000000000001" # TODO(phase3)
+database_id = "5e540ab4-2957-4974-bf54-040af4d9a461"
 migrations_dir = "migrations"

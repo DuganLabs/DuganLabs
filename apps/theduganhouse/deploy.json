@@ -6,11 +6,12 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-theduganhouse-staging.duganlabs.workers.dev"
+      "url": "https://dl-theduganhouse-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://theduganhouse.com"
+      "url": "https://theduganhouse.com",
+      "blocked": "waiting on Turnstile + Access API permissions (cut-over 2026-11-26)"
     }
   },
   "lighthouse": [

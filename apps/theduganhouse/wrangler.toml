@@ -27,7 +27,7 @@ service = "dl-leads"
 #   OWNER_EMAILS   who may open /app (Access enforces it first)
 [vars]
 TURNSTILE_SITE_KEY = "TODO-phase3"          # public site key (infra/cloudflare/turnstile.tf)
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
 ACCESS_AUD = "TODO-phase3"                   # Access application AUD tag
 
 [env.staging]
@@ -38,6 +38,6 @@ routes = []
 binding = "LEADS"
 service = "dl-leads-staging"
 [env.staging.vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA" # Cloudflare always-pass TEST key (staging only)
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
 ACCESS_AUD = "TODO-phase3"

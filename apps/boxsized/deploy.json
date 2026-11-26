@@ -6,11 +6,12 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-boxsized-staging.duganlabs.workers.dev"
+      "url": "https://dl-boxsized-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://boxsized.com"
+      "url": "https://boxsized.com",
+      "blocked": "waiting on Turnstile + Access API permissions (cut-over 2026-11-26)"
     }
   },
   "lighthouse": [

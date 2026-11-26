@@ -6,11 +6,12 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-hipowerinc-staging.duganlabs.workers.dev"
+      "url": "https://dl-hipowerinc-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://hipowerinc.com"
+      "url": "https://hipowerinc.com",
+      "blocked": "waiting on Turnstile + Access API permissions (cut-over 2026-11-26)"
     }
   },
   "lighthouse": [

@@ -1,0 +1,25 @@
+name = "duganlabs"
+main = "index.js"
+compatibility_date = "2026-04-04"
+compatibility_flags = ["nodejs_compat"]
+
+# Cut-over (PLAN.md): the coming-soon page (apps/duganlabs, Worker dl-duganlabs) takes
+# duganlabs.com + www. This, the previous public site, moves to private.duganlabs.com,
+# protected in full by Cloudflare Access (infra/cloudflare/access.tf). Deploying this
+# BEFORE the Access app exists would publish it unprotected; deploy.json blocks it.
+routes = [
+  { pattern = "private.duganlabs.com", custom_domain = true }
+]
+
+[[kv_namespaces]]
+binding = "BLOG"
+id = "6abd29c8014f4b70add446dc20cd9c06"
+
+[[kv_namespaces]]
+binding = "REGISTRY"
+id = "f47c0f5887f54a45ab4ef1f2f75a6b62"
+
+[assets]
+directory = "../pages"
+binding = "ASSETS"
+run_worker_first = true

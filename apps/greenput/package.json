@@ -1,0 +1,8 @@
+{
+  "name": "@duganlabs/app-greenput",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@duganlabs/coming-soon": "workspace:*"
+  }
+}

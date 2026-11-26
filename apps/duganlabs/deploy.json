@@ -1,0 +1,21 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/duganlabs/wrangler.toml",
+  "artifact": "dist/apps/duganlabs/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-duganlabs-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://duganlabs.com",
+      "blocked": "cut-over pending: move the current duganlabs.com site to private.duganlabs.com (behind Access) first; see PLAN.md migration order"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

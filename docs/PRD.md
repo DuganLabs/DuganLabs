@@ -57,8 +57,7 @@ N/A — documentation repo.
 
 ### M0 — Org documentation baseline (in progress)
 - PRD-TEMPLATE.md ✓
-- SETUP-ORG-PROJECT-BOARD.md ✓
-- REUSABLE-WORKFLOWS-ACCESS.md ✓
+- (the project-board and reusable-workflow access notes were retired with the monorepo move)
 - This PRD ✓
 
 ### M1 — ADR backlog

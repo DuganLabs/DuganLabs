@@ -1,0 +1,20 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/hipowerinc/wrangler.toml",
+  "artifact": "dist/apps/hipowerinc/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-hipowerinc-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://hipowerinc.com"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

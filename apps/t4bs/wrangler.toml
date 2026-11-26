@@ -1,0 +1,41 @@
+# t4bs.com: standard DuganLabs site Worker (libs/coming-soon).
+# Config as code. Nothing here has been deployed; routes go live only with
+# the owner's approval (PLAN.md D2 for live sites).
+name = "dl-t4bs"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+[observability]
+enabled = true
+
+# Every public page is served by this Worker; /app/* is additionally behind
+# Cloudflare Access (infra/cloudflare/access.tf).
+routes = [
+  { pattern = "t4bs.com", custom_domain = true },
+  { pattern = "www.t4bs.com", custom_domain = true },
+]
+
+[[services]]
+binding = "LEADS"
+service = "dl-leads"
+
+# Secrets (never committed; this repo is public). Pushed from Doppler
+# duganlabs/repository at deploy with `wrangler secret bulk`:
+#   OWNER_EMAILS   who may open /app (Access enforces it first)
+[vars]
+TURNSTILE_SITE_KEY = "TODO-phase3"          # public site key (infra/cloudflare/turnstile.tf)
+ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+ACCESS_AUD = "TODO-phase3"                   # Access application AUD tag
+
+[env.staging]
+name = "dl-t4bs-staging"
+workers_dev = true
+routes = []
+[[env.staging.services]]
+binding = "LEADS"
+service = "dl-leads-staging"
+[env.staging.vars]
+TURNSTILE_SITE_KEY = "TODO-phase3"
+ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+ACCESS_AUD = "TODO-phase3"

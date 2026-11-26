@@ -1,0 +1,23 @@
+{
+  "name": "The Dugan House",
+  "domain": "theduganhouse.com",
+  "source": "theduganhouse",
+  "status": "coming-soon",
+  "theme": {
+    "accent": "#7a5c3e",
+    "accentInk": "#ffffff",
+    "accentStrong": "#6b4f34",
+    "accentDark": "#d9b892",
+    "accentInkDark": "#1a120a",
+    "accentStrongDark": "#e3c7a6",
+    "ink": "#2a1f15"
+  },
+  "monogram": "D",
+  "eyebrow": "Family",
+  "headline": "The Dugan House",
+  "idea": "A home on the web for the Dugan family.",
+  "form": false,
+  "noindex": true,
+  "parentLabel": "",
+  "_sources": "Owner: family hub; eventually BaseNative-powered home automation (not advertised: private-feeling, minimal public page). No lead form, not indexed."
+}

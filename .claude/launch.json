@@ -1,11 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
-      "name": "duganlabs-dev",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
-      "port": 8787
-    }
+    { "name": "leads", "runtimeExecutable": "pnpm", "runtimeArgs": ["exec", "wrangler", "dev", "-c", "apps/leads/wrangler.toml", "--persist-to", ".wrangler/state", "--port", "8700"], "port": 8700 },
+    { "name": "duganlabs", "runtimeExecutable": "pnpm", "runtimeArgs": ["exec", "wrangler", "dev", "-c", "apps/duganlabs/wrangler.toml", "--port", "8702", "--var", "TURNSTILE_SITE_KEY:1x00000000000000000000AA", "--var", "DEV_ACCESS_EMAIL:dev@example.com"], "port": 8702 }
   ]
 }

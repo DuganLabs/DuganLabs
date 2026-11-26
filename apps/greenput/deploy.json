@@ -1,0 +1,21 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/greenput/wrangler.toml",
+  "artifact": "dist/apps/greenput/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-greenput-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://greenput.com",
+      "blocked": "cut-over pending: move the current greenput.com site to private.greenput.com (behind Access) first; see PLAN.md migration order"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

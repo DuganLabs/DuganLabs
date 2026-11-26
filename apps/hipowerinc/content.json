@@ -1,0 +1,24 @@
+{
+  "name": "hipowerinc.com",
+  "domain": "hipowerinc.com",
+  "source": "hipowerinc",
+  "status": "coming-soon",
+  "theme": {
+    "accent": "#1f7a4d",
+    "accentInk": "#ffffff",
+    "accentStrong": "#17603c",
+    "accentDark": "#1f7a4d",
+    "accentInkDark": "#ffffff",
+    "accentStrongDark": "#78c79e",
+    "ink": "#07231a"
+  },
+  "eyebrow": "Greenput pilot",
+  "headline": "A new site is on the way",
+  "idea": "This site is being built on Greenput as part of a pilot. Leave your email and we'll let you know when it's live.",
+  "cta": "Notify me",
+  "parentLabel": "Built on Greenput",
+  "parentUrl": "https://greenput.com",
+  "noindex": true,
+  "_sources": "Owner: hipowerinc = pilot customer URL for a friend's company using Greenput (a Greenput tenant pilot, not a separate product). Company details intentionally omitted until the customer approves copy.",
+  "placeholder": "you@example.com"
+}

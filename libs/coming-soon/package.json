@@ -1,0 +1,11 @@
+{
+  "name": "@duganlabs/coming-soon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The one standard landing for every DuganLabs domain: coming-soon page, lead form, private login, leads view.",
+  "exports": {
+    ".": "./src/index.js",
+    "./content": "./src/content.js"
+  }
+}

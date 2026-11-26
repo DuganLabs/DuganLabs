@@ -1,0 +1,20 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/visitnorthwood/wrangler.toml",
+  "artifact": "dist/apps/visitnorthwood/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-visitnorthwood-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://visitnorthwood.com"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "DuganLabs",
+  "domain": "duganlabs.com",
+  "source": "duganlabs",
+  "status": "coming-soon",
+  "headline": "Building tools for real problems",
+  "idea": "DuganLabs is the studio behind BaseNative, Greenput and PendingBusiness.",
+  "points": [
+    {
+      "icon": "layers",
+      "title": "BaseNative",
+      "body": "An open-source design system, fully in code."
+    },
+    {
+      "icon": "inbox",
+      "title": "Greenput",
+      "body": "The operating system for trade contractors."
+    },
+    {
+      "icon": "trend",
+      "title": "PendingBusiness",
+      "body": "A treasury operating system for one."
+    }
+  ],
+  "theme": {
+    "accent": "#1d1d1f",
+    "accentInk": "#ffffff",
+    "accentDark": "#f5f5f7",
+    "accentInkDark": "#111113",
+    "accentStrongDark": "#f5f5f7",
+    "ink": "#1d1d1f"
+  },
+  "monogram": "D",
+  "leadsScope": "all",
+  "privateUrl": "https://private.duganlabs.com/",
+  "privateLabel": "the current site",
+  "_sources": "duganlabs.com meta description + each product's own line (2026-11-26)."
+}

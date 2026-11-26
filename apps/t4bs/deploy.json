@@ -1,0 +1,21 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/t4bs/wrangler.toml",
+  "artifact": "dist/apps/t4bs/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-t4bs-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://t4bs.com",
+      "blocked": "cut-over pending: move the current t4bs.com site to private.t4bs.com (behind Access) first; see PLAN.md migration order"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

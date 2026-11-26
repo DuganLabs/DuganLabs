@@ -1,3 +1,5 @@
 packages:
-  - 'worker'
-  - 'pages'
+  - 'apps/*'
+  - 'apps/duganlabs-private/worker'
+  - 'apps/duganlabs-private/pages'
+  - 'libs/*'

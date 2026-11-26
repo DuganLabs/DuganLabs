@@ -1,0 +1,8 @@
+{
+  "name": "@duganlabs/app-duganlabs",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@duganlabs/coming-soon": "workspace:*"
+  }
+}

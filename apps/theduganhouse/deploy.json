@@ -1,0 +1,20 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/theduganhouse/wrangler.toml",
+  "artifact": "dist/apps/theduganhouse/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-theduganhouse-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://theduganhouse.com"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

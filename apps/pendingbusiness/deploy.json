@@ -1,0 +1,21 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/pendingbusiness/wrangler.toml",
+  "artifact": "dist/apps/pendingbusiness/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-pendingbusiness-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://pendingbusiness.com",
+      "blocked": "cut-over pending: move the current pendingbusiness.com site to private.pendingbusiness.com (behind Access) first; see PLAN.md migration order"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

@@ -1,0 +1,197 @@
+# DuganLabs monorepo CI/CD. Public repo, so standard runners are free.
+# One install per run; Nx affected vs the last green main; build once and deploy the
+# same artifact staging -> production (production gated by the GitHub environment).
+#
+# Secrets (Doppler duganlabs/repository -> GitHub sync): CLOUDFLARE_API_TOKEN,
+# CLOUDFLARE_ACCOUNT_ID, NX_CLOUD_ACCESS_TOKEN. NEVER Plaid: PLAID_* are Worker
+# runtime secrets set outside CI (docs/PLAID-SECRETS.md); tools/ci/guard.sh enforces it.
+#
+# Nx Cloud bills per distinct commit author ("contributor", bots included). The cache
+# is used ONLY when the head commit author is the one trusted identity
+# (repo variable NX_CLOUD_AUTHOR_EMAIL) and the actor is not a bot. Everything else
+# runs with NX_NO_CLOUD=true. Agents commit as that identity (standards/ci.md).
+name: CI
+
+on:
+  pull_request:
+    # Docs-only changes skip CI. Root *.md and docs/ only: app content (blog posts)
+    # under apps/** is still built.
+    paths-ignore: ['*.md', 'docs/**', 'standards/**', '.github/*.md', '.vscode/**', 'LICENSE']
+  push:
+    branches: [main]
+    paths-ignore: ['*.md', 'docs/**', 'standards/**', '.github/*.md', '.vscode/**', 'LICENSE']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read          # nrwl/nx-set-shas reads the last successful main run
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # PRs: newest push wins. main: never kill a deploy half-way.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: '22'
+  NX_BRANCH: ${{ github.event.number || github.ref_name }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      deploy_apps: ${{ steps.affected.outputs.deploy_apps }}
+      e2e: ${{ steps.affected.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # Decide Nx Cloud use from the head commit author (the billed "contributor").
+      - id: cloud
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          TRUSTED: ${{ vars.NX_CLOUD_AUTHOR_EMAIL }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          author=$(git log -1 --format=%ae "$HEAD_SHA")
+          use=false
+          if [[ -n "$TRUSTED" && "$author" == "$TRUSTED" && "$ACTOR" != *'[bot]' ]]; then use=true; fi
+          echo "use=$use" >> "$GITHUB_OUTPUT"
+          if [[ "$use" != true ]]; then echo "NX_NO_CLOUD=true" >> "$GITHUB_ENV"; fi
+          echo "Nx Cloud: $use (actor $ACTOR)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Public-repo guards (Plaid, secret files, PII, commit identity)
+        env:
+          GUARD_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: bash tools/ci/guard.sh
+      - name: Secret scan (gitleaks, new commits only)
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          base="${PR_BASE:-$PUSH_BEFORE}"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base" 2>/dev/null; then base="$HEAD_SHA~1"; fi
+          docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git --redact --no-banner --log-opts="$base..$HEAD_SHA" .
+      - uses: pnpm/action-setup@v6          # version from package.json "packageManager"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Base = last successful CI on main, so main only re-checks what changed
+      # since the last green deploy.
+      - uses: nrwl/nx-set-shas@v5
+      - name: nx affected (check, test, build)
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ steps.cloud.outputs.use == 'true' && secrets.NX_CLOUD_ACCESS_TOKEN || '' }}
+        run: pnpm exec nx affected -t check test build --parallel=3
+      - id: affected
+        run: |
+          apps=$(pnpm exec nx show projects --affected --with-target deploy --json)
+          e2e=$(pnpm exec nx show projects --affected --with-target e2e --json)
+          echo "deploy_apps=$apps" >> "$GITHUB_OUTPUT"
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
+      # Build once: everything deployable for this commit, uploaded one time.
+      - if: github.ref == 'refs/heads/main' && steps.affected.outputs.deploy_apps != '[]'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/apps/
+          retention-days: 3
+
+  # Browser tests only when a project with an e2e target is affected.
+  e2e:
+    needs: verify
+    if: needs.verify.outputs.e2e != '[]' && needs.verify.outputs.e2e != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm exec playwright install --with-deps chromium
+      - uses: nrwl/nx-set-shas@v5
+      - run: pnpm exec nx affected -t e2e --parallel=1
+        env:
+          NX_NO_CLOUD: 'true'
+
+  # Same artifact to staging, then production (environment protection rule =
+  # Warren's approval). No rebuild, no second install. deploy.sh skips any stage
+  # marked "blocked" in apps/<app>/deploy.json (e.g. live sites before cut-over).
+  deploy-staging:
+    needs: [verify, e2e]
+    if: always() && github.ref == 'refs/heads/main' && needs.verify.result == 'success' && (needs.e2e.result == 'success' || needs.e2e.result == 'skipped') && needs.verify.outputs.deploy_apps != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.verify.outputs.deploy_apps) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            apps/${{ matrix.app }}
+            tools/deploy
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/apps/
+      - run: bash tools/deploy/deploy.sh "$APP" staging
+        env:
+          APP: ${{ matrix.app }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-production:
+    needs: [verify, deploy-staging]
+    if: always() && github.ref == 'refs/heads/main' && needs.deploy-staging.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.verify.outputs.deploy_apps) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            apps/${{ matrix.app }}
+            tools/deploy
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/apps/
+      - run: bash tools/deploy/deploy.sh "$APP" production
+        env:
+          APP: ${{ matrix.app }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # Post-deploy audits in ONE job, main only, report-only (never blocks or rebuilds).
+  audit:
+    needs: [verify, deploy-production]
+    if: always() && github.ref == 'refs/heads/main' && needs.deploy-production.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: bash tools/audit/post-deploy.sh "$APPS"
+        env:
+          APPS: ${{ needs.verify.outputs.deploy_apps }}

@@ -1,20 +1,53 @@
+# PUBLIC REPO. Nothing secret or personal is ever committed (standards/public-repo.md).
+# tools/ci/guard.sh and gitleaks enforce this in CI; GitHub secret scanning +
+# push protection are on for the repo.
+
+# Dependencies and build output
 node_modules/
+dist/
+coverage/
 .wrangler/
 .wrangler-dry/
-.dev.vars
-.DS_Store
-dist/
-*.local
-.env
-.env.*
-!.env.example
+*.tsbuildinfo
 
 # Nx
 .nx/cache
 .nx/workspace-data
 
-# Terraform
-infra/.terraform/
-infra/*.tfstate
-infra/*.tfstate.backup
-infra/.terraform.lock.hcl
+# Local secrets and env (use Doppler: `doppler run -- ...`)
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.npmrc.local
+doppler.secrets.*
+*.secrets.json
+
+# Data that may contain leads/PII (lives only in D1)
+*.sqlite
+*.sqlite3
+*.db
+leads*.csv
+exports/
+
+# Terraform state can contain secrets
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/.terraform.lock.hcl
+infra/**/*.tfvars
+!infra/**/example.tfvars
+crash.log
+
+# Editors / OS
+.DS_Store
+.idea/
+*.swp

@@ -1,6 +1,6 @@
 # ADR 0002 — `DuganLabs/.github` is the source of truth for org GitHub infrastructure
 
-- Status: **accepted**
+- Status: **partly superseded by ADR 0007**
 - Date: 2026-04-26
 - Owner: Warren Dugan
 
@@ -42,7 +42,7 @@ The natural home is the special `.github` repo at the org root.
 
 ## Open issues
 
-- **Private→public reusable workflow access** — t4bs was private when first wired; GitHub blocks calls from a private repo to a public reusable workflow by default. Resolved by making t4bs public. Other private repos (greenput, pendingbusiness, warrendugan) need the org-level `actions/permissions/access` setting flipped, OR they keep inline workflows. See [REUSABLE-WORKFLOWS-ACCESS.md](../REUSABLE-WORKFLOWS-ACCESS.md).
+- **Private→public reusable workflow access** — t4bs was private when first wired; GitHub blocks calls from a private repo to a public reusable workflow by default. Resolved by making t4bs public. Other private repos (greenput, pendingbusiness, warrendugan) need the org-level `actions/permissions/access` setting flipped, OR they keep inline workflows. (Superseded by ADR 0007: the monorepo is public and owns its own CI.)
 
 ## Alternatives considered
 

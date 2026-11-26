@@ -1,0 +1,37 @@
+{
+  "name": "BaseNative",
+  "domain": "basenative.com",
+  "source": "basenative",
+  "status": "coming-soon",
+  "headline": "Apple-grade design, all in code",
+  "idea": "An open-source design system kit, fully in code: accessible components on real HTML elements, in light and dark, built on web standards.",
+  "points": [
+    {
+      "icon": "layers",
+      "title": "Real HTML elements",
+      "body": "Accessible components built on the elements the browser already gives you."
+    },
+    {
+      "icon": "spark",
+      "title": "Light and dark",
+      "body": "Every component, in both themes, out of the box."
+    },
+    {
+      "icon": "shield",
+      "title": "Ready for agents",
+      "body": "AI-safe and ready for agents, built on web standards."
+    }
+  ],
+  "theme": {
+    "accent": "#2f5bea",
+    "accentInk": "#ffffff",
+    "accentStrong": "#2a50d0",
+    "accentDark": "#8aa6ff",
+    "accentInkDark": "#0a1030",
+    "accentStrongDark": "#a6bbff",
+    "ink": "#0e1530"
+  },
+  "privateUrl": "https://private.basenative.com/",
+  "privateLabel": "the BaseNative docs",
+  "_sources": "basenative.com h1 + meta description (2026-11-26)."
+}

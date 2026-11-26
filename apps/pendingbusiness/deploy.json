@@ -6,12 +6,11 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-pendingbusiness-staging.duganlabs.workers.dev"
+      "url": "https://dl-pendingbusiness-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://pendingbusiness.com",
-      "blocked": "cut-over pending: move the current pendingbusiness.com site to private.pendingbusiness.com (behind Access) first; see PLAN.md migration order"
+      "url": "https://pendingbusiness.com"
     }
   },
   "lighthouse": [

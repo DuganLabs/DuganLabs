@@ -6,12 +6,11 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-duganlabs-staging.duganlabs.workers.dev"
+      "url": "https://dl-duganlabs-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://duganlabs.com",
-      "blocked": "cut-over pending: move the current duganlabs.com site to private.duganlabs.com (behind Access) first; see PLAN.md migration order"
+      "url": "https://duganlabs.com"
     }
   },
   "lighthouse": [

@@ -6,12 +6,11 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-greenput-staging.duganlabs.workers.dev"
+      "url": "https://dl-greenput-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://greenput.com",
-      "blocked": "cut-over pending: move the current greenput.com site to private.greenput.com (behind Access) first; see PLAN.md migration order"
+      "url": "https://greenput.com"
     }
   },
   "lighthouse": [

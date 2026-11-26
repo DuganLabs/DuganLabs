@@ -111,7 +111,7 @@ function visual(c) {
 
 export function landing(c, env, { nonce, state = {} }) {
   const todo = !!c.todo;
-  const title = todo ? `${c.domain} · Coming soon` : `${c.name} · ${c.headline}`;
+  const title = todo ? `${c.domain} · Coming soon` : c.headline === c.name ? c.name : `${c.name} · ${c.headline}`;
   const description = todo ? `${c.domain} is coming soon.` : c.idea;
   const hero = todo
     ? html`<section class="hero solo" aria-labelledby="h">

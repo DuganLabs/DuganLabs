@@ -15,8 +15,8 @@ observability = { enabled = true }
 # Every public page is served by this Worker; /app/* is additionally behind
 # Cloudflare Access (infra/cloudflare/access.tf).
 routes = [
-  { pattern = "greenput.com", custom_domain = true },
-  { pattern = "www.greenput.com", custom_domain = true },
+  { pattern = "greenput.com/*", zone_name = "greenput.com" },
+  { pattern = "www.greenput.com/*", zone_name = "greenput.com" },
 ]
 
 [[services]]
@@ -27,9 +27,9 @@ service = "dl-leads"
 # duganlabs/repository at deploy with `wrangler secret bulk`:
 #   OWNER_EMAILS   who may open /app (Access enforces it first)
 [vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"          # public site key (infra/cloudflare/turnstile.tf)
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
-ACCESS_AUD = "TODO-phase3"                   # Access application AUD tag
+TURNSTILE_SITE_KEY = "0x4AAAAAAGUwXnIJpHMI3vwL" # Turnstile widget "DuganLabs landing pages (live)" (public)
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
+ACCESS_AUD = "f763f132679a391c90c1117a3bb1e82f72f18f8ac265c19b44b4a39709078551" # Access app "greenput private"
 
 [env.staging]
 name = "dl-greenput-staging"
@@ -39,6 +39,6 @@ routes = []
 binding = "LEADS"
 service = "dl-leads-staging"
 [env.staging.vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+TURNSTILE_SITE_KEY = "0x4AAAAAAGUyuK_Dx6XpaYx2" # Turnstile widget "DuganLabs landing pages (staging)" (public)
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
 ACCESS_AUD = "TODO-phase3"

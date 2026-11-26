@@ -6,12 +6,12 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-t4bs-staging.duganlabs.workers.dev"
+      "url": "https://dl-t4bs-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
       "url": "https://t4bs.com",
-      "blocked": "cut-over pending: move the current t4bs.com site to private.t4bs.com (behind Access) first; see PLAN.md migration order"
+      "blocked": "kept running: the t4bs game stays public at t4bs.com for its players (repo DuganLabs/t4bs, not archived). Do not deploy coming-soon here unless Warren retires the game."
     }
   },
   "lighthouse": [

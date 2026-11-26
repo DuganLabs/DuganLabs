@@ -6,12 +6,11 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-basenative-staging.duganlabs.workers.dev"
+      "url": "https://dl-basenative-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://basenative.com",
-      "blocked": "cut-over pending: move the current basenative.com site to private.basenative.com (behind Access) first; see PLAN.md migration order"
+      "url": "https://basenative.com"
     }
   },
   "lighthouse": [

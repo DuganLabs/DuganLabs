@@ -11,8 +11,8 @@ observability = { enabled = true }
 # Every public page is served by this Worker; /app/* is additionally behind
 # Cloudflare Access (infra/cloudflare/access.tf).
 routes = [
-  { pattern = "pendingbusiness.com", custom_domain = true },
-  { pattern = "www.pendingbusiness.com", custom_domain = true },
+  { pattern = "pendingbusiness.com/*", zone_name = "pendingbusiness.com" },
+  { pattern = "www.pendingbusiness.com/*", zone_name = "pendingbusiness.com" },
 ]
 
 [[services]]
@@ -23,9 +23,9 @@ service = "dl-leads"
 # duganlabs/repository at deploy with `wrangler secret bulk`:
 #   OWNER_EMAILS   who may open /app (Access enforces it first)
 [vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"          # public site key (infra/cloudflare/turnstile.tf)
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
-ACCESS_AUD = "TODO-phase3"                   # Access application AUD tag
+TURNSTILE_SITE_KEY = "0x4AAAAAAGUwXnIJpHMI3vwL" # Turnstile widget "DuganLabs landing pages (live)" (public)
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
+ACCESS_AUD = "dad154a3a3920e13b8befefd4bd28b8ccf835653349ab86be7873be4f194fc9b" # Access app "pendingbusiness private"
 
 [env.staging]
 name = "dl-pendingbusiness-staging"
@@ -35,6 +35,6 @@ routes = []
 binding = "LEADS"
 service = "dl-leads-staging"
 [env.staging.vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"
-ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
+TURNSTILE_SITE_KEY = "0x4AAAAAAGUyuK_Dx6XpaYx2" # Turnstile widget "DuganLabs landing pages (staging)" (public)
+ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
 ACCESS_AUD = "TODO-phase3"

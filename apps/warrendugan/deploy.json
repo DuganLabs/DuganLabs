@@ -6,12 +6,11 @@
   "stages": {
     "staging": {
       "env": "staging",
-      "url": "https://dl-warrendugan-staging.duganlabs.workers.dev"
+      "url": "https://dl-warrendugan-staging.greenput.workers.dev"
     },
     "production": {
       "env": null,
-      "url": "https://warrendugan.com",
-      "blocked": "cut-over pending: move the current warrendugan.com site to private.warrendugan.com (behind Access) first; see PLAN.md migration order"
+      "url": "https://warrendugan.com"
     }
   },
   "lighthouse": [

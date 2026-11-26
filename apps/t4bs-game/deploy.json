@@ -1,0 +1,17 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "pages",
+  "config": "apps/t4bs-game/wrangler.toml",
+  "artifact": "dist/apps/t4bs-game",
+  "pagesProject": { "staging": "t4bs", "production": "t4bs" },
+  "d1": { "database": "tabs-db", "seed": "seed.sql" },
+  "stages": {
+    "staging": {
+      "env": null,
+      "url": "https://t4bs.com",
+      "blocked": "no staging env: the game's wrangler.toml binds the production D1 for every branch, so it deploys straight to production after CI"
+    },
+    "production": { "env": null, "url": "https://t4bs.com" }
+  },
+  "lighthouse": ["/"]
+}

@@ -36,9 +36,21 @@ if [[ "$kind" == "worker" ]]; then
 elif [[ "$kind" == "pages" ]]; then
   project=$(j "pagesProject.${stage}")
   branch=$([[ "$stage" == production ]] && echo main || echo staging)
-  "${WR[@]}" pages deploy "$artifact" --project-name "$project" --branch "$branch" --commit-dirty=true
+  # Run from the wrangler.toml's directory so its bindings (D1, KV, vars) apply to the
+  # deployment; a prebuilt _worker.js in the artifact means nothing is bundled here.
+  art_abs="$(cd "$artifact" && pwd)"
+  ( cd "$(dirname "$config")" && "${WR[@]}" pages deploy "$art_abs" --project-name "$project" --branch "$branch" --commit-dirty=true )
 else
   echo "unknown kind $kind" >&2; exit 2
+fi
+# Optional D1 step after the deploy (deploy.json "d1": {database, seed}): apply pending
+# migrations (wrangler.toml migrations dir), then an idempotent seed file. Same order as
+# the product's pre-monorepo pipeline: deploy -> migrate -> seed.
+d1db=$(j d1.database)
+if [[ -n "$d1db" ]]; then
+  seed=$(j d1.seed)
+  ( cd "$(dirname "$config")" && "${WR[@]}" d1 migrations apply "$d1db" --remote )
+  if [[ -n "$seed" ]]; then ( cd "$(dirname "$config")" && "${WR[@]}" d1 execute "$d1db" --remote --file="$seed" ); fi
 fi
 if [[ "$dry" == "--dry-run" ]]; then echo "(dry-run) would deploy ${app} -> ${stage} ${url}"; exit 0; fi
 echo "deployed ${app} -> ${stage} ${url}"

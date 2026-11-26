@@ -1,5 +1,12 @@
 # T4BS
 
+> **Monorepo:** this game now lives in `DuganLabs/DuganLabs` at `apps/t4bs-game` (imported with full
+> history from `DuganLabs/t4bs`). Nx targets: `install`, `check` (lint + typecheck), `test`, `build`
+> (`scripts/monorepo-build.sh` → `dist/apps/t4bs-game`, Functions prebuilt to `_worker.js`), `deploy`.
+> CI deploys production to the `t4bs` Pages project on push to `main`, then applies D1 migrations and
+> `seed.sql` (`tools/deploy/deploy.sh`, `deploy.json`). Credentials come from Doppler
+> `duganlabs/repository`. The deploy notes below describe the old standalone repo.
+
 One subject. One phrase. No mercy.
 
 A Wordle-killer with poker mechanics. The server holds the answer; the client only ever sees per-tile feedback. Four lives for an entire phrase, per-tile stakes that cost a life when they miss, agency-driven cascade rewards, and an all-in shove that ends the round one way or the other. One server-picked daily per UTC day, plus unlimited free play.

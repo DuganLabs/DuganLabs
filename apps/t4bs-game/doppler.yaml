@@ -1,6 +1,6 @@
-# Pins `doppler run` to this repo's project and config, so nobody passes
-# --project/--config by hand and nobody deploys against the wrong one.
-# One root config, `repository`, keeps the account on Doppler's free tier.
+# Pins `doppler run` here to the monorepo's single Doppler project/config.
+# The game has no runtime secrets; Cloudflare deploy credentials live in
+# duganlabs/repository (standards/secrets-doppler.md).
 setup:
-  project: t4bs
+  project: duganlabs
   config: repository

@@ -7,6 +7,7 @@
     "kind": { "enum": ["worker", "pages"] },
     "config": { "type": "string", "description": "wrangler config path, repo-relative" },
     "artifact": { "type": "string", "description": "worker: bundled entry in dist/; pages: output directory in dist/" },
+    "d1": { "type": "object", "description": "optional: { database, seed } — after deploy, apply D1 migrations then the idempotent seed file (paths relative to the wrangler.toml dir)" },
     "pagesProject": { "type": "object", "description": "pages only: { staging, production } Cloudflare Pages project names" },
     "stages": {
       "type": "object",

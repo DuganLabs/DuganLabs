@@ -1,0 +1,50 @@
+{
+  "name": "t4bs-game",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/t4bs-game/src",
+  "tags": ["scope:product", "type:pages-app"],
+  "namedInputs": {
+    "game": ["{projectRoot}/**/*", "!{projectRoot}/node_modules/**", "!{projectRoot}/dist/**"]
+  },
+  "targets": {
+    "install": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "cwd": "apps/t4bs-game", "command": "npm ci --no-audit --no-fund" }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["install"],
+      "inputs": ["game"],
+      "options": { "cwd": "apps/t4bs-game", "commands": ["npm run lint", "npm run typecheck"], "parallel": false }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["install"],
+      "inputs": ["game"],
+      "options": { "cwd": "apps/t4bs-game", "command": "npm test" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["install", "check"],
+      "inputs": ["game"],
+      "outputs": ["{workspaceRoot}/dist/apps/t4bs-game"],
+      "options": { "command": "bash apps/t4bs-game/scripts/monorepo-build.sh" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/t4bs-game", "command": "npm run dev" }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "bash tools/deploy/deploy.sh t4bs-game {args.stage}", "args": "--stage=staging" }
+    }
+  }
+}

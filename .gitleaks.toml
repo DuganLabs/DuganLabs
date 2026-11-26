@@ -7,3 +7,8 @@ useDefault = true
 description = "Cloudflare Access AUD tags in apps/*/wrangler.toml"
 regexTarget = "line"
 regexes = ['''ACCESS_AUD = "[0-9a-f]{64}"''']
+
+[[allowlists]]
+description = "Cloudflare Web Analytics beacon tokens (public: served in every page's HTML)"
+regexTarget = "line"
+regexes = ['''data-cf-beacon='\{"token":"[0-9a-f]{32}"\}'''']

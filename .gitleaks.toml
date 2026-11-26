@@ -1,0 +1,9 @@
+# Extends gitleaks' default rules. Cloudflare Access application AUD tags are
+# public identifiers (they travel in every Access JWT's `aud` claim), not secrets.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Cloudflare Access AUD tags in apps/*/wrangler.toml"
+regexTarget = "line"
+regexes = ['''ACCESS_AUD = "[0-9a-f]{64}"''']

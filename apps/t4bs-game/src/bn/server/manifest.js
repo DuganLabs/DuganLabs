@@ -1,0 +1,86 @@
+/* Reads dist/asset-manifest.json (emitted by `vite build`) and resolves
+   the hashed JS + transitively-imported CSS for the bn-hydrate entry.
+   Cached per isolate so we only fetch + parse once per warm worker.
+
+   Manifest is shipped as a static asset at /asset-manifest.json by
+   wrangler pages — read via env.ASSETS.fetch(). Falls back to a sensible
+   dev-time default when the manifest is missing (vite dev). */
+
+const ENTRY_KEY = "src/bn/client/hydrate.js";
+
+/* The three views the hydrator imports lazily. Their chunks are only
+   discovered once the hydrate bundle has downloaded, parsed and run —
+   a second serial round trip on the critical path of anyone who opened
+   one of these routes directly. When we already know the route at
+   render time we can name the chunk in <head> and let the browser fetch
+   it alongside the hydrate bundle instead of after it, which is what
+   made /submit's category picker look absent for a beat on a phone. */
+const ROUTE_VIEW_ENTRY = {
+  submit:   "src/views/submit.js",
+  moderate: "src/views/moderate.js",
+  admin:    "src/views/admin.js",
+};
+
+const DEV_FALLBACK = { js: "/src/bn/client/hydrate.js", css: [], views: {} };
+
+/** @typedef {{ file: string, css?: string[], imports?: string[] }} Chunk */
+/** @typedef {Record<string, Chunk>} Manifest */
+
+/** @type {Promise<{ js: string, css: string[], views: Record<string, string> }> | null} */
+let cached = null;
+
+/** @param {{ ASSETS?: { fetch(req: Request): Promise<Response> } } | undefined} env @param {URL} pageUrl */
+export function loadAssets(env, pageUrl) {
+  if (cached) return cached;
+  cached = (async () => {
+    if (!env?.ASSETS) return DEV_FALLBACK;
+    try {
+      const manifestUrl = new URL("/asset-manifest.json", pageUrl.origin);
+      const r = await env.ASSETS.fetch(new Request(manifestUrl.toString()));
+      if (!r.ok) return DEV_FALLBACK;
+      /** @type {Manifest} */
+      const manifest = await r.json();
+      const entry = manifest[ENTRY_KEY];
+      if (!entry?.file) return DEV_FALLBACK;
+      /** @type {Record<string, string>} */
+      const views = {};
+      for (const [route, key] of Object.entries(ROUTE_VIEW_ENTRY)) {
+        const chunk = manifest[key];
+        if (chunk?.file) views[route] = `/${chunk.file}`;
+      }
+      return {
+        js: `/${entry.file}`,
+        css: collectCss(manifest, ENTRY_KEY).map(c => `/${c}`),
+        views,
+      };
+    } catch {
+      return DEV_FALLBACK;
+    }
+  })();
+  return cached;
+}
+
+/* Walk `imports` transitively to gather every CSS file the entry pulls
+   in via shared chunks. Vite only lists `css` on the chunk that owns it,
+   so an entry that imports a shared chunk needs this resolution. */
+/** @param {Manifest} manifest @param {string} entryKey @returns {string[]} */
+function collectCss(manifest, entryKey) {
+  /** @type {Set<string>} */
+  const seen = new Set();
+  /** @type {string[]} */
+  const out = [];
+  /** @param {string} key */
+  function walk(key) {
+    if (seen.has(key)) return;
+    seen.add(key);
+    const chunk = manifest[key];
+    if (!chunk) return;
+    for (const css of chunk.css || []) out.push(css);
+    for (const imp of chunk.imports || []) walk(imp);
+  }
+  walk(entryKey);
+  return out;
+}
+
+/* Test-only — drop the cached manifest so a hot-reload picks up changes. */
+export function _resetAssetsCache() { cached = null; }

@@ -1,0 +1,482 @@
+/* T4BS — BaseNative SSR/SPA shell entry point.
+   Replaces the React 18 app with a signal-driven runtime.
+
+   - Routing: @basenative/router (hash-free) for / (today's puzzle), /play
+     (preview), /submit, /moderate, /admin.
+     /s/:id is handled by functions/s/[id].js (worker-rendered) and never
+     reaches this bundle.
+   - Persistence: @basenative/persist for session resume + stats.
+   - Sharing: @basenative/share/client for nativeShare + mintShareCard.
+   - Keyboard: @basenative/keyboard for the on-screen QWERTY.
+   - Game core: shared/engine.js (untouched) via /api/* endpoints. */
+
+import "./styles.css";
+import "@basenative/keyboard/styles.css";
+import "@basenative/combobox/css";
+/* Kept in sync with src/bn/client/hydrate.js's @basenative/components
+   imports (see that file for why tokens/components/states, why not
+   layers.css, and why not the package's reset.css/layout.css) — this
+   file is documented above as "identical to [hydrate.js] minus the
+   SSR seed", and the toast/help-modal/auth-modal components it also
+   mounts now render [data-bn="dialog"]/[data-bn="tabs"] markup that
+   needs this CSS. */
+import "@basenative/components/tokens.css";
+import "@basenative/components/components.css";
+import "@basenative/components/states.css";
+import "./theme.css";
+
+import { signal, effect } from "@basenative/runtime";
+import { createRouter, interceptLinks } from "@basenative/router";
+import {
+  loadPersisted, savePersisted, clearPersisted,
+} from "@basenative/persist";
+import { nativeShare, mintShareCard, composeShareText } from "@basenative/share/client";
+
+import { api } from "./lib/api.js";
+import { bnAlert, mount, h } from "./lib/dom.js";
+import { createHeader } from "./components/header.js";
+import { createToast, makeToaster } from "./components/toast.js";
+import { createHelpModal } from "./components/help-modal.js";
+import { createAuthModal } from "./components/auth-modal.js";
+import { createHome } from "./views/home.js";
+import { createPlay } from "./views/play.js";
+import { createSessionState, shareGrid } from "./lib/session-state.js";
+/* submit / moderate / admin are gated behind user actions (clicking the
+   submit FAB, navigating to /moderate or /admin) and are bundled with
+   their own heavy deps (@basenative/admin, @basenative/combobox). They
+   load lazily via dynamic import below — keeping them out of the eager
+   chunk shaves ~10 kB gzipped for the typical play-only journey. */
+import { decidePlayBoot, withTimeout, isResumable } from "./bn/client/play-boot.js";
+import { routes } from "./bn/route-table.js";
+
+/* ── error logging (carryover from the React main) ─────────────────────── */
+function postLog(payload) {
+  try {
+    fetch("/api/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* empty */ }
+}
+window.addEventListener("error", (e) => {
+  postLog({ msg: e.message, where: `${e.filename}:${e.lineno}:${e.colno}`, stack: e.error?.stack, url: location.href });
+});
+window.addEventListener("unhandledrejection", (e) => {
+  postLog({ msg: String(e.reason?.message || e.reason || "unhandledrejection"), stack: e.reason?.stack, where: "promise", url: location.href });
+});
+
+/* ── App-level signals ─────────────────────────────────────────────────── */
+const view  = signal("home");       // 'home' | 'playing' | 'submit' | 'moderate' | 'admin' | 'not-found'
+const user  = signal(null);
+const categories = signal([]);
+const error = signal(null);
+const stats = signal({});
+const toast = signal(null);
+const helpOpen = signal(false);
+const authOpen = signal(false);
+
+/* The round as the client holds it — one server view, not nine derived
+   signals (see lib/session-state.js). */
+const round = createSessionState();
+const { session, score, lives, tokens } = round;
+/* True while the /play boot resolver is running — distinguishes
+   "still loading" from "definitively no session". */
+const playLoading   = signal(window.location.pathname === "/play" || window.location.pathname === "/");
+
+/* Today's daily as the SERVER sees it (GET /api/daily): which puzzle,
+   whether this player already finished it, and their streak. Mirrors
+   src/bn/client/hydrate.js — this legacy `?legacy=1` shell is that file
+   minus the SSR seed. */
+const daily         = signal(null);
+
+const RESUME_TIMEOUT_MS = 8000;
+
+const toaster = makeToaster(toast);
+
+/* ── Router ────────────────────────────────────────────────────────────── */
+const router = createRouter([...routes]);
+// interceptLinks signature is (root, router) — first arg is the DOM element to
+// listen on, second is the router. Passing only `router` made `root` = router,
+// which has no addEventListener → blank-page crash.
+interceptLinks(document, router);
+
+effect(() => {
+  const r = router.currentRoute();
+  if (r.name === "home")          view.set((session.peek ? session.peek() : session()) ? "playing" : "home");
+  else if (r.name === "play")     view.set("playing");
+  else if (r.name === "submit")   view.set("submit");
+  else if (r.name === "moderate") view.set("moderate");
+  else if (r.name === "admin")    view.set("admin");
+  else                            view.set("not-found");   // router gives name: null for an unmatched path (T4-031)
+
+  /* Mirror the SSR shell's <body data-route>, so the one rule that sizes
+     the play view's keyboard gutter (`body[data-route="play"] #app`)
+     works on this legacy entry too. */
+  if (typeof document !== "undefined" && document.body) document.body.dataset.route = r.name || "not-found";
+});
+
+/* ── Stats + session resume via @basenative/persist ────────────────────── */
+const STATS_KEY   = "t4bs:stats";
+const SESSION_KEY = "t4bs:session";
+
+(async () => {
+  const s = await loadPersisted(STATS_KEY);
+  if (s) stats.set(s);
+})();
+
+/* Local stats are a personal-best scratchpad; the streak is server-side
+   (daily_results, keyed by player + day key). See hydrate.js. */
+async function recordResultPersist(won, finalScore, category, mode) {
+  const s = (await loadPersisted(STATS_KEY)) || {};
+  s.played = (s.played || 0) + 1;
+  if (won) {
+    s.wins = (s.wins || 0) + 1;
+    s.best = Math.max(s.best || 0, finalScore);
+  }
+  s.lastCategory = category;
+  s.lastScore = finalScore;
+  s.lastResult = won ? "won" : "lost";
+  s.lastMode = mode;
+  s.lastAt = Date.now();
+  await savePersisted(STATS_KEY, s);
+  await clearPersisted(SESSION_KEY);
+  stats.set(s);
+  api.daily().then(daily.set).catch(() => {});
+}
+
+/* ── Boot: me + today's status, then resume / start / deep-link ────────── */
+api.me().then(r => user.set(r.user)).catch(() => {});
+const dailyReady = api.daily().then(daily.set).catch(() => {});
+function loadCategories() {
+  api.listPuzzles().then((rows) => {
+    const seen = new Set(categories());
+    for (const p of rows || []) seen.add(p.category);
+    categories.set([...seen].sort((a, b) => a.localeCompare(b)));
+  }).catch(() => {});
+}
+
+(async () => {
+  try {
+    const saved = await loadPersisted(SESSION_KEY).catch(() => null);
+    /* No SSR seed on this entry, so the daily status has to land before
+       the boot decision can read it. */
+    await dailyReady;
+    const intent = decidePlayBoot(window.location, saved, daily());
+
+    // Routes other than /play and / never touch session start/resume —
+    // see the matching comment in bn/client/hydrate.js.
+    if (intent.kind === "ignore") return;
+
+    if (intent.kind === "start") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("play");
+      window.history.replaceState(null, "", url.pathname + (url.search || "") + url.hash);
+      await start(intent.puzzleId);
+      return;
+    }
+
+    if (intent.kind === "daily") {
+      await startDaily();
+      return;
+    }
+
+    if (intent.kind === "resume") {
+      try {
+        const s = await withTimeout(
+          api.resumeSession(intent.sessionId),
+          RESUME_TIMEOUT_MS,
+          "resume-timeout",
+        );
+        /* "/" is today's puzzle and nothing else. A saved round only
+           resumes there if it IS today's daily; a preview, or yesterday's
+           unfinished daily, is dropped so the page shows the day's game
+           rather than whatever was open last. /play resumes anything. */
+        const onHome = window.location.pathname === "/";
+        const isTodaysDaily = s?.mode === "daily" && s?.day === daily()?.day;
+        if (isResumable(s) && (!onHome || isTodaysDaily)) {
+          hydrateSession(s);
+          const wanted = s.mode === "daily" ? "/" : "/play";
+          if (window.location.pathname !== wanted) router.navigate(wanted, { replace: true });
+          if (!onHome || !isTodaysDaily) toaster("RESUMED — pick up where you left off", "good");
+          return;
+        }
+        await clearPersisted(SESSION_KEY).catch(() => {});
+      } catch (e) {
+        await clearPersisted(SESSION_KEY).catch(() => {});
+        if (/** @type {{ code?: string }} */ (e)?.code === "ETIMEOUT") {
+          toaster("Couldn't reach the server — try again.", "bad");
+        }
+      }
+    }
+
+    if (window.location.pathname === "/") {
+      const d = daily();
+      if (d?.puzzleId && !d.playedToday) { await startDaily(); return; }
+    }
+    leavePlay();
+  } finally {
+    playLoading.set(false);
+  }
+})();
+
+function leavePlay() {
+  if (window.location.pathname === "/play") router.navigate("/", { replace: true });
+  view.set(session() ? "playing" : "home");
+}
+
+function finishRound() {
+  round.clear();
+  if (window.location.pathname !== "/") router.navigate("/");
+  view.set("home");
+}
+
+function hydrateSession(s) {
+  round.apply(s);
+  view.set("playing");
+}
+
+/* Today's puzzle, started in place on "/". A 409 means it's already
+   been played, which is the done card and not an error. */
+async function startDaily() {
+  error.set(null);
+  try {
+    const s = await withTimeout(api.startDaily(), RESUME_TIMEOUT_MS, "start-timeout");
+    if (s.daily) daily.set(s.daily);
+    hydrateSession(s);
+    await savePersisted(SESSION_KEY, { sessionId: s.sessionId }, 12 * 3600);
+    if (window.location.pathname !== "/") router.navigate("/", { replace: true });
+  } catch (e) {
+    const err = /** @type {{ data?: { daily?: unknown }, message?: string }} */ (e);
+    if (err?.data?.daily) daily.set(err.data.daily);
+    else error.set(String(err?.message || e));
+    leavePlay();
+  }
+}
+
+/** A preview — one approved puzzle, unlimited, never recorded. */
+async function start(puzzleId) {
+  error.set(null);
+  try {
+    const s = await withTimeout(api.startSession(puzzleId), RESUME_TIMEOUT_MS, "start-timeout");
+    hydrateSession(s);
+    await savePersisted(SESSION_KEY, { sessionId: s.sessionId }, 12 * 3600);
+    if (window.location.pathname !== "/play") router.navigate("/play");
+  } catch (e) {
+    error.set(String(/** @type {Error} */ (e)?.message || e));
+    leavePlay();
+  }
+}
+
+/* The share card is minted ONCE per finished round, the moment the round
+   ends (createPlay's onMint), so the end dialog can show the card itself —
+   the same 1200×630 PNG a chat app renders for the link. */
+const minted = new Map();
+async function mintResult({ won }) {
+  const s = session();
+  if (!s?.words) return null;
+  const key = s.sessionId || s.id;
+  if (minted.has(key)) return minted.get(key);
+  const grid = shareGrid({ session: s, locked: round.locked(), busted: round.busted(), guessLog: round.guessLog() });
+  const m = await mintShareCard({
+    sessionId: s.sessionId || s.id,
+    puzzleId: s.puzzleId ?? s.id ?? null,
+    category: s.category,
+    score: score(),
+    won,
+    grid,
+  }, { endpoint: "/api/share-cards" });
+  const out = m?.id ? { id: m.id, url: m.url, imageUrl: `/og/score/${m.id}.png`, grid } : null;
+  if (out) minted.set(key, out);
+  return out;
+}
+
+/* Share the LINK, and nothing but the link.
+
+   `shareUrl` is `/s/<id>`, and that page already carries the Open Graph
+   tags for this exact result — `og:image` pointing at
+   `/og/score/<id>.png`, plus `og:title`, `og:description` and
+   `twitter:card=summary_large_image` — so Messages, Slack, Discord and
+   the rest fetch the card themselves and unfurl it as the preview. We do
+   not fetch the PNG here, and never attach it as a `File`: iOS refuses
+   `files` and `url` in one payload, so attaching the image demoted the
+   link into the text and the share sheet handed the recipient a bare
+   `tabs-<id>.png` — an orphan picture with nothing to tap. A link
+   renders the same card AND leads back to the game. */
+async function shareResult({ won, card }) {
+  try {
+    const s = session();
+    if (!s?.words) return "Couldn't share";
+    const c = card || await mintResult({ won }).catch(() => null);
+    const grid = c?.grid || shareGrid({ session: s, locked: round.locked(), busted: round.busted(), guessLog: round.guessLog() });
+    const shareUrl = c?.url || "https://t4bs.com";
+    const text = composeShareText(
+      "Tabs · ${category} · ${score}pts · ${verdict}\n\n${grid}",
+      { category: s.category, score: score(), verdict: won ? "Solved" : "Busted", grid },
+    );
+    const r = await nativeShare({ text, url: shareUrl });
+    if (r?.status === "shared") return "✓ Shared";
+    if (r?.status === "copied") return "✓ Link copied";
+    return "Couldn't share";
+  } catch {
+    return "Couldn't share";
+  }
+}
+
+/* ── Mount ─────────────────────────────────────────────────────────────── */
+const root = document.getElementById("app");
+
+const header = createHeader({
+  view, user, score, lives, tokens,
+  onLogo:   () => router.navigate("/"),
+  onHelp:   () => helpOpen.set(true),
+  onAuth:   () => authOpen.set(true),
+  onMod:    () => router.navigate("/moderate"),
+  onAdmin:  () => router.navigate("/admin"),
+  onLogout: async () => { await api.logout(); user.set(null); },
+});
+
+const helpModal = createHelpModal({
+  open: helpOpen.peek ? () => helpOpen() : helpOpen,
+  onClose: () => helpOpen.set(false),
+});
+const authModal = createAuthModal({
+  open: () => authOpen(),
+  onClose: () => authOpen.set(false),
+  onAuthed: (u) => { user.set(u); authOpen.set(false); },
+});
+
+// View slot — replaced reactively when the route or session changes.
+const viewSlot = h("div", { "data-bn-region": "view-slot" });
+
+/* Lazy-mount helper for views that ship in their own chunk. Shows a
+   status placeholder while the import resolves, then mounts only if the
+   user hasn't navigated away in the meantime. The signal read after the
+   await happens outside an effect context, so it doesn't create stray
+   subscriptions on the outer view-mount effect. */
+function mountLazy(label, importFn, build) {
+  mount(viewSlot, h("p", {
+    "data-bn-region": "status",
+    role: "status",
+    "aria-live": "polite",
+  }, `Loading ${label}…`));
+  importFn().then((mod) => {
+    if (view() !== label) return;
+    mount(viewSlot, build(mod));
+  }).catch((err) => {
+    if (view() !== label) return;
+    const failed = bnAlert({ variant: "error" });
+    failed.content.textContent = `Couldn't load ${label}: ${String(err?.message || err)}`;
+    mount(viewSlot, failed.el);
+  });
+}
+
+/* Top-level shell — layout only. It must NOT restate #app's padding or
+   min-height: it is mounted inside #app, so anything it repeats is
+   applied twice (see the [data-bn-region="shell"] note in styles.css).
+   Keyboard-mode bottom padding rides on `body[data-route="play"] #app`,
+   kept in sync by the router effect above. */
+const container = h("div", { "data-bn-region": "shell" });
+container.append(header, viewSlot);
+
+/* Mount BEFORE registering the view-switching effect below. That effect
+   runs immediately on creation (it's a plain `effect()`, not deferred),
+   and — for a signed-out visitor whose route is /submit, or any other
+   guarded route — its first pass calls `authOpen.set(true)`/navigates
+   synchronously. authModal's own `effect()` reacts to that in the same
+   tick: if the modal weren't in the document yet, `dlg.showModal()`
+   would throw "not in a Document" (now guarded in auth-modal.js too,
+   but a still-detached dialog can only ever silently fail to open —
+   mounting first is what lets it actually show). */
+mount(root,
+  container,
+  createToast(toast),
+  helpModal,
+  authModal,
+);
+
+// Re-mount the active view when `view` changes. Effects own DOM lifetime;
+// each branch builds its component fresh, so we can safely tear down by
+// just replacing children on `viewSlot`.
+effect(() => {
+  const v = view();
+  if (v === "home") {
+    mount(viewSlot, createHome({
+      daily, error,
+      starting: playLoading,
+      onShareLast: null,
+      onSubmit: () => {
+        if (user()) router.navigate("/submit");
+        else authOpen.set(true);
+      },
+    }));
+  } else if (v === "submit") {
+    if (!user()) {
+      router.navigate("/");
+      authOpen.set(true);
+      return;
+    }
+    loadCategories();
+    mountLazy("submit", () => import("./views/submit.js"), (mod) => mod.createSubmit({
+      existingCategories: () => categories(),
+      onCancel: () => router.navigate("/"),
+      onSubmitted: () => router.navigate("/"),
+      toaster,
+    }));
+  } else if (v === "moderate") {
+    if (!(user()?.isModerator || user()?.isAdmin)) {
+      router.navigate("/");
+      return;
+    }
+    mountLazy("moderate", () => import("./views/moderate.js"), (mod) => mod.createModerate({
+      toaster,
+      goHome: () => router.navigate("/"),
+      onPreview: (id) => start(id),
+    }));
+  } else if (v === "admin") {
+    if (!user()?.isAdmin) {
+      router.navigate("/");
+      return;
+    }
+    mountLazy("admin", () => import("./views/admin.js"), (mod) => mod.createAdmin({
+      currentHandle: user()?.handle,
+      toaster,
+      goLobby: () => router.navigate("/"),
+    }));
+  } else if (v === "playing") {
+    if (!session()) {
+      if (playLoading()) {
+        mount(viewSlot, createHome({ daily, error, starting: playLoading, onShareLast: null, onSubmit: () => router.navigate("/submit") }));
+      } else {
+        mount(viewSlot);
+        leavePlay();
+      }
+      return;
+    }
+    mount(viewSlot, createPlay({
+      round,
+      toaster,
+      onResultRecorded: recordResultPersist,
+      onDailyUpdate: daily.set,
+      onShare: shareResult,
+      onMint: mintResult,
+      goLobby: finishRound,
+      retry: () => { const id = session()?.id; if (id) start(id); },
+    }));
+  } else if (v === "not-found") {
+    /* Same dead end hydrate.js renders: say where we are, offer the way
+       out, leave the wrong URL in the address bar so it can be noticed
+       and reported (T4-031). */
+    const alert = bnAlert({ variant: "warning" });
+    alert.content.textContent = `No page at ${window.location.pathname}.`;
+    mount(viewSlot, h("main", { "aria-labelledby": "gate-title", "data-bn-view": "gate" },
+      h("h1", { id: "gate-title", class: "sr-only" }, "Page not found"),
+      h("section", { "data-bn-region": "gate", "aria-live": "polite" },
+        h("p", { "data-bn-region": "sticky", "data-bn-variant": "narrow" }, "Page not found"),
+        alert.el,
+        h("a", { href: "/", "data-bn-action": "gate-home" }, "Play today's puzzle"),
+      ),
+    ));
+  }
+});

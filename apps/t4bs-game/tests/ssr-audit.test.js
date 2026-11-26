@@ -1,0 +1,370 @@
+/* End-to-end audit of every SSR route's rendered HTML. The existing
+   src/bn/hydrate.test.js covers the orchestration layer (renderPage
+   shapes the right context, lobby renders the right anchors, etc.);
+   this file is the spec-level companion: for every canonical route,
+   assert the emitted HTML is well-formed and accessible.
+
+   Each route is rendered with a representative context, then walked
+   through a small set of HTML/a11y rules. Failures point at the
+   specific defect (heading skip, button without name, input without
+   label, etc.) so a regression in a future template change surfaces
+   immediately rather than via a flaky Lighthouse run. */
+
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+import { renderPage } from "../src/bn/server/render.js";
+import { onRequestGet as shareLanding } from "../functions/s/[id].js";
+
+const ASSETS = { js: "/assets/bn-hydrate.js", css: ["/assets/app.css"] };
+
+function baseCtx(overrides = {}) {
+  return {
+    route: "home",
+    pathname: "/",
+    user: null,
+    error: null,
+    daily: null,
+    play: null,
+    submit: { existingCategories: [] },
+    moderate: { pending: null, forbidden: false },
+    admin: { elevated: null, currentHandle: null, forbidden: false },
+    ...overrides,
+  };
+}
+
+const ROUTE_FIXTURES = {
+  home: {
+    pathname: "/",
+    /* The page is today's puzzle: the audit fixture carries the server's
+       daily status and the board it resolved for it. */
+    daily: {
+      day: "2026-09-11", puzzleId: 3, category: "FOODS", submittedBy: "carol",
+      playedToday: false, outcome: null, score: null,
+      streak: 2, bestStreak: 4, daysPlayed: 9, msUntilNext: 3600000,
+    },
+    play: {
+      id: 3, category: "FOODS", submittedBy: "carol",
+      words: [4, 3], totalLetters: 7, par: 60, attemptsMax: [4, 3],
+      anchors: [{ wi: 0, li: 0, letter: "F" }],
+    },
+  },
+  play: {
+    pathname: "/play",
+    play: {
+      id: 7,
+      category: "CAPITALS",
+      submittedBy: "dave",
+      words: [3, 4], attemptsMax: [3, 4],
+      anchors: [{ wi: 0, li: 0, letter: "P" }],
+      totalLetters: 7,
+    },
+  },
+  submit: {
+    pathname: "/submit",
+    submit: { existingCategories: ["ANIMALS", "FOODS"] },
+  },
+  moderate: {
+    pathname: "/moderate",
+    user: { handle: "warren", isModerator: true },
+    moderate: {
+      pending: [{ id: 4, category: "X", phrase: "TEST PHRASE", submittedBy: "alice" }],
+      catalogue: [{ id: 1, category: "ANIMALS", phrase: "A BIRD IN THE HAND", submittedBy: "house" }],
+      forbidden: false,
+    },
+  },
+  admin: {
+    pathname: "/admin",
+    user: { handle: "warren", isAdmin: true },
+    admin: {
+      elevated: [{ handle: "alice", role: "moderator" }],
+      currentHandle: "warren",
+      forbidden: false,
+    },
+  },
+  "not-found": {
+    pathname: "/whatever",
+  },
+};
+
+const ROUTES = Object.entries(ROUTE_FIXTURES).map(([route, fixture]) => ({ route, ...fixture }));
+
+/* ── Audit primitives — small enough that the assertion message names
+   what failed without the test having to repeat the rule. ── */
+
+function ariaLabelledbyTargetExists(html) {
+  const m = html.match(/<main[^>]*aria-labelledby="([^"]+)"/);
+  if (!m) return { ok: false, reason: "main missing aria-labelledby" };
+  const id = m[1];
+  if (!new RegExp(`id="${id}"`).test(html)) {
+    return { ok: false, reason: `main aria-labelledby="${id}" but no element with that id` };
+  }
+  return { ok: true };
+}
+
+function headingOrderMonotonic(html) {
+  const headings = [...html.matchAll(/<h([1-6])\b/g)].map(m => Number(m[1]));
+  let prev = 0;
+  for (const lv of headings) {
+    if (lv > prev + 1 && prev !== 0) {
+      return { ok: false, reason: `heading skip: ${headings.join("→")}` };
+    }
+    prev = lv;
+  }
+  return { ok: true, headings };
+}
+
+function anchorsHaveHrefs(html) {
+  /* Require word boundary after `<a` so we don't false-positive on
+     `<article>`. */
+  const m = html.match(/<a\s+(?![^>]*href=)[^>]*>/);
+  if (m) return { ok: false, reason: `<a> without href: ${m[0].slice(0, 80)}` };
+  return { ok: true };
+}
+
+function buttonsInsideFormsHaveType(html) {
+  /* HTML default button type is "submit" — implicit-submit footguns
+     are a perennial PR#-on-the-form regression. */
+  const formStart = html.indexOf("<form");
+  const formEnd   = html.indexOf("</form>");
+  if (formStart < 0 || formEnd <= formStart) return { ok: true };
+  const formContent = html.slice(formStart, formEnd);
+  const m = formContent.match(/<button(?![^>]*\btype=)[^>]*>/);
+  if (m) return { ok: false, reason: `button without type inside <form>: ${m[0].slice(0, 80)}` };
+  return { ok: true };
+}
+
+function inputsHaveLabels(html) {
+  const issues = [];
+  for (const m of html.matchAll(/<input[^>]*\bid="([^"]+)"[^>]*>/g)) {
+    const id = m[1];
+    const inputTag = m[0];
+    /* Skip non-textual inputs (hidden / submit etc.) — only labelable
+       controls need an associated label. */
+    if (/\btype="hidden"|\btype="submit"|\btype="reset"|\btype="button"/.test(inputTag)) continue;
+    const hasLabelFor = new RegExp(`<label[^>]*for="${id}"`).test(html);
+    const hasAriaLabel = /\baria-label=|\baria-labelledby=/.test(inputTag);
+    if (!hasLabelFor && !hasAriaLabel) issues.push(`input id="${id}" missing label`);
+  }
+  return issues.length ? { ok: false, reason: issues.join("; ") } : { ok: true };
+}
+
+function buttonsHaveAccessibleName(html) {
+  const issues = [];
+  /* Greedy-but-non-greedy match across nested tags so wrapper <span>s
+     inside the button still reveal text content. */
+  const re = /<button[^>]*>([\s\S]*?)<\/button>/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const tag = m[0];
+    const innerText = m[1].replace(/<[^>]+>/g, "").trim();
+    const hasAriaName = /\baria-label="[^"]+"|\baria-labelledby="[^"]+"/.test(tag);
+    if (!innerText && !hasAriaName) issues.push(`button no name: ${tag.slice(0, 80)}`);
+  }
+  return issues.length ? { ok: false, reason: issues.join("; ") } : { ok: true };
+}
+
+/* ── Per-route suite ── */
+
+describe("SSR audit — every route emits accessible, spec-conformant HTML", () => {
+  for (const ctx of ROUTES) {
+    describe(`route=${ctx.route}`, () => {
+      const html = renderPage(baseCtx(ctx), ASSETS);
+
+      it("has a doctype and <html lang>", () => {
+        assert.ok(html.startsWith("<!DOCTYPE html>"), "missing doctype");
+        assert.match(html, /<html[^>]*\blang=/);
+      });
+
+      it("has a <title>, viewport meta, and rel=canonical", () => {
+        const title = (html.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
+        assert.ok(title.length >= 5, `weak <title>: "${title}"`);
+        assert.match(html, /name="viewport"/);
+        assert.match(html, /rel="canonical"/);
+      });
+
+      it("has a noscript fallback inside the body", () => {
+        const body = (html.match(/<body[^>]*>([\s\S]*)<\/body>/) || [])[1] || "";
+        assert.match(body, /<noscript>/i, "no <noscript> in body");
+      });
+
+      it("main aria-labelledby points at a real id", () => {
+        const r = ariaLabelledbyTargetExists(html);
+        assert.ok(r.ok, r.reason);
+      });
+
+      it("heading order is monotonic (no skipped levels)", () => {
+        const r = headingOrderMonotonic(html);
+        assert.ok(r.ok, r.reason);
+      });
+
+      it("every <a> has an href", () => {
+        const r = anchorsHaveHrefs(html);
+        assert.ok(r.ok, r.reason);
+      });
+
+      it("every <button> inside a <form> has an explicit type", () => {
+        const r = buttonsInsideFormsHaveType(html);
+        assert.ok(r.ok, r.reason);
+      });
+
+      it("every text-style <input id> has an associated <label for> or aria-label", () => {
+        const r = inputsHaveLabels(html);
+        assert.ok(r.ok, r.reason);
+      });
+
+      it("every <button> has an accessible name (text content or aria-label)", () => {
+        const r = buttonsHaveAccessibleName(html);
+        assert.ok(r.ok, r.reason);
+      });
+    });
+  }
+});
+
+/* ── Defensive shaping — the bug that prompted this whole sweep. ── */
+
+describe("renderPage tolerates partial play contexts", () => {
+  /* shapePlay() used to throw "play.anchors is not iterable" when the
+     incoming play row was missing either field. Adding `|| []` guards
+     makes the SSR robust to malformed input — fail open with an empty
+     grid rather than 500 the whole page. */
+
+  it("does not throw when play.anchors is null", () => {
+    const ctx = baseCtx({
+      route: "play",
+      pathname: "/play",
+      play: { id: 1, category: "X", submittedBy: "a", words: [3], anchors: null, totalLetters: 3 },
+    });
+    assert.doesNotThrow(() => renderPage(ctx, ASSETS));
+  });
+
+  it("does not throw when play.anchors is undefined", () => {
+    const ctx = baseCtx({
+      route: "play",
+      pathname: "/play",
+      play: { id: 1, category: "X", submittedBy: "a", words: [3], totalLetters: 3 },
+    });
+    assert.doesNotThrow(() => renderPage(ctx, ASSETS));
+  });
+
+  it("does not throw when play.words is null", () => {
+    const ctx = baseCtx({
+      route: "play",
+      pathname: "/play",
+      play: { id: 1, category: "X", submittedBy: "a", words: null, anchors: [], totalLetters: 0 },
+    });
+    assert.doesNotThrow(() => renderPage(ctx, ASSETS));
+  });
+});
+
+/* The share landing's not-found copy (T4-051). Share cards never expire
+   — no expiry column, no DELETE, no scheduled handler — so a 404 on
+   /s/{id} can only mean an id that was never minted, i.e. a link that
+   was mangled on the way. The page used to say the link had "expired",
+   which told the recipient not to bother asking for it again. */
+describe("share landing copy — functions/s/[id].js", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(join(here, "../functions/s/[id].js"), "utf8");
+
+  it("never tells the recipient a share link expired", () => {
+    assert.equal(/expired/i.test(src), false, "share links cannot expire — do not say they did");
+  });
+
+  it("still offers the way out", () => {
+    assert.ok(src.includes(`<a href="/">Play today's puzzle</a>`));
+  });
+
+  /* The client shares this URL and NOTHING else — no fetched PNG, no
+     `File` on the share sheet (see shareResult in src/main.js and
+     src/bn/client/hydrate.js). That only pays off if this page hands a
+     crawler everything it needs to draw the card itself. Every URL in
+     the meta must be absolute on the public origin: iMessage, Slack and
+     Twitter resolve og:image against nothing, so a relative path
+     unfurls as a blank card and the recipient gets a naked link. */
+  const CARD = {
+    id: "k5n4zwar",
+    sessionId: "s1",
+    userId: null,
+    puzzleId: 7,
+    category: "Proverbs",
+    score: 87,
+    won: 1,
+    grid: "\u{1F7E9}\u{1F7E8}",
+    createdAt: "2026-09-15T00:00:00Z",
+  };
+  const ENV = {
+    PUBLIC_ORIGIN: "https://t4bs.com",
+    DB: { prepare: () => ({ bind: () => ({ first: async () => ({ ...CARD }) }) }) },
+  };
+
+  const landing = async () => {
+    const res = await shareLanding({
+      request: new Request("https://t4bs.com/s/k5n4zwar"),
+      env: ENV,
+      params: { id: "k5n4zwar" },
+    });
+    return await res.text();
+  };
+
+  const meta = (html, attr, name) => {
+    const m = html.match(new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`));
+    return m ? m[1] : null;
+  };
+  const og = (html, name) => meta(html, "property", name);
+  const tw = (html, name) => meta(html, "name", name);
+
+  it("points og:image at the card PNG, absolute, with its dimensions", async () => {
+    const html = await landing();
+    assert.equal(og(html, "og:image"), "https://t4bs.com/og/score/k5n4zwar.png");
+    assert.equal(og(html, "og:image:width"), "1200");
+    assert.equal(og(html, "og:image:height"), "630");
+    assert.equal(og(html, "og:image:secure_url"), "https://t4bs.com/og/score/k5n4zwar.png");
+  });
+
+  it("carries a per-card og:title and og:description", async () => {
+    const html = await landing();
+    assert.match(og(html, "og:title"), /Proverbs/);
+    assert.match(og(html, "og:description"), /Proverbs/);
+    assert.match(og(html, "og:description"), /87/);
+  });
+
+  it("asks for the big Twitter card, with its own image", async () => {
+    const html = await landing();
+    assert.equal(tw(html, "twitter:card"), "summary_large_image");
+    assert.equal(tw(html, "twitter:image"), "https://t4bs.com/og/score/k5n4zwar.png");
+    assert.ok(tw(html, "twitter:title"), "twitter:title must be present");
+  });
+
+  it("declares og:url as the absolute /s/{id} the client shares", async () => {
+    const html = await landing();
+    assert.equal(og(html, "og:url"), "https://t4bs.com/s/k5n4zwar");
+  });
+
+  it("leaves no relative URL in any og:/twitter: tag", async () => {
+    const html = await landing();
+    const urlish = [...html.matchAll(/<meta (?:property|name)="((?:og|twitter):[a-z_:]*(?:image|url)[a-z_:]*)" content="([^"]*)"/g)];
+    assert.ok(urlish.length >= 4, "expected the og/twitter image + url tags to be emitted");
+    for (const [, name, value] of urlish) {
+      // :alt is prose, :type a MIME type, :width/:height plain integers.
+      if (/:(alt|type|width|height)$/.test(name)) continue;
+      assert.match(
+        value, /^https:\/\/t4bs\.com\//,
+        `${name} must be absolute on the public origin — a crawler has no base URL to resolve "${value}" against`,
+      );
+    }
+  });
+
+  it("honours PUBLIC_ORIGIN rather than hard-coding the domain", async () => {
+    const res = await shareLanding({
+      request: new Request("https://staging.t4bs.com/s/k5n4zwar"),
+      env: { ...ENV, PUBLIC_ORIGIN: "https://staging.t4bs.com" },
+      params: { id: "k5n4zwar" },
+    });
+    const html = await res.text();
+    assert.equal(og(html, "og:image"), "https://staging.t4bs.com/og/score/k5n4zwar.png");
+    assert.equal(og(html, "og:url"), "https://staging.t4bs.com/s/k5n4zwar");
+  });
+});

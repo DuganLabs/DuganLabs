@@ -1,0 +1,60 @@
+name: deploy
+
+# Thin caller: delegates to DuganLabs org-wide reusable workflows.
+# Cloudflare credentials live in Doppler; the caller passes the project id.
+#
+# Reusables (DuganLabs/.github @v1):
+#   .github/workflows/cf-deploy.yml   — build + wrangler pages deploy
+#   .github/workflows/d1-migrate.yml  — wrangler d1 migrations apply (idempotent)
+#
+# seed (inline): applies seed.sql after the migrations. Every statement in
+# it is INSERT OR IGNORE on an explicit id, so re-running on every deploy is
+# a no-op for rows already present and the only way a new catalogue line
+# (shared/catalogue.js) reaches production — the reusable has no hook for
+# it and a regenerated file cannot be an append-only migration.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: DuganLabs/.github/.github/workflows/cf-deploy.yml@v3
+    with:
+      project-name: t4bs
+      package-manager: npm
+      node-version: "22"
+      branch: main
+      environment: production
+      environment-url: https://t4bs.com
+    secrets:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  migrate:
+    needs: deploy
+    if: github.event_name == 'push'
+    uses: DuganLabs/.github/.github/workflows/d1-migrate.yml@v3
+    with:
+      database: tabs-db
+      package-manager: npm
+      node-version: "22"
+    secrets:
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  seed:
+    needs: migrate
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - uses: dopplerhq/cli-action@v3
+      - name: Apply seed.sql (idempotent)
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: doppler run -- npx --yes wrangler@4 d1 execute tabs-db --remote --file=./seed.sql

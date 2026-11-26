@@ -1,0 +1,1243 @@
+/* T4BS — BaseNative shell stylesheet.
+   Axiom: zero inline style. Every visual rule lives here.
+   Font strategy: display=swap at source + @font-face fallbacks ensure
+   text is always readable while custom fonts load. Improves LCP. */
+
+/* Layer order: reset → app → keyboard.
+   Layered rules from @basenative/keyboard (loaded after this file in
+   main.js) need to override the universal reset, so the reset goes in
+   its own layer where it can be beaten by anything in `app` or
+   `keyboard`. Without this, `* { margin: 0 }` was killing the
+   `margin: 0 auto` on `[data-bn="kb-rows"]` and the on-screen keyboard
+   was not centering on wide viewports. */
+@layer reset, app, keyboard;
+
+/* Fallback font stacks with swap display for FOUT resilience */
+@font-face {
+  font-family: 'Bebas Neue';
+  src: local('Bebas Neue'), local('BebasNeue');
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: local('DM Sans'), local('DMSans');
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: local('DM Sans'), local('DMSans');
+  font-display: swap;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter');
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter');
+  font-display: swap;
+  font-weight: 600;
+}
+
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  ul, ol, menu { list-style: none; }
+}
+html, body { background: #0C0B09; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+html, body, #app { min-height: 100dvh; }
+body { font-family: 'DM Sans', sans-serif; color: #F0EDE4; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+:focus-visible { outline: 2px solid #FFD700; outline-offset: 2px; border-radius: 4px; }
+
+/* PENDING / SKELETON / GATE — the three things a view can show instead
+   of itself, all built from @basenative/components primitives
+   (renderSpinner, renderSkeleton, renderAlert) in src/lib/dom.js rather
+   than hand-rolled here. Only placement and brand type live in T4BS.
+
+   These exist because "nothing yet" used to render as a bare line of
+   text, or as nothing at all: a slow /submit chunk left a form-shaped
+   hole where the category picker belonged, and a guarded route
+   redirected before it could say why. */
+[data-bn-region="pending"] {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 18px 0; color: #9A9590;
+  font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase;
+}
+[data-bn-region="skeleton"] {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; max-width: 480px; margin: 0 auto;
+}
+[data-bn-region="gate"] {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: 100%; max-width: 480px; margin: 24px auto 0; text-align: center;
+}
+[data-bn-region="gate"] [data-bn-action="gate-lobby"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px;
+  color: #E8920A; border-bottom: 1px solid rgba(232,146,10,.4); padding-bottom: 2px;
+}
+
+/* SHELL — top-level wrapper added imperatively by main.js / hydrate.js
+   INSIDE the SSR-rendered <div id="app">.
+
+   It used to restate #app's own box — min-height, gradient, and
+   `padding: max(safe-top,16px) 14px calc(40px + safe-bottom)`. Nested
+   inside #app, every one of those applied twice, so the instant the SPA
+   mounted, the whole page inset by another 14px per side and 16px from
+   the top. Measured at 390x844 on t4bs.com: the header went from
+   362x48 at (14,20) on the SSR paint to 334x48 at (28,36) once
+   hydration committed — a 16px vertical and 28px horizontal jump on
+   every single load, and the "the header keeps resizing" report.
+
+   The shell now contributes layout only: it stretches to #app's content
+   box and re-centres its children, so the SSR tree (#app > header,
+   #app > main) and the hydrated tree (#app > shell > header, ...) put
+   the header in exactly the same box. The gradient and min-height come
+   from <body>/#app, which paint behind it either way.
+
+   There is no keyboard gutter any more, on the shell or anywhere: the
+   keyboard sits in flow under the board, sticky to the bottom edge (see
+   the KEYBOARD rule), so nothing has to be kept numerically in step. */
+[data-bn-region="shell"] {
+  --rc: #E8920A;
+  --rg: 232,146,10;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* VIEW SLOT — the <div> the SPA swaps the active view into. It exists
+   only in the hydrated tree: SSR renders <main> as a direct child of
+   #app, so `main { width: 100% }` resolves against #app's content box.
+
+   The hydrated tree inserts shell > view-slot between the two, and an
+   unstyled <div> flex item under `align-items: center` is shrink-to-fit
+   — so `width: 100%` on the view resolved against the view's OWN
+   max-content width instead of the page's. The views that declare
+   `width: 100%; max-width: 540px` silently got whatever their widest
+   line of text happened to need.
+
+   Measured in Chromium before this rule:
+
+     route      viewport 390   viewport 1280
+     /moderate  main 252px     main 252px
+     /          main 362px     main 480px
+
+   i.e. the moderation queue was 252px wide on a 390px phone and STILL
+   252px on a 1280px desktop — the "card narrower than the screen"
+   report. The lobby escaped it by accident: its rules-note paragraph is
+   long enough that max-content already filled the line.
+
+   Stretching the slot and re-centring its children puts <main> in the
+   same box in both trees, which is the same contract the shell rule
+   above exists to keep. Like the shell, it contributes layout only — no
+   padding, margin, border or min-height, all of which #app owns. */
+[data-bn-region="view-slot"] {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* STICKY NOTE — yellow rotated paper visual reused as the page-title
+   marker on lobby, submit, moderate, admin, and play. The "narrow"
+   variant widens the cap from 320px to 380px for the lobby tagline
+   ("One subject. One phrase. No mercy."). The play view's category
+   marker uses [data-bn-region="play-sticky"] and shares this rule. */
+[data-bn-region="sticky"],
+main[data-bn-view] [data-bn-region="play-sticky"] {
+  background: #F5E06A; color: #1E1600; font-family: 'Caveat', cursive;
+  font-size: 21px; font-weight: 700; padding: 10px 26px 12px;
+  border-radius: 2px; transform: rotate(-1.4deg);
+  box-shadow: 2px 4px 16px rgba(0,0,0,.55);
+  margin-bottom: 10px; text-align: center; line-height: 1.2;
+  max-width: 320px; position: relative;
+}
+[data-bn-region="sticky"][data-bn-variant="narrow"] { max-width: 380px; }
+
+/* TOAST — attribute-driven. Markup is
+   <p data-bn-region="toast" data-tone="good|bad|great|cascade"> from
+   src/components/toast.js. */
+[data-bn-region="toast"] {
+  position: fixed; top: calc(72px + env(safe-area-inset-top,0px)); left: 50%;
+  transform: translateX(-50%);
+  border-radius: 100px; padding: 8px 24px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px;
+  z-index: 90; white-space: nowrap; pointer-events: none;
+}
+[data-bn-region="toast"][data-tone="good"]    { background: #1E1C16; color: #E8920A; border: 1px solid rgba(232,146,10,.4); }
+[data-bn-region="toast"][data-tone="bad"]     { background: #1E1518; color: #E84444; border: 1px solid rgba(232,68,68,.4); }
+[data-bn-region="toast"][data-tone="great"]   { background: #1E1C10; color: #FFD700; border: 1px solid rgba(255,215,0,.5); box-shadow: 0 0 28px rgba(255,215,0,.2); }
+[data-bn-region="toast"][data-tone="cascade"] { background: #121E17; color: #4EAF7C; border: 1px solid rgba(78,175,124,.5); }
+
+/* MODAL CARD — every dialog in T4BS (help, auth, end-of-round) is now
+   @basenative/components' renderDialog() wrapping a renderCard()
+   <article data-bn="card">. The dialog element is the full-viewport
+   scrim (see the `dialog[open]` rule near the bottom of this file) and
+   the card is the thing it centres.
+
+   Surface, border, radius and shadow all come from the package's own
+   [data-bn="card"] / [data-bn="dialog"] rules reading theme.css's
+   --bn-* mapping. What's left here is the two things those tokens
+   can't carry — T4BS's modal width and its centred text — plus one
+   correction: [data-bn="card"] paints itself var(--bn-color-surface),
+   which in T4BS IS the page background (#0C0B09), so a card would
+   dissolve into the page. Point it at the raised surface, the same
+   #1C1916 T4BS's modal cards have always used. */
+[data-bn="card"] {
+  background: var(--bn-color-surface-raised);
+  /* Every card in T4BS is a modal card, so it takes the modal step of
+     the radius ladder (14px) rather than the container step (12px) the
+     package defaults a card to. */
+  border-radius: var(--bn-radius-modal);
+  width: min(420px, 96vw); text-align: center;
+  max-height: 92vh; overflow: auto;
+}
+[data-bn="card-body"] { padding: 24px 22px; }
+
+/* Card title — <h2 data-bn-region="title"> with optional data-tone for
+   accent color. */
+[data-bn-region="title"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 4px;
+  line-height: 1; margin-bottom: 2px; color: #F0EDE4; font-weight: 400;
+}
+[data-bn-region="title"][data-tone="win"]  { color: #E8920A; }
+[data-bn-region="title"][data-tone="lose"] { color: #E84444; }
+[data-bn-region="title"][data-tone="help"] { color: #E8920A; font-size: 32px; }
+[data-bn-region="title"][data-tone="auth"] { color: #E8920A; }
+
+/* Card subtitle — small muted line under the title. */
+[data-bn-region="subtitle"] { font-size: 13px; color: #9A9590; margin-bottom: 18px; }
+
+/* End-of-round score readout — large display number + small "points" label. */
+[data-bn-region="end-score"] {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: #F0EDE4;
+  line-height: 1; margin-bottom: 2px;
+}
+[data-bn-region="score-label"] {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+  color: #9A9590; margin-bottom: 14px;
+}
+
+/* Reveal — the answer phrase shown in the end-of-round card. */
+[data-bn-region="reveal"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px;
+  color: #E8920A; margin-bottom: 6px; line-height: 1.2;
+}
+
+/* Credit / status — small uppercase muted line. Used for "submitted by"
+   in the end-of-round card and for "loading…" status messages
+   throughout. */
+[data-bn-region="credit"],
+[data-bn-region="status"] {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.8px;
+  color: #9A9590; margin-bottom: 18px;
+}
+[data-bn-region="credit"] strong { color: #7EC49A; font-weight: 400; }
+
+/* Help-modal body — attribute-driven. Markup is
+   <div data-bn-region="help-body"> from src/components/help-modal.js. */
+[data-bn-region="help-body"] { text-align: left; font-size: 13px; line-height: 1.5; color: #C0BBB5; margin: 8px 0 18px; }
+[data-bn-region="help-body"] p { margin-bottom: 10px; }
+[data-bn-region="help-body"] p:last-child { margin-bottom: 0; }
+[data-bn-region="help-body"] b { color: #F0EDE4; }
+[data-bn-region="help-body"] b[data-tone="green"]  { color: #4EAF7C; }
+[data-bn-region="help-body"] b[data-tone="yellow"] { color: #FFD700; }
+[data-bn-region="help-body"] b[data-tone="red"]    { color: #FF4D4D; }
+
+/* SHARED BUTTONS — markup now comes from @basenative/components'
+   renderButton(), i.e. <button data-bn="button" data-variant="primary|
+   secondary">. Colour, radius, height, focus ring and disabled state
+   all come from the package's own [data-bn="button"] rules reading the
+   --bn-* tokens theme.css maps onto T4BS's palette; what remains here
+   is the brand geometry those tokens can't express — Bebas Neue at 17px
+   with 2px tracking, full-bleed width, and the 9px rhythm between
+   stacked buttons.
+
+   `data-bn-variant="back"` adds the narrower max-width / extra top
+   margin for the "← Back" buttons in moderate / admin views. */
+[data-bn="button"] {
+  display: flex; inline-size: 100%;
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px;
+  margin-block-end: 9px;
+}
+[data-bn="button"]:last-child { margin-block-end: 0; }
+/* The "leave this view" control at the foot of the moderation queue and
+   the admin screen.
+
+   It used to read "← Back" with data-bn-variant="back", which described
+   a history action it has never performed: it navigates to the lobby,
+   a different view, and does it whether or not the lobby is where the
+   user came from. A moderator who reached the queue from the header's
+   MOD button read "← Back" as "undo that navigation" and instead landed
+   on the shelf of approved puzzles. The label now names the
+   destination, the arrow points forward, and the attribute is
+   data-bn-variant="leave" so the old name can't quietly come back.
+
+   Styled for both trees: the client renders @basenative/components'
+   <button data-bn="button">, the SSR templates render a plain <a> (the
+   no-JS surface), and both get the same box. */
+[data-bn="button"][data-bn-variant="leave"],
+a[data-bn-variant="leave"] {
+  /* Stays narrower than the content column on purpose — it is the way
+     out, not the job. 300px was set against a 252px-wide <main>, so it
+     was effectively full-bleed and read as a primary action; against
+     the real column it can afford to be a little wider and still sit
+     clearly below the work. */
+  max-inline-size: 360px; margin-block-start: 18px;
+}
+a[data-bn-variant="leave"] {
+  display: flex; align-items: center; justify-content: center;
+  inline-size: 100%; min-block-size: 44px; padding: 0 16px;
+  border: 1px solid var(--bn-color-border, #2E2C28); border-radius: 8px;
+  color: #F0EDE4; text-decoration: none;
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px;
+}
+a[data-bn-variant="leave"]:hover { border-color: #E8920A; color: #E8920A; }
+
+/* One standing correction, because upstream's default assumes a light
+   theme: the secondary variant paints itself var(--bn-color-surface),
+   which in T4BS IS the page background (#0C0B09), so the button would
+   dissolve into the page and leave only its border. Point it at the
+   raised surface — the same #1C1916 T4BS's secondary buttons have
+   always used. */
+[data-bn="button"][data-variant="secondary"] { background: var(--bn-color-surface-raised); }
+
+/* Disabled buttons, T4BS's reading of "unavailable". The package already
+   dims to opacity .5, sets cursor: not-allowed and suppresses the hover
+   restyle (every variant's hover is :hover:not(:disabled)), so the only
+   thing left here is the brand part: a slightly deeper fade plus a
+   partial grayscale, which keeps the amber recognisable while making it
+   unmistakably inert. Added because a disabled primary rendered at full
+   strength — "SUBMIT FOR REVIEW" looked live while it silently refused
+   clicks, most visible now that the submit form blocks until at least
+   one starting letter is picked. */
+[data-bn="button"]:disabled { opacity: .4; filter: grayscale(.5); }
+
+/* SHARED FORMS — markup is <form data-bn-region="form"> with
+   <p data-bn-region="field"> wrappers. The flabel attribute targets
+   <span> stand-ins for <label> when there's no associated control
+   (e.g. the "Preview" tile-strip label in submit.js). Real <label>
+   elements inside the form get the same treatment via the :is() group. */
+[data-bn-region="form"] { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; text-align: left; }
+[data-bn-region="field"] { display: flex; flex-direction: column; gap: 5px; }
+[data-bn-region="form"] :is(label, [data-bn-region="flabel"]) {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #9A9590;
+}
+[data-bn-region="input"] {
+  background: #0F0E0C; border: 1.5px solid #2A2724; border-radius: 6px;
+  color: #F0EDE4; font-family: 'DM Sans', sans-serif; font-size: 15px;
+  padding: 11px 12px; outline: none; min-height: 44px; width: 100%;
+  transition: border-color .15s;
+}
+[data-bn-region="input"]:focus { border-color: #E8920A; }
+[data-bn-region="hint"] { font-size: 10px; color: #A09B95; letter-spacing: .5px; }
+
+/* Error output — used standalone (lobby) and inside forms (submit/auth).
+   The box itself is @basenative/components' [data-bn="alert"]
+   [data-variant="error"], whose background / border / text colour all
+   resolve through the --bn-color-error-bg | -border | -text tokens
+   theme.css points at T4BS's own error red — so the eight declarations
+   that used to restate that here are gone. What is left is the brand
+   typography those tokens can't carry. The lobby variant under
+   main[data-bn-view="home"] adds the extra padding and width caps. */
+[data-bn="alert"] {
+  font-size: 11px; letter-spacing: .5px; padding: 8px 10px;
+}
+
+/* TAGLINE — small uppercase muted subheading. Used under the sticky
+   note on lobby / submit / moderate / admin headers. */
+[data-bn-region="tagline"] {
+  font-size: 11px; color: #9A9590; letter-spacing: 1.2px; text-transform: uppercase;
+  margin-bottom: 18px; text-align: center;
+}
+
+/* MODERATION & ADMIN — markup from @basenative/admin/components.
+   The bn-admin-* classes are produced by renderAdminQueueList +
+   renderAdminUserList; we theme them to match the t4bs palette. */
+.bn-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+.bn-admin-empty { color: #988570; font-size: 13px; padding: 8px 0; }
+.bn-admin-section {
+  font-size: 11px; letter-spacing: 1.5px; color: #988570;
+  text-transform: uppercase; margin-top: 10px; margin-bottom: 6px;
+}
+
+/* MODERATION QUEUE — markup is @basenative/admin's
+   renderAdminQueueList(); everything below is T4BS skin over it.
+
+   Reported as "this screen doesn't need to be so small and tightly
+   compacted": one item, a wall of empty space under it, and a card
+   narrower than the phone. Two separate causes, fixed in two places.
+
+   The width was never a queue problem — <main> itself was being
+   shrink-to-fit at 252px on every viewport; see the
+   [data-bn-region="view-slot"] note above. With that fixed the queue
+   reaches its 540px cap and fills a 390px phone edge to edge.
+
+   What's left is density, and it was genuinely too tight for the job.
+   A moderator is reading a phrase and deciding yes/no, so the phrase is
+   the thing that has to be legible — it was 18px, smaller than the
+   lobby's own category labels. The attribution was 10px, below what
+   anyone reads comfortably on a phone and under the 11px floor the rest
+   of this sheet keeps. Type and padding both go up:
+
+     item padding   14px → 18px      gap 8px → 12px
+     category       15px → 17px
+     submitted-by   10px → 12px
+     phrase         18px → 26px
+     decide buttons 42px → 48px tall, 15px label
+
+   The decision buttons also stop at 42px high, under the 44px minimum
+   tap target the rest of the app keeps, so they go to 48px. */
+.bn-admin-queue {
+  list-style: none; padding: 0; margin: 0;
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.bn-admin-queue__item {
+  background: #161412; border: 1.5px solid #222; border-radius: 12px;
+  padding: 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.bn-admin-queue__meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.bn-admin-queue__cat  { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px; color: #F0EDE4; }
+.bn-admin-queue__by   { font-size: 12px; letter-spacing: 1.2px; color: #9A9590; text-transform: uppercase; white-space: nowrap; }
+.bn-admin-queue__phrase {
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px;
+  color: #E8920A; line-height: 1.15; word-break: break-word;
+}
+.bn-admin-queue__actions { display: flex; gap: 10px; }
+.bn-admin-queue__actions .bn-admin-btn { min-height: 48px; font-size: 15px; }
+
+.bn-admin { width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 14px; }
+.bn-admin-search-wrap { display: block; }
+.bn-admin-search {
+  width: 100%; padding: 12px 14px; border-radius: 8px;
+  background: #100F0D; color: #F0EDE4; border: 1.5px solid #2A2724;
+  font-size: 15px; letter-spacing: .5px; outline: none; min-height: 44px;
+}
+.bn-admin-search:focus { border-color: #E8920A; box-shadow: 0 0 0 3px rgba(232,146,10,.15); }
+
+.bn-admin-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: #161412; border: 1.5px solid #222; border-radius: 8px;
+  min-height: 52px; margin-bottom: 8px;
+}
+.bn-admin-row__handle { flex: 1; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.5px; color: #F0EDE4; }
+.bn-admin-row__handle small { font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #988570; margin-left: 6px; }
+.bn-admin-row__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.bn-admin-role {
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+  background: #1E1C18; color: #988570; border: 1px solid #2A2724;
+}
+.bn-admin-role--admin     { background: rgba(232,146,10,.12); color: #E8920A; border-color: rgba(232,146,10,.4); }
+.bn-admin-role--moderator { background: rgba(78,175,124,.12); color: #4EAF7C; border-color: rgba(78,175,124,.4); }
+
+.bn-admin-btn {
+  border-radius: 6px; cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; letter-spacing: 1.2px;
+  background: #1E1C18; color: #988570; border: 1px solid #2A2724;
+  padding: 7px 10px; font-size: 11px; min-height: 32px;
+}
+.bn-admin-btn:hover { color: #F0EDE4; border-color: #E8920A; }
+.bn-admin-btn:disabled { opacity: .45; cursor: default; }
+.bn-admin-btn--danger:hover { color: #FF6E6E; border-color: #FF6E6E; }
+.bn-admin-btn--ok {
+  flex: 1; min-height: 42px; padding: 10px; font-size: 13px; letter-spacing: 1.5px;
+  background: #4EAF7C; color: #0A1F12; border: none;
+}
+.bn-admin-btn--no {
+  flex: 1; min-height: 42px; padding: 10px; font-size: 13px; letter-spacing: 1.5px;
+  background: #2C2925; color: #FF6E6E; border: 1px solid rgba(255,77,77,.3);
+}
+
+/* @basenative/keyboard theming.
+
+   Every state color below is paired with its OWN -fg token, not left
+   to inherit the package default. That default pairing is exactly how
+   the ENTER key bug happened (see the comment below) and how two more
+   were found sitting right next to it, both silently broken by the
+   same "override the bg token, forget the fg token" shape:
+     green:  white (#FFFFFF, package default --kb-key-green-fg) on the
+             T4BS green #4EAF7C below → 2.71:1, fails AA (4.5:1).
+     absent: #5A5550 on #1E1C18 (both package defaults — untouched by
+             T4BS, so this one shipped broken from day one) → 2.31:1,
+             fails AA. The package's own styles.css header comment
+             claims 5.0:1 for this exact pairing; recomputing the WCAG
+             relative-luminance formula by hand puts it at 2.31:1 — the
+             comment was never actually checked against the formula.
+   Every ratio here was computed from the WCAG 2.x relative-luminance
+   formula (same formula a browser's own contrast checker uses), not
+   eyeballed — see the getKeyStateColors() test in game.test.js for a
+   plain-JS re-implementation that keeps these numbers honest. */
+.bn-kb {
+  --kb-bg: #0C0B09;
+  --kb-key-bg: #3A3530;
+  --kb-key-fg: #F0EDE4;
+  --kb-key-active: #5A5550;
+
+  /* Every one of these three labels is scoped to the ACTIVE word — the
+     keyboard makes no claim about any other word (src/lib/game.js
+     computeKeyStatus). */
+
+  /* green ("placed in this word") — #0A1F12 on #4EAF7C = 6.36:1. Reuses the
+     same dark-green-on-green pairing .bn-admin-btn--ok already uses,
+     rather than inventing a new value. */
+  --kb-key-green: #4EAF7C;
+  --kb-key-green-fg: #0A1F12;
+
+  /* yellow ("in this word, not placed yet") — package
+     default fg #1F1700 already cleared AA against this bg (8.82:1);
+     restated explicitly here so it's paired the same way as the other
+     three states instead of relying on nobody re-overriding it later. */
+  --kb-key-yellow: #D4B445;
+  --kb-key-yellow-fg: #1F1700;
+
+  /* absent ("not in this word", and the key is disabled) — #988570 on
+     #1E1C18 = 4.80:1. Reuses
+     --bn-color-text-muted's value (theme.css) instead of a one-off. */
+  --kb-key-absent: #1E1C18;
+  --kb-key-absent-fg: #988570;
+
+  --kb-key-radius: 5px;
+  --kb-min-tap: 44px;
+}
+/* ENTER key text contrast — axe measured #F0EDE4 on #E8920A (2.1:1,
+   fails AA) despite @basenative/keyboard's own --kb-key-primary-fg
+   token existing for exactly this. Belt-and-suspenders: set the color
+   directly on the class (theme.css sets the token too), same
+   #1A0A00/7.86:1 pairing --bn-color-on-primary carries. */
+.bn-kb-key--enter { color: #1A0A00; }
+
+/* Non-colour cues for the four keyboard states (WCAG 1.4.1 — state
+   can't be conveyed by colour alone). Each state gets its own small
+   glyph badge, distinct from the other two, on top of its background
+   color; game.js's KEY_STATE_INFO keeps the matching aria-label
+   suffixes in sync for screen-reader users (applied in play.js, since
+   @basenative/keyboard's own hydrate() only ever toggles classes).
+   "Untried" needs no cue of its own — it's the plain, unmarked key,
+   which is itself the distinguishing signal (nothing has been said
+   about that letter yet). */
+.bn-kb [data-bn="kb-key"] { position: relative; }
+.bn-kb-key--green::after,
+.bn-kb-key--yellow::after,
+.bn-kb-key--absent::after {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+.bn-kb-key--green::after  { content: "✓"; color: var(--kb-key-green-fg); }
+.bn-kb-key--yellow::after { content: "◆"; color: var(--kb-key-yellow-fg); }
+.bn-kb-key--absent::after { content: "✕"; color: var(--kb-key-absent-fg); }
+
+/* A key ruled out for the active word is disabled, not merely coloured
+   (src/lib/game.js KEY_BLOCKED_STATUS) — the owner's father spent
+   attempts re-typing letters he had already eliminated because the key
+   still took the press. @basenative/keyboard dims every disabled key to
+   --kb-key-disabled-opacity (0.55), which would drag the absent pairing
+   under its measured 4.80:1; the state already reads as unavailable
+   through its own background and ✕ badge, so hold it at full strength
+   and let the cursor carry the "can't press this". */
+.bn-kb [data-bn="kb-key"].bn-kb-key--absent:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* ENGINE-OWNED HIDE/SHOW (used by signal templates) */
+.is-hidden { display: none !important; }
+
+/* No-JS fallback — index.html's <p class="noscript-msg" role="alert">
+   shown when JS is disabled. The h1 child rule that used to live here
+   was a leftover from an older shape (h1 + p chain inside the
+   noscript) — the post-#54 markup is a single <p>, no h1. */
+.noscript-msg {
+  padding: 24px; text-align: center;
+  font-family: system-ui, sans-serif;
+  color: #F0EDE4; background: #0C0B09;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   BASENATIVE SEMANTIC SHELL — drives both the SSR first paint AND the
+   post-hydration SPA tree (createHeader / lobby / play / etc. emit the
+   same data-bn-* shape the SSR templates use, so these selectors apply
+   continuously across the SSR→SPA handoff).
+
+   Selectors mirror the SSR templates verbatim:
+     - <body data-route="…"> with <header data-bn-region="header">
+     - <main data-bn-view="…"> with semantic <section>/<ul>/<a> children
+     - [data-bn-action="…"] on the interactive hot-spots
+   ────────────────────────────────────────────────────────────────── */
+
+#app {
+  --rc: #E8920A;
+  --rg: 232,146,10;
+  display: flex; flex-direction: column; align-items: center;
+  padding: max(env(safe-area-inset-top, 0px), 16px) 14px calc(40px + env(safe-area-inset-bottom, 0px));
+}
+body { background: radial-gradient(ellipse 110% 55% at 50% 0%, #1c1810 0%, #0C0B09 60%); }
+
+/* HEADER — semantic shell. Drives both SSR first paint and the
+   post-hydration SPA tree (createHeader emits the same shape).
+   Card-like: rounded, bordered, inline-padded so contents don't crash
+   into the band's edge. Sits 4px below the viewport top so the
+   border-radius is visible on initial render; sticky pin still works. */
+header[data-bn-region="header"] {
+  position: sticky; top: 0; z-index: 30; width: 100%; max-width: 540px;
+  margin-top: 4px; margin-bottom: 14px;
+  padding: 8px 14px;
+  background: rgba(22,20,18,.92); backdrop-filter: blur(8px);
+  border: 1px solid #2C2926;
+  border-radius: 12px;
+}
+header[data-bn-region="header"] > nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+[data-bn-action="logo"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 23px; letter-spacing: 4px;
+  color: #F0EDE4; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  background: transparent; border: none; padding: 0;
+}
+[data-bn-action="logo"] em { font-style: normal; color: #E8920A; }
+
+header[data-bn-region="header"] output {
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px; color: #F0EDE4;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+header[data-bn-region="header"] output[data-bn-role="score"] {
+  font-size: 19px; min-width: 60px; text-align: right; padding: 0;
+}
+header[data-bn-region="header"] output[data-bn-role="lives"] { border: 1.5px solid #E8920A; color: #E8920A; }
+header[data-bn-region="header"] output[data-bn-role="tokens"] {
+  border: 1.5px solid #4EAF7C; color: #4EAF7C; box-shadow: 0 0 10px rgba(78,175,124,.25);
+}
+
+header[data-bn-region="header"] ul { display: flex; align-items: center; gap: 6px; list-style: none; padding: 0; margin: 0; }
+header[data-bn-region="header"] li { display: inline-flex; }
+header[data-bn-region="header"] button,
+header[data-bn-region="header"] a[href="/moderate"],
+header[data-bn-region="header"] a[href="/admin"] {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid #2E2C28; color: #9A9590;
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1.5px;
+  padding: 0 11px; border-radius: 6px; height: 34px; min-width: 42px;
+  text-decoration: none; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+header[data-bn-region="header"] button:hover,
+header[data-bn-region="header"] a[href="/moderate"]:hover,
+header[data-bn-region="header"] a[href="/admin"]:hover { border-color: #E8920A; color: #E8920A; }
+header[data-bn-region="header"] [data-bn-action="auth"] { background: #E8920A; color: #1A0A00; border-color: #E8920A; }
+header[data-bn-region="header"] [data-bn-action="auth"]:hover { background: #FFA830; }
+header[data-bn-region="header"] [data-bn-action="account"] {
+  color: #E8920A; border-color: rgba(232,146,10,.4); cursor: default;
+}
+header[data-bn-region="header"] [aria-current="page"] { color: #E8920A; border-color: rgba(232,146,10,.4); }
+
+/* Narrow phones (390px and down) signed in as moderator/admin while
+   playing: logo + score/lives/tokens + ? + MOD + ADM + handle button
+   all in one row can outgrow the viewport (measured 409px of content
+   at 390px wide) and force the page to zoom out / scroll horizontally.
+   Three moves, in order of how much they change the layout:
+     1. Tighter gaps/padding/font-sizes and a min-width:0 escape hatch
+        so the row can actually shrink instead of every box holding its
+        full-size min-content width.
+     2. The account button's handle is unbounded text (any registered
+        handle) — no amount of padding-trimming makes that safe, so it
+        gets a hard max-width + ellipsis instead of contributing an
+        arbitrarily wide box to the row.
+     3. flex-wrap as the last-resort safety net: if MOD + ADM + a near-
+        max-width handle still doesn't fit next to "?", they wrap to a
+        second line under the row instead of forcing horizontal scroll —
+        never a viewport overflow, worst case a taller header. */
+@media (max-width: 420px) {
+  header[data-bn-region="header"] { padding: 8px 10px; }
+  header[data-bn-region="header"] > nav { gap: 5px; min-width: 0; flex-wrap: wrap; row-gap: 4px; }
+  header[data-bn-region="header"] ul { gap: 4px; min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 4px; }
+  [data-bn-action="logo"] { font-size: 19px; letter-spacing: 2px; gap: 4px; flex-shrink: 0; }
+  header[data-bn-region="header"] output {
+    font-size: 12px; padding: 2px 6px; gap: 2px;
+  }
+  header[data-bn-region="header"] output[data-bn-role="score"] { font-size: 16px; min-width: 0; }
+  header[data-bn-region="header"] button,
+  header[data-bn-region="header"] a[href="/moderate"],
+  header[data-bn-region="header"] a[href="/admin"] {
+    font-size: 10.5px; letter-spacing: 1px; padding: 0 7px; height: 30px; min-width: 32px;
+  }
+  header[data-bn-region="header"] [data-bn-action="account"] {
+    max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: inline-block;
+  }
+}
+
+/* HOME — the page at "/", which is today's puzzle. While the round is
+   open the play view (below) is mounted here under data-bn-view="home",
+   so this block only styles the frame: the streak strip, the day label,
+   the done-for-today card, the nothing-scheduled notice and the foot. */
+main[data-bn-view="home"] {
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  --rc: #E8920A;
+  --rg: 232,146,10;
+}
+main[data-bn-view="home"] [data-bn="alert"] {
+  width: 100%; max-width: 540px; justify-content: center; text-align: center;
+  padding: 8px 12px; font-size: 12px; letter-spacing: .5px;
+}
+
+/* STREAK STRIP — three little cards. <section data-bn-region="stats">
+   with three <p data-bn-region="stat">, each a <strong> and a <small>. */
+main[data-bn-view="home"] [data-bn-region="stats"] {
+  display: flex; gap: 8px; justify-content: center;
+  width: 100%; max-width: 320px;
+}
+main[data-bn-view="home"] [data-bn-region="stat"] {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; background: #100F0D; border: 1px solid #1F1C18; border-radius: 8px;
+}
+main[data-bn-view="home"] [data-bn-region="stat"] > strong {
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1.5px;
+  color: #F0EDE4; font-weight: 400;
+}
+main[data-bn-view="home"] [data-bn-region="stat"] > small {
+  font-size: 9px; letter-spacing: 1.2px; color: #9A9590; text-transform: uppercase;
+}
+
+/* "Today · 2026-09-14" over the board, and "Preview · …" on /play. */
+[data-bn-region="day-label"],
+[data-bn-region="preview-note"] {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: #E8920A; font-weight: 700; text-align: center;
+}
+[data-bn-region="preview-note"] { color: #988570; }
+
+/* Setting up today's round — a skeleton where the board is about to be. */
+main[data-bn-view="home"] [data-bn-region="daily-loading"] {
+  width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 10px;
+}
+
+/* DONE FOR TODAY — the result, the number, when the next one lands. */
+main[data-bn-view="home"] [data-bn-region="daily-done"],
+main[data-bn-view="home"] [data-bn-region="daily-none"] {
+  width: 100%; max-width: 480px;
+  background: #161412; border: 1.5px solid #E8920A; border-radius: 12px;
+  padding: 28px 18px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+main[data-bn-view="home"] [data-bn-region="daily-none"] { border-color: #2C2926; }
+main[data-bn-view="home"] [data-bn-region="daily-none"] > h2 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: #F0EDE4; font-weight: 400;
+}
+main[data-bn-view="home"] [data-bn-region="daily-none"] > p { font-size: 13px; color: #9A9590; }
+main[data-bn-view="home"] [data-bn-region="daily-result"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 4px;
+  color: #E8920A; font-weight: 400;
+}
+main[data-bn-view="home"] [data-bn-region="daily-score"] {
+  font-size: 14px; color: #C0BBB5; letter-spacing: 1px; text-transform: uppercase;
+}
+main[data-bn-view="home"] [data-bn-region="daily-score"] > strong {
+  font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 2px;
+  color: #F0EDE4; font-weight: 400; margin-right: 6px; font-variant-numeric: tabular-nums;
+}
+main[data-bn-view="home"] [data-bn-region="daily-cat"] {
+  font-size: 11px; color: #9A9590; letter-spacing: 1.2px; text-transform: uppercase;
+}
+main[data-bn-view="home"] [data-bn-region="daily-next"] {
+  font-size: 12px; color: #9A9590; letter-spacing: 1px; margin-top: 6px;
+}
+main[data-bn-view="home"] [data-bn-region="daily-done"] [data-bn="button"] { margin-top: 12px; }
+
+/* The foot — one quiet link, in flow. The floating "+ SUBMIT A PHRASE"
+   pill it replaces sat over live content at every scroll position
+   (T4-053); nothing floats now. */
+[data-bn-region="home-foot"] {
+  margin-top: 18px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+}
+[data-bn-region="home-foot"] a { color: #988570; text-decoration: none; border-bottom: 1px solid #3A332B; }
+[data-bn-region="home-foot"] a:hover { color: #E8920A; border-color: #E8920A; }
+
+/* PLAY view — semantic, attribute-driven. Same rules cover the SSR-rendered
+   skeleton (which uses [role="group"] words + [role="img"] tiles + the
+   <h1> sticky-note category) and the post-hydration SPA tree (which adds
+   data-bn-region="word"/"tile" + boolean state attributes). The shared
+   end-of-round overlay markup is built in src/views/play.js; its visuals
+   come from the shared dialog/card selectors above. */
+main[data-bn-view="play"] {
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  --rc: #E8920A;
+  --rg: 232,146,10;
+}
+/* The daily round is mounted under data-bn-view="home", so every play
+   rule below is written against the regions, not the landmark. */
+
+/* SUMMARY HEADER — sticky-note category + meta + hint + cbar */
+main[data-bn-view] > header[data-bn-region="play-summary"] {
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; padding: 0 6px;
+}
+
+/* SSR <h1> in summary doubles as the visible sticky-note. Post-hydration the
+   <h1> becomes sr-only and the visible category is on [data-bn-region="play-sticky"]
+   (also covered by the [data-bn-region="sticky"] rule above). */
+main[data-bn-view] > header[data-bn-region="play-summary"] > h1 {
+  font-family: 'Caveat', cursive;
+  background: #F5E06A; color: #1E1600;
+  font-size: 21px; font-weight: 700; padding: 10px 26px 12px;
+  border-radius: 2px; transform: rotate(-1.4deg);
+  box-shadow: 2px 4px 16px rgba(0,0,0,.55);
+  text-align: center; line-height: 1.2;
+  max-width: 320px;
+}
+
+/* "#42 · capital cities" — #7A7570 measured 4.31:1 at 12px (fails AA's
+   4.5:1 for normal-size text). #988570 is the same brand muted token
+   already used elsewhere (theme.css --bn-color-text-muted) at 5.55:1. */
+main[data-bn-view] [data-bn-bind="num"] {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 2.5px; color: #988570;
+  margin-bottom: 10px; width: 100%; max-width: 540px; text-align: center;
+}
+
+/* "3 words · 13 letters · by handle" */
+main[data-bn-view] [data-bn-bind="sub"] {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #9A9590;
+  margin-bottom: 18px; text-align: center;
+}
+main[data-bn-view] [data-bn-bind="sub"] strong { color: #E8920A; font-weight: 600; }
+
+/* SSR fallback: when no JS has hydrated yet, the summary's plain <p> contains
+   inline <small> chunks. Style them as a single uppercase muted line. */
+main[data-bn-view] > header[data-bn-region="play-summary"] > p:not([data-bn-bind]):not([data-bn-region]) {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: #9A9590;
+}
+
+/* hint line — orange when a word is active. Both colors below were
+   raised for AA contrast at 12px: the active #A06020 measured 3.92:1
+   (fails 4.5:1); the default #7A7570 shares the meta line's failing
+   color above. #988570 is the brand muted token (5.55:1); #C97A2A
+   keeps the same hue as the old active-state orange while clearing
+   4.5:1 on this background. */
+main[data-bn-view] [data-bn-region="play-hint"] {
+  width: 100%; max-width: 540px; text-align: center;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: #988570; margin-bottom: 12px; min-height: 14px; transition: color .4s;
+}
+main[data-bn-view] [data-bn-region="play-hint"][data-active] { color: #C97A2A; }
+
+/* cbar — green by default, red in all-in mode */
+main[data-bn-view] [data-bn-region="play-cbar"] {
+  width: 100%; max-width: 540px;
+  background: rgba(78,175,124,.08); border: 1px solid rgba(78,175,124,.5);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 12px;
+  text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: #4EAF7C; font-weight: 600;
+}
+main[data-bn-view] [data-bn-region="play-cbar"][data-allin] {
+  background: rgba(255,77,77,.08); border-color: rgba(255,77,77,.5); color: #FF6E6E;
+}
+
+/* THE BOARD — one row of tiles per word. States are boolean attributes on
+   the tile: [data-locked] anchor or earned green, [data-typed] the letter
+   being entered, [data-cursor] where the next letter lands, [data-wagered]
+   a stake, [data-solved] / [data-busted] the word's end, [data-feedback]
+   on a frozen past row. Past attempts sit ABOVE the live row for the word
+   in play (data-bn-region="history"), and as a strip of mini rows for the
+   others (data-bn-region="history-strip") — every guess stays on the board. */
+main[data-bn-view] [data-bn-region="grid"] {
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 14px 8px 12px;
+  background: #161412; border: 1.5px solid #222; border-radius: 12px;
+}
+main[data-bn-view] [data-bn-region="grid"] > [role="group"] {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  position: relative; padding: 4px 10px; border-radius: 10px; cursor: pointer;
+  transition: background .15s;
+}
+main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-active] {
+  background: #1E1A15; box-shadow: inset 0 0 0 1.5px rgba(232,146,10,.55);
+}
+main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-allin] {
+  box-shadow: inset 0 0 0 1.5px rgba(255,77,77,.55);
+}
+main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-solved] { opacity: .92; cursor: default; }
+main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-busted] { opacity: .85; }
+main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-shake] { animation: t4-shake .35s; }
+@keyframes t4-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+main[data-bn-view] [data-bn-region="row"],
+main[data-bn-view] [data-bn-region="past"] { display: flex; gap: 4px; }
+main[data-bn-view] [data-bn-region="history"] { display: flex; flex-direction: column; gap: 4px; }
+main[data-bn-view] [data-bn-region="history-strip"] { display: flex; flex-direction: column; gap: 2px; }
+main[data-bn-view] [data-bn-region="past-mini"] { display: flex; gap: 2px; }
+main[data-bn-view] [data-bn-region="past-mini"] [data-bn-region="tile"] {
+  width: 10px; height: 6px; border-radius: 2px; font-size: 0; border: none;
+}
+
+main[data-bn-view] [data-bn-region="tile"] {
+  width: clamp(34px, 8.6vw, 42px); height: clamp(40px, 10.5vw, 48px);
+  border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: clamp(21px, 5.2vw, 27px);
+  user-select: none; flex-shrink: 0; position: relative;
+  background: #1E1B17; border: 1.5px solid #2A2724; color: #F0EDE4;
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+main[data-bn-view] [data-bn-region="tile"][data-locked],
+main[data-bn-view] [data-bn-region="tile"][data-solved] {
+  background: #FFF3E0; color: #5C2A00; border-color: #FFF3E0;
+  box-shadow: 0 2px 5px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5);
+}
+main[data-bn-view] [data-bn-region="tile"][data-solved] { background: #3F9D5B; color: #06170C; border-color: #3F9D5B; }
+main[data-bn-view] [data-bn-region="tile"][data-busted] { background: #2C2925; color: #988570; border-color: #2C2925; }
+main[data-bn-view] [data-bn-region="tile"][data-typed] { border-color: #E8920A; color: #F0EDE4; background: #241F18; }
+main[data-bn-view] [data-bn-region="tile"][data-allin-typed] { border-color: #FF6E6E; }
+main[data-bn-view] [data-bn-region="tile"][data-cursor] { border-color: #E8920A; border-style: dashed; }
+main[data-bn-view] [data-bn-region="tile"][data-wagered] { box-shadow: inset 0 -3px 0 #E8920A; }
+main[data-bn-view] [data-bn-region="tile"][data-wagered]::before {
+  content: "2×"; position: absolute; top: -7px; right: -5px;
+  font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 700;
+  color: #1A0A00; background: #E8920A; border-radius: 6px; padding: 0 4px; line-height: 12px;
+}
+main[data-bn-view] [data-bn-region="tile"][data-casc-pick] { border-color: #4EAF7C; border-style: dashed; cursor: pointer; }
+main[data-bn-view] [data-bn-region="tile"][data-casc-drop] { transform: translateY(-4px); }
+/* Frozen feedback on a past row. */
+main[data-bn-view] [data-bn-region="tile"][data-feedback="green"]  { background: #3F9D5B; color: #06170C; border-color: #3F9D5B; }
+main[data-bn-view] [data-bn-region="tile"][data-feedback="yellow"] { background: #E8B73B; color: #2B1D00; border-color: #E8B73B; }
+main[data-bn-view] [data-bn-region="tile"][data-feedback="absent"] { background: #3A332B; color: #9A9590; border-color: #3A332B; }
+main[data-bn-view] [data-bn-region="past"] [data-bn-region="tile"][data-staked]::before {
+  content: "2×"; position: absolute; top: -7px; right: -5px;
+  font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 700;
+  color: #1A0A00; background: #E8920A; border-radius: 6px; padding: 0 4px; line-height: 12px;
+}
+main[data-bn-view] [data-bn-region="past"][data-fb-flip] [data-bn-region="tile"] { animation: t4-flip .6s; }
+@keyframes t4-flip { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+main[data-bn-view] [data-bn-region="attempts"] {
+  font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: #988570;
+}
+main[data-bn-view] [data-bn-region="attempts"][data-tone="bust"] { color: #C97A2A; }
+@media (prefers-reduced-motion: reduce) {
+  main[data-bn-view] [data-bn-region="tile"] { transition: none; }
+  main[data-bn-view] [data-bn-region="grid"] > [role="group"][data-shake] { animation: none; }
+  main[data-bn-view] [data-bn-region="past"][data-fb-flip] [data-bn-region="tile"] { animation: none; }
+}
+
+/* HINT — the one line under the category that says what to do next. */
+main[data-bn-view] [data-bn-region="play-hint"] {
+  width: 100%; max-width: 480px; text-align: center;
+  font-size: 12px; line-height: 1.45; color: #988570; min-height: 1.4em; transition: color .3s;
+}
+main[data-bn-view] [data-bn-region="play-hint"][data-active] { color: #C97A2A; }
+main[data-bn-view] [data-bn-region="play-hint"][data-allin] { color: #FF6E6E; }
+main[data-bn-view] [data-bn-region="play-meta"] {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #988570;
+  margin-bottom: 4px; text-align: center;
+}
+
+/* KNOWLEDGE READ-OUT — four stats and a sentence, under the grid. */
+main[data-bn-view] section[data-bn-region="knowledge"] {
+  width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 6px;
+  padding: 0 4px;
+}
+main[data-bn-view] [data-bn-region="knowledge"] > ul {
+  display: flex; gap: 6px; list-style: none; margin: 0; padding: 0;
+}
+main[data-bn-view] [data-bn-region="know-stat"] {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 4px; background: #100F0D; border: 1px solid #1F1C18; border-radius: 8px;
+}
+main[data-bn-view] [data-bn-region="know-stat"] > strong {
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1.5px; color: #F0EDE4; font-weight: 400;
+}
+main[data-bn-view] [data-bn-region="know-stat"] > small {
+  font-size: 8px; letter-spacing: 1.1px; color: #9A9590; text-transform: uppercase; text-align: center;
+}
+main[data-bn-view] [data-bn-region="know-stat"][data-tone="attempts"] > strong { color: #E8920A; }
+main[data-bn-view] [data-bn-region="know-hint"] { font-size: 11px; color: #9A9590; text-align: center; line-height: 1.4; }
+
+/* LETTER BANK — what is known to be in the phrase / not in this word. */
+main[data-bn-view] section[data-bn-region="bank"] {
+  width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 4px; padding: 0 6px;
+}
+main[data-bn-view] [data-bn-region="bank-present"],
+main[data-bn-view] [data-bn-region="bank-absent"] { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+main[data-bn-view] section[data-bn-region="bank"] [data-bn-role="label"] {
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: #988570; margin-right: 2px;
+}
+main[data-bn-view] section[data-bn-region="bank"] [data-bn-chip] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px;
+  padding: 1px 6px; border-radius: 4px;
+}
+main[data-bn-view] section[data-bn-region="bank"] [data-bn-chip="yellow"] { background: #E8B73B; color: #2B1D00; }
+main[data-bn-view] section[data-bn-region="bank"] [data-bn-chip="absent"] { background: #3A332B; color: #9A9590; }
+
+/* KEYBOARD ACTIONS — ALL IN and the stake read-out, on the keyboard card. */
+main[data-bn-view] [data-bn-region="kb-actions"] {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;
+}
+main[data-bn-view] button[data-bn-action="all-in"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 2px;
+  color: #FF6E6E; background: transparent; border: 1.5px solid rgba(255,77,77,.5); border-radius: 100px;
+  padding: 6px 14px; min-height: 34px; cursor: pointer; transition: background .15s, transform .1s;
+}
+main[data-bn-view] button[data-bn-action="all-in"]:hover { background: rgba(255,77,77,.1); }
+main[data-bn-view] button[data-bn-action="all-in"][data-on] { background: #FF4D4D; color: #1A0000; border-color: #FF4D4D; }
+main[data-bn-view] button[data-bn-action="all-in"]:disabled { opacity: .4; cursor: default; }
+main[data-bn-view] [data-bn-region="stake-label"] {
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1.5px; color: #E8920A;
+}
+main[data-bn-view] section[data-bn-region="keyboard"][data-allin] { border-color: rgba(255,77,77,.5); }
+
+/* END CARD — the share card itself, shown in the dialog the moment the
+   round ends: the same PNG a chat app renders for the link, so what you
+   see is what you send. */
+[data-bn-region="end-card-image"] {
+  display: block; width: 100%; height: auto; aspect-ratio: 1200 / 630;
+  border-radius: 10px; border: 1px solid #2C2926; margin: 10px 0 12px;
+  background: #0C0B09;
+}
+/* END CARD — the "how" line under the verdict. */
+[data-bn-region="how"] { font-size: 13px; color: #C9C2B6; margin: 4px 0 8px; }
+
+/* END-OF-ROUND LEDGER LINE — "Daily 2026-09-11 · streak 🔥3" or
+   "Free play · streak untouched". */
+[data-bn-region="end-mode"] {
+  font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
+  color: #E8920A; margin-bottom: 10px;
+}
+
+/* KEYBOARD — in flow, directly under the bank, and sticky to the bottom
+   edge. On a phone, where the page overflows, that pins it within thumb
+   reach exactly as the old fixed card did; on a desktop, where it
+   doesn't, it sits right under the board instead of floating at the
+   bottom of a tall empty window (which is what the owner saw). QWERTY
+   with ENTER and ⌫ — see src/lib/keyboard-layout.js. */
+main[data-bn-view] section[data-bn-region="keyboard"] {
+  position: sticky; bottom: 0; z-index: 30;
+  width: 100%; max-width: 568px;
+  background: #161412;
+  border: 1px solid #2C2926;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.5);
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+  margin-top: 4px;
+}
+/* A tried key is final: dim it and take it out of the tab order's way. */
+main[data-bn-view] .bn-kb-key:disabled { cursor: default; }
+
+/* MODERATE — the catalogue. @basenative/components' accordion, one
+   section per category; inside, one row per phrase with a Preview link. */
+main[data-bn-view="moderate"] [data-bn-region="catalogue-section"] > h2 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2.5px;
+  font-weight: 400; color: #988570; text-transform: uppercase; margin-bottom: 2px;
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue-note"] {
+  font-size: 11px; line-height: 1.45; color: #9A9590; margin-bottom: 10px;
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; border: none; background: transparent;
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] [data-bn="accordion-item"] {
+  margin: 0; border: 1.5px solid #222; border-radius: 10px;
+  background: #161412; overflow: hidden;
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] [data-bn="accordion-item"][open] {
+  border-color: rgba(232,146,10,.45);
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] [data-bn="accordion-header"] {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 48px; padding: 12px 16px; cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2.5px;
+  color: #F0EDE4; background: transparent; border: none;
+}
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] [data-bn="accordion-header"]:hover { color: #E8920A; }
+main[data-bn-view="moderate"] [data-bn-region="catalogue"] [data-bn="accordion-content"] { padding: 0 12px 12px; }
+main[data-bn-view="moderate"] [data-bn-region="phrases"] {
+  display: flex; flex-direction: column; gap: 6px; list-style: none; padding: 0; margin: 0;
+}
+main[data-bn-view="moderate"] [data-bn-region="phrase-row"] {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "phrase preview" "meta preview";
+  gap: 2px 12px; align-items: center;
+  padding: 10px 14px; background: #100F0D; border: 1px solid #1F1C18; border-radius: 8px;
+}
+main[data-bn-view="moderate"] [data-bn-region="phrase-row"] [data-bn-cell="phrase"] {
+  grid-area: phrase; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px; color: #F0EDE4;
+}
+main[data-bn-view="moderate"] [data-bn-region="phrase-row"] small {
+  grid-area: meta; font-size: 10px; letter-spacing: 1.2px; color: #9A9590; text-transform: uppercase;
+}
+main[data-bn-view="moderate"] [data-bn-region="phrase-row"] a[data-bn-action="preview"] {
+  grid-area: preview; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #E8920A; text-decoration: none; padding: 8px 10px; border: 1px solid #3A332B; border-radius: 6px;
+}
+main[data-bn-view="moderate"] [data-bn-region="phrase-row"] a[data-bn-action="preview"]:hover { border-color: #E8920A; }
+
+/* SUBMIT / MODERATE / ADMIN — minimum SSR styling so the static shell
+   for these admin-only routes isn't unstyled while JS loads. */
+main[data-bn-view="submit"],
+main[data-bn-view="moderate"],
+main[data-bn-view="admin"] {
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+main[data-bn-view="submit"] > h1,
+main[data-bn-view="moderate"] > h1,
+main[data-bn-view="admin"] > h1 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2.5px;
+  font-weight: 400;
+}
+/* Reset the browser-default fieldset/legend chrome (grey inset border +
+   inline legend) on /submit — both SSR and post-hydration render a real
+   <fieldset>/<legend> for free grouping semantics, but neither wants the
+   UA stylesheet's box around it. */
+main[data-bn-view="submit"] fieldset {
+  border: 0; margin: 0; padding: 0; min-inline-size: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+main[data-bn-view="submit"] legend {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* SUBMIT — live tile preview. Markup is
+   <section data-bn-region="preview"> with [role="group"] word rows
+   and [role="img"] tile cells from src/views/submit.js. The empty
+   state is rendered as a single <p>. */
+main[data-bn-view="submit"] [data-bn-region="preview"] {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 10px 16px; margin: 12px 0; padding: 14px 8px;
+  background: #100F0D; border-radius: 8px; border: 1px solid #1F1C18;
+  min-height: 74px;
+}
+main[data-bn-view="submit"] [data-bn-region="preview"] > p {
+  color: #988570; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+}
+main[data-bn-view="submit"] [data-bn-region="preview"] > [role="group"] {
+  display: flex; gap: 3px;
+}
+/* Tiles are real <button>s now: tapping one gives that letter away as
+   a starting anchor, which is how a submitted puzzle gets the bootstrap
+   the house puzzles were missing. */
+main[data-bn-view="submit"] [data-bn-region="preview"] [data-bn-region="preview-tile"] {
+  width: 30px; height: 34px; border-radius: 4px; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+  background: #1E1C18; border: 1px solid #2A2724; color: #F0EDE4;
+  transition: background .15s, border-color .15s;
+}
+main[data-bn-view="submit"] [data-bn-region="preview"] [data-bn-region="preview-tile"]:hover {
+  border-color: #E8920A;
+}
+main[data-bn-view="submit"] [data-bn-region="preview"] [data-bn-region="preview-tile"][data-anchor] {
+  background: #4EAF7C; border-color: #4EAF7C; color: #0A1F12;
+}
+
+/* DIALOGS — native <dialog> takes care of `display: none` when closed,
+   so we only dress the open state. The dialog element itself is the
+   scrim; the [data-bn="card"] inside it is the visible card (see the
+   MODAL CARD block earlier in this file).
+
+   renderDialog() always emits a [data-bn="dialog-header"] and wraps the
+   content in a [data-bn="dialog-body"]. Every T4BS dialog is called
+   without a `title` and with closable: false — the heading lives inside
+   the card as <h2 data-bn-region="title"> so all three modals share one
+   layout — which leaves that header empty. Left alone it contributes a
+   stray border-bottom and, under the flex centring below, a stray flex
+   item beside the card. Remove it when it has no element children, and
+   let the body pass its child straight through (BaseNative's own
+   `display: contents` on host elements axiom) so the card is the direct
+   flex child the centring expects. */
+dialog[open] {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  background: rgba(10,9,7,.92); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; border: none; z-index: 100;
+  color: #F0EDE4; max-width: none; max-height: none;
+  overflow: auto;
+}
+dialog[data-bn="dialog"] > [data-bn="dialog-header"]:not(:has(*)) { display: none; }
+dialog[data-bn="dialog"] > [data-bn="dialog-body"] { display: contents; }
+dialog::backdrop { background: rgba(10,9,7,.92); }
+
+/* NOT-FOUND */
+main[data-bn-view="not-found"] {
+  width: 100%; max-width: 540px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  text-align: center;
+}
+main[data-bn-view="not-found"] > h1 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 4px;
+  color: #E8920A;
+}
+
+/* ────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ADMIN v2 — one route, five tabs (docs/PRD.md §4). The tabs and the
+   table are @basenative/components (renderTabs / renderTable) and take
+   their chrome from components.css; these rules only size the admin
+   surface, give the catalogue table room to scroll, and mark the rows the
+   win-rate column says to look at. */
+main[data-bn-view="admin"] { max-width: 880px; }
+main[data-bn-view="admin"] [data-bn="tabs"] { width: 100%; }
+main[data-bn-view="admin"] [data-bn-region="tab-body"] { padding-block: 12px; }
+main[data-bn-view="admin"] [data-bn-region="scroll"] { overflow-x: auto; width: 100%; }
+main[data-bn-view="admin"] table { font-size: 13px; white-space: nowrap; }
+main[data-bn-view="admin"] table td[data-bn-cell="phrase"] { white-space: normal; min-width: 14rem; }
+main[data-bn-view="admin"] tr[data-suspicious] td:first-child::before {
+  content: '⚠ '; color: #E8920A;
+}
+main[data-bn-view="admin"] tr[data-status="retired"] { opacity: .5; }
+main[data-bn-view="admin"] [data-bn-region="numbers"] {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 8px; margin: 0 0 12px;
+}
+main[data-bn-view="admin"] [data-bn-region="number"] {
+  background: #161412; border: 1px solid #2A2724; border-radius: 8px; padding: 10px 12px;
+}
+main[data-bn-view="admin"] [data-bn-region="number"] > strong {
+  display: block; font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; color: #F0EDE4;
+  font-variant-numeric: tabular-nums;
+}
+main[data-bn-view="admin"] [data-bn-region="number"] > small {
+  display: block; margin-top: 4px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: #988570;
+}
+main[data-bn-view="admin"] [data-bn-region="day-row"][data-today] { outline: 1.5px solid #E8920A; outline-offset: -1px; }
+main[data-bn-view="admin"] [data-bn-region="pin"] { font: inherit; background: #0C0B09; color: #F0EDE4; border: 1px solid #3A332B; border-radius: 4px; padding: 4px 6px; max-width: 16rem; }
+main[data-bn-view="admin"] [data-bn-region="edit-form"] { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; align-items: end; margin: 12px 0; padding: 12px; background: #161412; border: 1px solid #2A2724; border-radius: 8px; }
+main[data-bn-view="admin"] [data-bn-region="edit-form"] label { display: grid; gap: 4px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #988570; }
+main[data-bn-view="admin"] [data-bn-region="edit-form"] input { font: inherit; background: #0C0B09; color: #F0EDE4; border: 1px solid #3A332B; border-radius: 4px; padding: 6px 8px; min-height: 36px; }
+main[data-bn-view="admin"] [data-bn-region="edit-form"] [data-bn-span="2"] { grid-column: 1 / -1; }
+main[data-bn-view="admin"] [data-bn-region="decided"] li { padding: 8px 0; border-bottom: 1px solid #2A2724; font-size: 13px; }
+main[data-bn-view="admin"] [data-bn-region="decided"] li small { color: #988570; }

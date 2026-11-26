@@ -1,0 +1,62 @@
+/* Single source of truth for the routes the BaseNative SSR worker
+   serves. Mirrors @basenative/router's path syntax so the client-side
+   router uses the exact same table after hydration.
+
+   "/" is today's puzzle — the game has no lobby. "/play" is the preview
+   route (`/play?play=<id>`, from the moderator's catalogue); on its own
+   it has nothing to show. */
+
+/** @typedef {'home'|'play'|'submit'|'moderate'|'admin'|'not-found'} RouteName */
+
+/** @type {ReadonlyArray<{ path: string; name: RouteName }>} */
+export const routes = [
+  { path: "/",         name: "home"     },
+  { path: "/play",     name: "play"     },
+  { path: "/submit",   name: "submit"   },
+  { path: "/moderate", name: "moderate" },
+  { path: "/admin",    name: "admin"    },
+];
+
+/** @param {string} pathname @returns {RouteName} */
+export function matchRoute(pathname) {
+  const norm = pathname.endsWith("/") && pathname !== "/"
+    ? pathname.slice(0, -1)
+    : pathname;
+  for (const r of routes) if (r.path === norm) return r.name;
+  return "not-found";
+}
+
+/* The client-side view a route name boots into. Lives here, not in
+   hydrate.js, so it stays pure and testable: hydrate.js runs the whole
+   app at import time and cannot be loaded by node --test.
+
+   "not-found" MUST map to itself. It used to fall into the default arm
+   and the client would boot as if it were home, mounting the live game
+   over the 404 the server had just sent (T4-031). */
+/** @param {string | undefined} ssrRoute @returns {'home'|'playing'|'submit'|'moderate'|'admin'|'not-found'} */
+export function routeToView(ssrRoute) {
+  switch (ssrRoute) {
+    case "play":      return "playing";
+    case "submit":    return "submit";
+    case "moderate":  return "moderate";
+    case "admin":     return "admin";
+    case "not-found": return "not-found";
+    case "home":
+    default:          return "home";
+  }
+}
+
+/* Asset / API / OG / share paths fall through to their own handlers
+   so the SSR worker never intercepts them. `?legacy=1` is the escape
+   hatch back to the static SPA shell at dist/index.html. */
+/** @param {string} pathname @param {URLSearchParams} search */
+export function shouldRenderSsr(pathname, search) {
+  if (search.get("legacy") === "1") return false;
+  if (pathname.startsWith("/api/")) return false;
+  if (pathname.startsWith("/og/"))  return false;
+  if (pathname.startsWith("/s/"))   return false;
+  if (pathname.startsWith("/assets/")) return false;
+  if (pathname === "/asset-manifest.json") return false;
+  if (pathname === "/favicon.svg" || pathname === "/robots.txt" || pathname === "/sitemap.xml") return false;
+  return true;
+}

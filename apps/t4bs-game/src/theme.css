@@ -1,0 +1,249 @@
+/* T4BS theme — overrides for @basenative/* component tokens.
+   Imported AFTER each @basenative/<pkg>/styles.css so these win.
+   Mirrors the @use pattern: import the package's defaults, then layer
+   on the consumer's theme. */
+
+/* @basenative/components ships its palette as `--bn-*` custom
+   properties in an `@layer tokens` block (packages/components/src/
+   tokens.css). This block maps T4BS's brand palette (see CLAUDE.md
+   "Color tokens") onto those same variable names so renderDialog() /
+   renderTabs() / components.css pick up T4BS's look with zero forked
+   CSS — no `[data-bn="dialog"]` selector is redeclared here, only the
+   tokens it reads.
+
+   Deliberately unlayered (not wrapped in `@layer tokens`): unlayered
+   rules always win over any `@layer`-declared rule regardless of
+   import order or layer position, so this overrides the package
+   default the same way the plain `body { color: #F0EDE4 }` above wins
+   over @basenative/components' own `@layer reset` — no ordering
+   games required. */
+:root {
+  /* Surfaces — bg #0C0B09 from CLAUDE.md, with raised/muted steps
+     matching the dialog/card chrome already in this file
+     ([data-bn-region="end-overlay"] > article, line ~126). */
+  --bn-color-surface: #0C0B09;
+  --bn-color-surface-subtle: #15130F;
+  /* -muted is upstream's generic hover tone (secondary/ghost buttons,
+     menu items, dialog-close). #242018 is the hover T4BS's buttons
+     already used, so pointing the token at it keeps every hovered
+     surface in the app on one value. */
+  --bn-color-surface-muted: #242018;
+  --bn-color-surface-raised: #1C1916;
+  --bn-color-surface-inset: #0C0B09;
+  --bn-color-surface-inverse: #F0EDE4;
+
+  /* Text — fg #F0EDE4, muted #988570 from CLAUDE.md. */
+  --bn-color-text: #F0EDE4;
+  --bn-color-text-muted: #988570;
+  --bn-color-text-subtle: #6B5F4F;
+  --bn-color-text-inverse: #0C0B09;
+  --bn-color-text-link: #E8920A;
+
+  /* Border — matches the dialog border already used at line ~126. */
+  --bn-color-border: #2C2926;
+  --bn-color-border-strong: #3A332B;
+  --bn-color-border-focus: #E8920A;
+  --bn-focus-ring: 0 0 0 2px #0C0B09, 0 0 0 4px #E8920A;
+
+  /* Border — control boundary (components 0.6.0). WCAG 1.4.11 requires
+     3:1 against the surface a control sits on; --bn-color-border /
+     -strong above are decorative-only (1.58:1 for -strong against bg)
+     and stay that way. Reuse --bn-color-text-muted's value instead:
+     5.55:1 on bg, 4.94:1 on surface-raised, 5.23:1 on surface-subtle —
+     clears 3:1 everywhere inputs/selects/comboboxes/checkboxes render. */
+  --bn-color-border-control: #988570;
+
+  /* Accent — accent #E8920A from CLAUDE.md. Used for
+     [data-bn="tab"][aria-selected="true"]'s underline
+     (--bn-color-accent-600) among others. */
+  --bn-color-accent-500: #E8920A;
+  --bn-color-accent-600: #E8920A;
+
+  /* Primary — what [data-bn="button"][data-variant="primary"] paints
+     itself with. Same accent orange, with the -700 step carrying the
+     hover lift T4BS's buttons have always had (#FFA830). Note upstream
+     aliases --bn-color-accent-* TO --bn-color-primary-*, so these are
+     declared after the accent block above purely for readability; each
+     name is set explicitly and neither inherits from the other here. */
+  --bn-color-primary-500: #E8920A;
+  --bn-color-primary-600: #E8920A;
+  --bn-color-primary-700: #FFA830;
+
+  /* Foreground on a filled brand box (components 0.8.0). Accent orange
+     is light: #FFFFFF on #E8920A is 2.46:1, well under WCAG 1.4.3's
+     4.5:1. #1A0A00 is 7.86:1 — the same near-black T4BS's own buttons
+     and the keyboard's ENTER key already use. Before these tokens
+     existed, --bn-color-white was hardcoded into the component CSS and
+     this file had nothing to point at, which is why every button in
+     this app was hand-rolled as [data-bn-button] instead. */
+  --bn-color-on-primary: #1A0A00;
+  --bn-color-on-accent: #1A0A00;
+  /* Error red #E84444 is light too: the page fg #F0EDE4 lands at 3.36:1
+     on it. The same near-black is 4.91:1. */
+  --bn-color-on-error: #1A0A00;
+
+  /* Control height — T4BS's 44px minimum tap target (WCAG 2.5.5), the
+     min-height its buttons and inputs have always carried. Upstream
+     defaults to 2.5rem/40px. */
+  --bn-control-height: 44px;
+
+  /* Status — reuse the tile-state palette from CLAUDE.md so any
+     future alert/badge/toast adoption inherits the same greens/
+     yellows/reds already on screen during play. */
+  --bn-color-success-500: #3F9D5B;
+  --bn-color-success-600: #3F9D5B;
+  --bn-color-success-bg: rgb(63 157 91 / 0.12);
+  --bn-color-success-border: rgb(63 157 91 / 0.4);
+  --bn-color-success-text: #3F9D5B;
+
+  --bn-color-warning-500: #E8B73B;
+  --bn-color-warning-600: #E8B73B;
+  --bn-color-warning-bg: rgb(232 183 59 / 0.12);
+  --bn-color-warning-border: rgb(232 183 59 / 0.4);
+  --bn-color-warning-text: #E8B73B;
+
+  --bn-color-error-500: #E84444;
+  --bn-color-error-600: #E84444;
+  /* -bg/-border/-text are what [data-bn="alert"][data-variant="error"]
+     paints itself with. Set to the exact rgba/hex triple T4BS's own
+     [data-bn-region="error"] box has always used (styles.css), so the
+     error notices on lobby / submit / moderate / admin are unchanged on
+     screen now that the box is the package's alert. #FF6E6E measures
+     6.77:1 on that tint over the page background and 5.90:1 on the same
+     tint over a card — comfortably AA both ways. */
+  --bn-color-error-bg: rgb(255 77 77 / 0.08);
+  --bn-color-error-border: rgb(255 77 77 / 0.3);
+  --bn-color-error-text: #FF6E6E;
+  /* --bn-color-error-fg (components 0.6.0): the text-safe error color
+     [data-bn="field-error"] reads — same red as -600/-text above, no
+     separate value needed. */
+  --bn-color-error-fg: var(--bn-color-error-600);
+
+  --bn-color-info-500: #E8920A;
+  --bn-color-info-600: #E8920A;
+  --bn-color-info-bg: rgb(232 146 10 / 0.12);
+  --bn-color-info-border: rgb(232 146 10 / 0.4);
+  --bn-color-info-text: #E8920A;
+
+  /* Type — DM Sans is already the body font (this file, `body{}` above). */
+  --bn-font-family: 'DM Sans', system-ui, sans-serif;
+
+  /* Radius ladder (components 0.6.0) — matches the corner radii T4BS's
+     own chrome already uses, so renderDialog()/renderTabs()/inputs
+     read as the same shapes as the bespoke UI around them:
+     controls (buttons/inputs, styles.css ~187/268) = 8px,
+     containers (cards/panels, styles.css ~253/387) = 12px,
+     modal surfaces ([data-bn-region="end-overlay"] > article,
+     styles.css ~126) = 14px. */
+  --bn-radius-control: 8px;
+  --bn-radius-container: 12px;
+  --bn-radius-modal: 14px;
+
+  /* Elevation — same drop shadow the end-of-round overlay's <article>
+     already uses (styles.css ~128), so [data-bn="dialog"] reads as
+     the same weight of "floating card". */
+  --bn-shadow-modal: 0 28px 72px rgb(0 0 0 / 0.7);
+
+  /* Scrim — same tone/opacity as the end-overlay backdrop (styles.css
+     ~118: rgba(10,9,7,.92)) minus its blur (component CSS hardcodes
+     its own backdrop-filter: blur(4px)), so [data-bn="dialog"]'s
+     ::backdrop dims to the same near-black T4BS already uses instead
+     of upstream's neutral rgb(0 0 0 / 0.4). */
+  --bn-scrim: rgb(10 9 7 / 0.92);
+
+  /* --bn-motion-fast/-base/-slow (components 0.6.0): NOT overridden.
+     Upstream's defaults (150ms/200ms/300ms ease, aliased from
+     --bn-transition-fast/-normal/-slow) already match T4BS's own
+     transition timings (.15s dominates border-color/color/background
+     transitions; .2s/.25s cover the rest — see styles.css) closely
+     enough that a T4BS-specific override would just restate the
+     default without changing anything on screen. */
+}
+
+/* @basenative/combobox ships a WCAG-AA *light* default palette (see its
+   own styles.css header comment) as `--cb-*` custom properties set
+   DIRECTLY on `[data-bn="combobox"]` (not `:root`) inside `@layer
+   combobox` — with no T4BS override, the category combobox on /submit
+   rendered as a plain white box with black text, the one light-surface
+   leak inside an otherwise all-dark UI.
+
+   This block used to target `:root` on the theory that "unlayered
+   always wins over layered" (same reasoning as the `--bn-*` block
+   above). That's true for a cascade *tie* on the same element, but
+   it isn't one here: the package's rule sets `--cb-fg` etc. directly
+   on [data-bn="combobox"] itself, so that specified value always wins
+   over whatever [data-bn="combobox"] would otherwise *inherit* from
+   :root, regardless of layering — inheritance only applies when
+   nothing in the cascade targets the element directly. A `:root`
+   override for one of the package's own component-scoped tokens is a
+   no-op; it has to target the same selector the package uses.
+   Deliberately unlayered here (like the --bn-* block) so this still
+   wins over the package's `@layer combobox` declaration once both are
+   competing for the same element.
+     bg/listbox-bg #0F0E0C, fg #F0EDE4 — one step darker than
+       --bn-color-surface (#0C0B09) so the field reads as a raised
+       control against the page, same relationship styles.css already
+       uses for [data-bn-region="input"].
+     border #988570 — reuses --bn-color-border-control (see its comment
+       above: 5.55:1 on this bg, clears the WCAG 1.4.11 3:1 control-
+       boundary minimum; the decorative --bn-color-border is too faint
+       for that).
+     option-bg-hover #242018 / -active #2E2A22 — distinguishable dark
+       steps up from the field bg, same "hover < active" relationship
+       as [data-bn="cb-option"] expects. */
+[data-bn="combobox"] {
+  --cb-bg: #0F0E0C;
+  --cb-fg: #F0EDE4;
+  --cb-muted-fg: #988570;
+  --cb-border: #988570;
+  --cb-border-focus: #E8920A;
+
+  --cb-listbox-bg: #0F0E0C;
+  --cb-listbox-border: #2C2926;
+
+  --cb-option-bg-hover: #242018;
+  --cb-option-bg-active: #2E2A22;
+  --cb-option-fg: #F0EDE4;
+  --cb-option-hint-fg: #988570;
+
+  --cb-create-fg: #4EAF7C;
+  --cb-create-bg: rgb(78 175 124 / 0.12);
+}
+
+@layer keyboard {
+  /* @basenative/keyboard — game palette layered on top of the WCAG-AA
+     default palette shipped by the package. */
+  [data-bn="keyboard"] {
+    --kb-bg: #0C0B09;
+    --kb-key-bg: #3A3530;
+    --kb-key-fg: #F0EDE4;
+    --kb-key-active: #5A5550;
+    /* Paired explicitly with their -fg tokens — see styles.css's
+       `.bn-kb` block (which wins the cascade today, being unlayered)
+       for the full contrast-ratio rationale. Kept in sync here too so
+       this block stays correct on its own if the unlayered override
+       is ever removed, same belt-and-suspenders reasoning as
+       --kb-key-primary-fg just below. */
+    --kb-key-green: #4EAF7C;
+    --kb-key-green-fg: #0A1F12;
+    --kb-key-yellow: #D4B445;
+    --kb-key-yellow-fg: #1F1700;
+    --kb-key-absent: #1E1C18;
+    --kb-key-absent-fg: #988570;
+    --kb-key-staked: #FFD700;
+    --kb-key-radius: 5px;
+    --kb-min-tap: 44px;
+
+    /* Enter key text — package default (#111111 on --kb-key-primary-bg
+       #E8920A, ~6:1) already clears AA, but something else in this
+       cascade (styles.css's unlayered `.bn-kb` block) was winning and
+       leaving the ENTER key's text at the general --kb-key-fg color
+       instead (#F0EDE4 on #E8920A — axe-measured 2.1:1, fails AA). Set
+       explicitly here, and belt-and-suspenders as a plain `color` rule
+       on `.bn-kb-key--enter` in styles.css, matching the 7.86:1
+       --bn-color-on-primary text color (this file, above) now used
+       everywhere else an accent-orange background needs readable
+       text. */
+    --kb-key-primary-fg: #1A0A00;
+  }
+}

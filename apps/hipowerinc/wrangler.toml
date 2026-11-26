@@ -6,8 +6,7 @@ main = "src/index.js"
 compatibility_date = "2026-11-01"
 workers_dev = false
 
-[observability]
-enabled = true
+observability = { enabled = true }
 
 # Every public page is served by this Worker; /app/* is additionally behind
 # Cloudflare Access (infra/cloudflare/access.tf).
@@ -24,9 +23,9 @@ service = "dl-leads"
 # duganlabs/repository at deploy with `wrangler secret bulk`:
 #   OWNER_EMAILS   who may open /app (Access enforces it first)
 [vars]
-TURNSTILE_SITE_KEY = "TODO-phase3"          # public site key (infra/cloudflare/turnstile.tf)
+TURNSTILE_SITE_KEY = "0x4AAAAAAGUwXUM0-4nsXFna" # Turnstile widget "DuganLabs landing pages (new)" (public)
 ACCESS_TEAM_DOMAIN = "duganlabs.cloudflareaccess.com"
-ACCESS_AUD = "TODO-phase3"                   # Access application AUD tag
+ACCESS_AUD = "b34270924818ac45ad49998edf06c9574da065c500563295d795611f3deddd34" # Access app "hipowerinc private"
 
 [env.staging]
 name = "dl-hipowerinc-staging"

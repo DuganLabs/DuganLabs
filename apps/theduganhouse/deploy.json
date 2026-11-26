@@ -10,8 +10,7 @@
     },
     "production": {
       "env": null,
-      "url": "https://theduganhouse.com",
-      "blocked": "waiting on Turnstile + Access API permissions (cut-over 2026-11-26)"
+      "url": "https://theduganhouse.com"
     }
   },
   "lighthouse": [

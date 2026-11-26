@@ -36,10 +36,12 @@ fi
 
 # 5. The head commit must be authored and committed under a GitHub noreply identity
 #    (no personal address in public commit metadata; also keeps Nx Cloud at one contributor).
-if [[ -n "${GUARD_CHECK_COMMIT:-1}" ]] && git rev-parse HEAD >/dev/null 2>&1; then
-  ids=$(git log -1 --format='%ae %ce')
-  for e in $ids; do
-    [[ "$e" == *noreply* ]] || err "commit identity '$e' is not a GitHub noreply address (git config user.email 23459839+warrendugan@users.noreply.github.com)"
+#    On pull_request runs the checkout is GitHub's synthetic merge commit, whose author is
+#    GitHub's choice, so CI passes the real PR head in GUARD_COMMIT_SHA.
+sha="${GUARD_COMMIT_SHA:-HEAD}"
+if git rev-parse --verify -q "${sha}^{commit}" >/dev/null; then
+  for e in $(git log -1 --format='%ae %ce' "$sha"); do
+    [[ "$e" == *noreply* ]] || err "commit identity '$e' ($sha) is not a GitHub noreply address (git config user.email 23459839+warrendugan@users.noreply.github.com; GitHub Settings -> Emails -> Keep my email addresses private)"
   done
 fi
 

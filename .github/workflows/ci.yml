@@ -60,6 +60,8 @@ jobs:
           if [[ "$use" != true ]]; then echo "NX_NO_CLOUD=true" >> "$GITHUB_ENV"; fi
           echo "Nx Cloud: $use (actor $ACTOR)" >> "$GITHUB_STEP_SUMMARY"
       - name: Public-repo guards (Plaid, secret files, PII, commit identity)
+        env:
+          GUARD_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash tools/ci/guard.sh
       - name: Secret scan (gitleaks, new commits only)
         env:

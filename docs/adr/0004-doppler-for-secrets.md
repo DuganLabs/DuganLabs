@@ -1,6 +1,6 @@
 # ADR 0004 — Doppler is the org-wide secret store
 
-- Status: **accepted** (rollout in progress)
+- Status: **superseded by ADR 0007** (one project/config; Plaid exception)
 - Date: 2026-04-26
 - Owner: Warren Dugan
 

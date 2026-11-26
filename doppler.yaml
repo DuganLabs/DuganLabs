@@ -1,4 +1,5 @@
-# Pins `doppler run` to this repo's project and config (duganlabs/repository).
+# Pins `doppler run` to the monorepo project and config (duganlabs/repository, GitHub-synced).
+# Plaid is the exception: pendingbusiness-runtime/prd, never synced (docs/PLAID-SECRETS.md).
 setup:
   project: duganlabs
   config: repository

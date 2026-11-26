@@ -7,13 +7,14 @@ This repo is public so that CI on standard GitHub runners is free. In exchange:
   `tools/ci/guard.sh` and gitleaks (CI, new commits) catch the rest.
 - **Personal data** lives only in D1 (leads), the Cloudflare Access policy, and Worker secrets
   (`OWNER_EMAILS`, `OWNER_EMAIL`). Tests use `@example.com`.
-- **Commit identity:** `Warren Dugan <warrendugan@users.noreply.github.com>`. Configure it
-  per clone with `git config user.email warrendugan@users.noreply.github.com`. Turn on GitHub
+- **Commit identity:** `Warren Dugan <23459839+warrendugan@users.noreply.github.com>`. Configure it
+  per clone with `git config user.email 23459839+warrendugan@users.noreply.github.com`. Turn on GitHub
   **Settings -> Emails -> Keep my email addresses private** and
   **Block command line pushes that expose my email**.
-- **History:** before the repo flips public, the existing history must be reviewed. As of
-  Nov 26, 2026 gitleaks found no leaks in 73 commits, but author metadata contains a
-  personal Gmail address and a work address. See PLAN.md (decision on history).
+- **History:** rewritten on Nov 26, 2026 with `git filter-repo` so that no commit (author,
+  committer or trailer) carries a personal address; only GitHub noreply addresses remain.
+  `tools/ci/guard.sh` fails the build if a personal address reappears in a tracked file or
+  in the head commit's author/committer.
 - **Repo settings (Warren, Phase 3):**
   - secret scanning and push protection on;
   - private vulnerability reporting on;

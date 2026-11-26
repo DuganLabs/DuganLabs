@@ -1,2 +1,9 @@
-# Default owner — Warren reviews everything until the team grows.
+# Owner review for everything. The personal GitHub account stays as the org owner
+# (only the personal REPOS are being retired), so the user handle remains valid.
+# When an org team exists (needs org-admin to create), replace with e.g. @DuganLabs/owners.
 * @warrendugan
+/.github/ @warrendugan
+/infra/ @warrendugan
+/tools/ci/ @warrendugan
+/AGENTS.md @warrendugan
+/standards/ @warrendugan

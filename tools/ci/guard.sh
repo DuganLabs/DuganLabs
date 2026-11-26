@@ -27,5 +27,21 @@ if em=$(git grep -nI -E '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}' -- 'apps/*
   err "email address in app config (public repo: use secrets / Access policy):"; echo "$em"
 fi
 
+# 4. No personal mailbox addresses anywhere in tracked files (any provider that is a
+#    personal inbox). Placeholders on example domains are fine.
+personal='@(gmail|googlemail|outlook|hotmail|icloud|yahoo|proton|protonmail|pm\.me)\.(com|me)|warren@green''put\.com'
+if pe=$(git grep -nI -i -E "[A-Za-z0-9._%+-]+($personal)" -- . ':!pnpm-lock.yaml' ':!tools/ci/guard.sh'); then
+  err "personal email address in tracked files:"; echo "$pe"
+fi
+
+# 5. The head commit must be authored and committed under a GitHub noreply identity
+#    (no personal address in public commit metadata; also keeps Nx Cloud at one contributor).
+if [[ -n "${GUARD_CHECK_COMMIT:-1}" ]] && git rev-parse HEAD >/dev/null 2>&1; then
+  ids=$(git log -1 --format='%ae %ce')
+  for e in $ids; do
+    [[ "$e" == *noreply* ]] || err "commit identity '$e' is not a GitHub noreply address (git config user.email 23459839+warrendugan@users.noreply.github.com)"
+  done
+fi
+
 [[ $fail -eq 0 ]] && echo "guard: ok"
 exit $fail

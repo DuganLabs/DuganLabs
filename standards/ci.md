@@ -22,7 +22,7 @@ This replaces the org's Sep 14 manual-only (`workflow_dispatch`) rule **for this
 ## Nx Cloud (Team plan: $29/mo with a $29 usage credit; $19 per extra contributor)
 A contributor is any **commit author** of a CI pipeline execution, bots included. So:
 - The cache is used only when the head commit author equals repo variable
-  `NX_CLOUD_AUTHOR_EMAIL` (the owner noreply identity) **and** the actor is not a `[bot]`.
+  `NX_CLOUD_AUTHOR_EMAIL` (the owner noreply identity, `23459839+warrendugan@users.noreply.github.com`) **and** the actor is not a `[bot]`.
   Otherwise `NX_NO_CLOUD=true` and the token is never exposed to the step.
 - Agents commit as the owner identity (AGENTS.md rule 3).
 - Dependabot PRs run without Nx Cloud (local cache only; small, so cheap).

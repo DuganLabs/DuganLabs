@@ -28,7 +28,7 @@ Cloudflare infra). If a rule is not here or in `standards/`, it is not a rule.
 2. **Plaid is runtime-only.** `PLAID_*` never appears in workflows, GitHub secrets, the
    GitHub-synced Doppler config, or CI logs (`docs/PLAID-SECRETS.md`).
 3. **Commit identity.** Agents commit as the single owner identity
-   `Warren Dugan <warrendugan@users.noreply.github.com>`, never a personal or work
+   `Warren Dugan <23459839+warrendugan@users.noreply.github.com>`, never a personal or work
    address. Nx Cloud bills per distinct commit author, and the public repo would expose
    the address. Bots (Dependabot) never use Nx Cloud (`standards/ci.md`).
 4. **Consequential actions need Warren's explicit yes.** That means merging to main,

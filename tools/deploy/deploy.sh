@@ -36,10 +36,16 @@ if [[ "$kind" == "worker" ]]; then
 elif [[ "$kind" == "pages" ]]; then
   project=$(j "pagesProject.${stage}")
   branch=$([[ "$stage" == production ]] && echo main || echo staging)
-  # Run from the wrangler.toml's directory so its bindings (D1, KV, vars) apply to the
-  # deployment; a prebuilt _worker.js in the artifact means nothing is bundled here.
+  # Deploy from a scratch dir holding only a copy of the app's wrangler.toml: its bindings
+  # (D1, KV, vars) apply to the deployment, and no functions/ source dir sits next to it,
+  # so wrangler uploads the artifact's prebuilt _worker.js instead of re-bundling sources
+  # (the deploy job has no node_modules).
   art_abs="$(cd "$artifact" && pwd)"
-  ( cd "$(dirname "$config")" && "${WR[@]}" pages deploy "$art_abs" --project-name "$project" --branch "$branch" --commit-dirty=true )
+  scratch="$(mktemp -d)"
+  [[ -f "$config" ]] && cp "$config" "$scratch/wrangler.toml"
+  mkdir -p "$scratch/node_modules"   # wrangler's cache dir resolves to the nearest node_modules (else "/")
+  ( cd "$scratch" && "${WR[@]}" pages deploy "$art_abs" --project-name "$project" --branch "$branch" --commit-dirty=true )
+  rm -rf "$scratch"
 else
   echo "unknown kind $kind" >&2; exit 2
 fi

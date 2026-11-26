@@ -29,7 +29,7 @@ fi
 
 # 4. No personal mailbox addresses anywhere in tracked files (any provider that is a
 #    personal inbox). Placeholders on example domains are fine.
-personal='@(gmail|googlemail|outlook|hotmail|icloud|yahoo|proton|protonmail|pm\.me)\.(com|me)|warren@green''put\.com'
+personal='@(gmail|googlemail|outlook|hotmail|icloud|yahoo|proton|protonmail|pm\.me)\.(com|me)|warren@gr''eenput\.com'
 if pe=$(git grep -nI -i -E "[A-Za-z0-9._%+-]+($personal)" -- . ':!pnpm-lock.yaml' ':!tools/ci/guard.sh'); then
   err "personal email address in tracked files:"; echo "$pe"
 fi

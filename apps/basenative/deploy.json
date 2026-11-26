@@ -1,0 +1,21 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/basenative/wrangler.toml",
+  "artifact": "dist/apps/basenative/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-basenative-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://basenative.com",
+      "blocked": "cut-over pending: move the current basenative.com site to private.basenative.com (behind Access) first; see PLAN.md migration order"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

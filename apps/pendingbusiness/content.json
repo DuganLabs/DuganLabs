@@ -1,0 +1,58 @@
+{
+  "name": "PendingBusiness",
+  "domain": "pendingbusiness.com",
+  "source": "pendingbusiness",
+  "status": "private-beta",
+  "monogram": "P",
+  "theme": {
+    "accent": "#0f0e0c",
+    "accentInk": "#ffffff",
+    "accentStrong": "#0f0e0c",
+    "accentDark": "#f3f1ec",
+    "accentInkDark": "#0f0e0c",
+    "accentStrongDark": "#e9e4d8",
+    "ink": "#0f0e0c"
+  },
+  "_sources": "Copy from pendingbusiness.com (h1, Principles paragraph, 'Membership is by invitation') and the PendingBusiness README on 2026-11-26. Ink from its theme-color #0F0E0C.",
+  "privateUrl": "https://private.pendingbusiness.com/",
+  "privateLabel": "PendingBusiness",
+  "headline": "A treasury operating system for one",
+  "idea": "Float capture, last-responsible-moment payments and deterministic cash routing, built for one person and a small group of invited members.",
+  "points": [
+    {
+      "icon": "trend",
+      "title": "Float is the product",
+      "body": "Idle money should earn yield every day it isn't needed elsewhere."
+    },
+    {
+      "icon": "clock",
+      "title": "The last responsible moment",
+      "body": "Bills get paid at the last responsible moment, not the first."
+    },
+    {
+      "icon": "layers",
+      "title": "Avalanche, not snowball",
+      "body": "Debt is extinguished by APR-ordered avalanche, not feel-good snowball."
+    }
+  ],
+  "visual": {
+    "rows": [
+      {
+        "icon": "trend",
+        "title": "Float",
+        "detail": "Idle cash earns yield"
+      },
+      {
+        "icon": "clock",
+        "title": "Last responsible moment",
+        "detail": "Bills paid when due, not before"
+      },
+      {
+        "icon": "layers",
+        "title": "APR avalanche",
+        "detail": "Highest rate retired first"
+      }
+    ]
+  },
+  "cta": "Request an invitation"
+}

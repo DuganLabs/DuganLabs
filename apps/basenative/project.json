@@ -1,0 +1,60 @@
+{
+  "name": "basenative",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/basenative/src",
+  "tags": [
+    "scope:site",
+    "type:coming-soon"
+  ],
+  "implicitDependencies": [
+    "coming-soon"
+  ],
+  "targets": {
+    "check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/content.json",
+        "{workspaceRoot}/libs/coming-soon/src/content.js"
+      ],
+      "options": {
+        "command": "node tools/scripts/check-content.mjs apps/basenative/content.json"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [
+        "check"
+      ],
+      "inputs": [
+        "default",
+        "^default"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/apps/basenative"
+      ],
+      "options": {
+        "command": "node tools/deploy/build-worker.mjs basenative"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "pnpm exec wrangler dev -c apps/basenative/wrangler.toml -c apps/leads/wrangler.toml --persist-to .wrangler/state"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "bash tools/deploy/deploy.sh basenative {args.stage}",
+        "args": "--stage=staging"
+      }
+    }
+  }
+}

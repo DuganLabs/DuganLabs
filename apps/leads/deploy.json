@@ -1,0 +1,12 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/leads/wrangler.toml",
+  "artifact": "dist/apps/leads/index.js",
+  "stages": {
+    "staging": { "env": "staging", "url": "service-binding-only" },
+    "production": { "env": null, "url": "service-binding-only" }
+  },
+  "migrations": "apps/leads/migrations",
+  "lighthouse": []
+}

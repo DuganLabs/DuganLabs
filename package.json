@@ -2,16 +2,26 @@
   "name": "duganlabs",
   "packageManager": "pnpm@10.18.3",
   "private": true,
-  "description": "DuganLabs org portfolio \u2014 duganlabs.com",
+  "description": "DuganLabs monorepo: every domain as apps/<domain>, shared libs, standards, and the control plane.",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "pnpm exec nx run worker:dev",
-    "deploy": "pnpm exec nx run worker:deploy",
-    "test": "node --test \"tests/**/*.test.mjs\""
+    "check": "nx run-many -t check test",
+    "build": "nx run-many -t build",
+    "affected": "nx affected -t check test build",
+    "new-app": "node tools/scripts/new-app.mjs",
+    "dev:leads:migrate": "wrangler d1 migrations apply dl-leads --local -c apps/leads/wrangler.toml --persist-to .wrangler/state"
   },
   "devDependencies": {
-    "nx": "^23.2.0"
+    "nx": "23.3.0",
+    "wrangler": "^4.151.0"
   },
-  "nx": {
-    "includedScripts": []
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "nx",
+      "workerd"
+    ]
   }
 }

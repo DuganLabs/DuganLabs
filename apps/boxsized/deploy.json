@@ -1,0 +1,20 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/boxsized/wrangler.toml",
+  "artifact": "dist/apps/boxsized/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-boxsized-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://boxsized.com"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

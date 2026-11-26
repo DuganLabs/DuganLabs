@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "apps/<app>/deploy.json",
+  "type": "object",
+  "required": ["kind", "config", "artifact", "stages"],
+  "properties": {
+    "kind": { "enum": ["worker", "pages"] },
+    "config": { "type": "string", "description": "wrangler config path, repo-relative" },
+    "artifact": { "type": "string", "description": "worker: bundled entry in dist/; pages: output directory in dist/" },
+    "pagesProject": { "type": "object", "description": "pages only: { staging, production } Cloudflare Pages project names" },
+    "stages": {
+      "type": "object",
+      "required": ["staging", "production"],
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "env": { "type": ["string", "null"], "description": "wrangler --env; null = top-level config" },
+          "url": { "type": "string" },
+          "blocked": { "type": "string", "description": "if set, deploy.sh refuses this stage and prints the reason" }
+        }
+      }
+    },
+    "lighthouse": { "type": "array", "items": { "type": "string" }, "description": "paths audited post-deploy" }
+  }
+}

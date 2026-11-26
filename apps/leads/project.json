@@ -1,0 +1,12 @@
+{
+  "name": "leads",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/leads/src",
+  "tags": ["scope:shared", "type:worker"],
+  "targets": {
+    "test": { "executor": "nx:run-commands", "cache": true, "options": { "command": "node --test 'apps/leads/test/*.test.mjs'" } },
+    "build": { "executor": "nx:run-commands", "cache": true, "inputs": ["production"], "outputs": ["{workspaceRoot}/dist/apps/leads"], "options": { "command": "node tools/deploy/build-worker.mjs leads" } },
+    "deploy": { "executor": "nx:run-commands", "dependsOn": ["build"], "options": { "command": "bash tools/deploy/deploy.sh leads {args.stage}", "args": "--stage=staging" } }
+  }
+}

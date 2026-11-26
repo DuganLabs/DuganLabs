@@ -1,0 +1,19 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/duganlabs-private/worker/wrangler.toml",
+  "artifact": "dist/apps/duganlabs-private/index.js",
+  "stages": {
+    "staging": {
+      "env": null,
+      "url": "https://private.duganlabs.com",
+      "blocked": "no staging env for the legacy site; it deploys straight to production after review"
+    },
+    "production": {
+      "env": null,
+      "url": "https://private.duganlabs.com",
+      "blocked": "cut-over pending: create the Cloudflare Access app for private.duganlabs.com first (infra/cloudflare/access.tf), then remove this line"
+    }
+  },
+  "lighthouse": []
+}

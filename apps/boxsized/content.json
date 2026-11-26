@@ -1,0 +1,19 @@
+{
+  "name": "boxsized",
+  "domain": "boxsized.com",
+  "source": "boxsized",
+  "status": "coming-soon",
+  "theme": {
+    "accent": "#3d4ed8",
+    "accentInk": "#ffffff",
+    "accentStrong": "#3442c4",
+    "accentDark": "#8b98ff",
+    "accentInkDark": "#0b0c1a",
+    "accentStrongDark": "#a9b3ff",
+    "ink": "#111327"
+  },
+  "headline": "A development blog",
+  "idea": "Writing on development topics, from the work of building software.",
+  "cta": "Get new posts",
+  "_sources": "Owner (t-answer 2026-11-26): boxsized = dev blog on development topics."
+}

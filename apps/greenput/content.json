@@ -1,0 +1,58 @@
+{
+  "name": "Greenput",
+  "domain": "greenput.com",
+  "source": "greenput",
+  "status": "private-beta",
+  "theme": {
+    "accent": "#1f7a4d",
+    "accentInk": "#ffffff",
+    "accentStrong": "#17603c",
+    "accentDark": "#1f7a4d",
+    "accentInkDark": "#ffffff",
+    "accentStrongDark": "#78c79e",
+    "ink": "#07231a"
+  },
+  "_sources": "Copy from greenput.com (meta description, h2/h3, feature paragraphs) on 2026-11-26. Brand green from greenput.com CSS (--color-palette-green-600/700/300).",
+  "privateUrl": "https://private.greenput.com/",
+  "privateLabel": "the marketing site",
+  "headline": "The operating system for trade contractors",
+  "idea": "A lead-to-payment platform that charges one price per delivered lead, so contractors pay for booked jobs, not bought leads.",
+  "points": [
+    {
+      "icon": "inbox",
+      "title": "Every lead, captured",
+      "body": "Capture leads from your website, referrals, and campaigns, so none fall through the cracks."
+    },
+    {
+      "icon": "calendar",
+      "title": "Quote to paid, in one system",
+      "body": "Scheduling, customers, invoicing and payments for electricians, plumbers, HVAC techs and roofers."
+    },
+    {
+      "icon": "card",
+      "title": "Pay for what you use",
+      "body": "No subscription tiers. One price per delivered lead."
+    }
+  ],
+  "visual": {
+    "rows": [
+      {
+        "icon": "inbox",
+        "title": "Lead Management",
+        "detail": "Website, referrals and campaigns"
+      },
+      {
+        "icon": "calendar",
+        "title": "Job Scheduling",
+        "detail": "Drag-and-drop visual calendar"
+      },
+      {
+        "icon": "card",
+        "title": "Invoicing & Payments",
+        "detail": "Quote to paid, in one system"
+      }
+    ]
+  },
+  "cta": "Request access",
+  "placeholder": "you@company.com"
+}

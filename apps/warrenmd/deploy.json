@@ -1,0 +1,20 @@
+{
+  "$schema": "../../tools/deploy/deploy.schema.json",
+  "kind": "worker",
+  "config": "apps/warrenmd/wrangler.toml",
+  "artifact": "dist/apps/warrenmd/index.js",
+  "stages": {
+    "staging": {
+      "env": "staging",
+      "url": "https://dl-warrenmd-staging.duganlabs.workers.dev"
+    },
+    "production": {
+      "env": null,
+      "url": "https://warrenmd.com"
+    }
+  },
+  "lighthouse": [
+    "/",
+    "/login"
+  ]
+}

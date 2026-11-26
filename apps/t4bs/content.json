@@ -1,0 +1,38 @@
+{
+  "name": "Tabs",
+  "domain": "t4bs.com",
+  "source": "t4bs",
+  "status": "coming-soon",
+  "headline": "One subject. One phrase. No mercy.",
+  "idea": "A daily phrase puzzle with poker mechanics. Pick a category, solve the hidden phrase, and stake your lives tile by tile.",
+  "points": [
+    {
+      "icon": "calendar",
+      "title": "A new daily",
+      "body": "One puzzle every day, plus unlimited free play."
+    },
+    {
+      "icon": "shield",
+      "title": "Four lives",
+      "body": "Four lives for an entire phrase. A staked tile that misses costs one."
+    },
+    {
+      "icon": "trend",
+      "title": "All in",
+      "body": "An all-in shove ends the round one way or the other."
+    }
+  ],
+  "theme": {
+    "accent": "#c23d22",
+    "accentInk": "#ffffff",
+    "accentStrong": "#a3321b",
+    "accentDark": "#ff8a70",
+    "accentInkDark": "#2a0c05",
+    "accentStrongDark": "#ffa48f",
+    "ink": "#2a0c05"
+  },
+  "monogram": "T",
+  "privateUrl": "https://private.t4bs.com/",
+  "privateLabel": "the game",
+  "_sources": "t4bs.com meta description + t4bs README (2026-11-26)."
+}

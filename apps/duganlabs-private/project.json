@@ -1,0 +1,49 @@
+{
+  "name": "duganlabs-private",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/duganlabs-private/worker",
+  "tags": [
+    "scope:site",
+    "type:private-site"
+  ],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "node --test 'apps/duganlabs-private/tests/*.test.mjs'"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/apps/duganlabs-private"
+      ],
+      "options": {
+        "command": "node tools/deploy/build-worker.mjs duganlabs-private"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "pnpm exec wrangler dev -c apps/duganlabs-private/worker/wrangler.toml"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "bash tools/deploy/deploy.sh duganlabs-private {args.stage}",
+        "args": "--stage=staging"
+      }
+    }
+  }
+}

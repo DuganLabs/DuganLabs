@@ -1,0 +1,15 @@
+{
+  "name": "coming-soon",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/coming-soon/src",
+  "tags": ["scope:shared", "type:kit"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/**/*"],
+      "options": { "command": "node --test 'libs/coming-soon/test/*.test.mjs'" }
+    }
+  }
+}

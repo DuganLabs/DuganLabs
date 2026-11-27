@@ -1,0 +1,51 @@
+{
+  "name": "basenative",
+  "version": "0.3.0",
+  "description": "BaseNative: an open-source, Apple-grade design system kit in plain HTML & CSS, on web standards. AI-safe and agent-ready.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "npx nx serve basenative-example-express",
+    "build:pages": "nx bundle basenative-example-express && node scripts/build-pages.js",
+    "build:pages:no-cloud": "NX_NO_CLOUD=true pnpm run build:pages",
+    "deploy": "pnpm build:pages && wrangler pages deploy dist --project-name basenative --branch main",
+    "audit:axe": "node scripts/audit/axe.mjs",
+    "audit:observatory": "node scripts/audit/observatory.mjs",
+    "audit:ux": "node scripts/audit/laws-of-ux.mjs",
+    "audit:lighthouse": "node scripts/audit/lighthouse.mjs",
+    "audit": "pnpm audit:axe && pnpm audit:ux",
+    "bundle-size": "node scripts/bundle-size.js",
+    "version": "changeset version && pnpm install --lockfile-only --ignore-scripts && node scripts/package-inventory.js && node scripts/llms-txt.js",
+    "publish:check": "node scripts/publish-check.mjs",
+    "smoke:npm": "node scripts/npm-smoke.mjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "0.18.5",
+    "@changesets/cli": "^3.0.3",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "26.6.4",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "happy-dom": "^21.0.1",
+    "lighthouse": "^13.6.0",
+    "nx": "^23.3.0",
+    "nx-mcp": "^0.25.0",
+    "prettier": "^3.9.9",
+    "publint": "0.3.25",
+    "typescript": "5.9.3",
+    "wrangler": "^4.151.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "nx",
+      "@playwright/test",
+      "sharp",
+      "workerd"
+    ]
+  }
+}

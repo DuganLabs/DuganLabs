@@ -1,0 +1,66 @@
+ol[variant="default"] {
+  position: var(--position-toast);
+  inset-block-end: var(--spacing-toast-inset-block-end);
+  inset-inline-end: var(--spacing-toast-inset-inline-end);
+  z-index: var(--layer-toast);
+  display: var(--display-toast);
+  flex-direction: var(--flex-direction-toast);
+  gap: var(--spacing-toast-gap);
+  list-style: var(--list-style-toast);
+  margin-inline: var(--spacing-toast-margin);
+  padding: var(--spacing-toast-padding);
+  /* One width for the stack, so every item lines up in one column
+     whatever its message says; on a phone the cap leaves the stack's
+     inset on both sides. */
+  inline-size: var(--size-toast-inline);
+
+  & > li {
+    display: var(--display-toast-item);
+    align-items: var(--align-toast-item);
+    gap: var(--spacing-toast-item-gap);
+    padding-block: var(--spacing-toast-item-padding-block);
+    padding-inline: var(--spacing-toast-item-padding-inline);
+    background-color: var(--color-bkg-toast-item);
+    color: var(--color-text-toast-item);
+    border-width: var(--size-border-toast-item);
+    border-style: var(--border-style-toast-item);
+    border-color: var(--color-border-toast-item);
+    border-radius: var(--size-radius-toast-item);
+    box-shadow: var(--shadow-toast-item);
+    font-family: var(--font-toast-item-family);
+    font-size: var(--font-toast-item-size);
+    line-height: var(--font-toast-item-leading);
+    letter-spacing: var(--font-toast-item-tracking);
+  }
+
+  /* The message takes the free space, so the dismiss action sits at
+     the item's trailing edge instead of trailing the text. */
+  & > li > p {
+    flex: var(--flex-toast-item-message);
+  }
+
+  & > li > svg {
+    inline-size: var(--size-toast-item-icon-inline);
+    block-size: var(--size-toast-item-icon-block);
+    flex: var(--flex-toast-item-icon);
+    color: var(--color-accent-toast-item);
+  }
+
+  /* Item tones are element-level registrations: the item element is
+     addressed exactly (li[variant="success"]), never by presence. */
+  & > li[variant="info"] {
+    --color-accent-toast-item: var(--color-accent-toast-item-info);
+  }
+
+  & > li[variant="success"] {
+    --color-accent-toast-item: var(--color-accent-toast-item-success);
+  }
+
+  & > li[variant="warning"] {
+    --color-accent-toast-item: var(--color-accent-toast-item-warning);
+  }
+
+  & > li[variant="danger"] {
+    --color-accent-toast-item: var(--color-accent-toast-item-danger);
+  }
+}

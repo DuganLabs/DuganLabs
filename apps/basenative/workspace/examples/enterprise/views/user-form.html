@@ -1,0 +1,10 @@
+<h1>New User</h1>
+<form data-bn="form-grid" method="POST" action="/api/users">
+  {{ nameInput }}
+  {{ emailInput }}
+  {{ roleSelect }}
+  <div data-bn="form-actions">
+    {{ submitButton }}
+    <a href="/users">{{ cancelButton }}</a>
+  </div>
+</form>

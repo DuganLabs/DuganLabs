@@ -1,0 +1,293 @@
+<!--
+  Every BaseNative figure on this page is bound to scripts/compare-stats.js,
+  which measures it from source on each build — the prose below binds
+  `{{ stats.… }}`, and the tables are composed from the same stats object in
+  examples/express/compare-tables.js. Do not type a number into either file:
+  scripts/check-compare-page.js fails the build if you do.
+-->
+{{ hero }}
+
+<section id="at-a-glance" data-bn-nav="At a glance" data-stats>
+  <ul data-bn="bn-card-grid">
+    <li>
+      <article data-bn="bn-metric">
+        <p data-bn="bn-metric-value" data-claim>{{ stats.coreLines }}</p>
+        <p data-bn="bn-metric-label">Lines of reactivity core</p>
+      </article>
+    </li>
+    <li>
+      <article data-bn="bn-metric">
+        <p data-bn="bn-metric-value" data-claim>{{ stats.runtimeProdDeps }}</p>
+        <p data-bn="bn-metric-label">Core runtime dependencies</p>
+      </article>
+    </li>
+    <li>
+      <article data-bn="bn-metric">
+        <p data-bn="bn-metric-value" data-claim>{{ stats.buildSteps }}</p>
+        <p data-bn="bn-metric-label">Build steps required</p>
+      </article>
+    </li>
+    <li>
+      <article data-bn="bn-metric">
+        <p data-bn="bn-metric-value" data-claim>{{ stats.corePrimitives }}</p>
+        <p data-bn="bn-metric-label">Core API primitives</p>
+      </article>
+    </li>
+  </ul>
+</section>
+
+<section id="bundle" data-bn-nav="Bundle size">
+  <h2>Bundle <em>size</em></h2>
+  <p>
+    BaseNative ships raw ES modules. No bundler, no tree-shaking needed — what you import is what
+    runs. The runtime is one package you can read end to end.
+  </p>
+  <ul data-compare-legend aria-label="How to read the tables">
+    <li data-tone="win">
+      <svg aria-hidden="true" viewBox="0 0 16 16" data-compare-marker>
+        <path d="M3.5 8.5l3 3 6-7" /></svg
+      >An advantage
+    </li>
+    <li data-tone="cost">
+      <svg aria-hidden="true" viewBox="0 0 16 16" data-compare-marker>
+        <path d="M8 3l5.5 10h-11z" /></svg
+      >A cost
+    </li>
+    <li data-tone="even">Unmarked: about even</li>
+  </ul>
+
+  <article data-compare-table>
+    <header><h3>Runtime weight and dependencies</h3></header>
+    {{ bundleTable }}
+    <p data-compare-note data-claim>
+      BaseNative's runtime is measured by <code>scripts/bundle-size.js</code> — the same gzipped
+      build CI holds to a {{ stats.runtimeBudgetKb }} KB budget — so this row is the number the
+      package actually ships, not a target. Competitor figures are what a minimal hello-world app
+      ships through each framework's own production pipeline, min+gzip, measured {{
+      stats.competitorsChecked }} against {{ stats.competitorVersions }}. Svelte has no fixed
+      runtime — its compiler ships only what the app uses — and at hello-world scale that lands
+      level with BaseNative's whole runtime; the tradeoff is the compiler it needs to get there, and
+      a figure that grows with the app.
+    </p>
+    <p data-compare-note data-claim>
+      "Zero dependencies" is a claim about <code>@basenative/runtime</code>, and only about it.
+      Across all published <code>@basenative/*</code> packages there are {{ stats.externalProdDeps
+      }} third-party production dependencies in {{ stats.externalProdDepPackages }} packages —
+      <code>server</code> parses HTML, <code>og-image</code> rasterises cards,
+      <code>wrangler-preset</code> wraps Wrangler, and <code>eslint-config</code> extends ESLint.
+      Install only the runtime and you install nothing else; the rest of the toolkit is not
+      dependency-free.
+    </p>
+  </article>
+</section>
+
+<section id="templates" data-bn-nav="Templates">
+  <h2>Templates are <em>data</em></h2>
+  <p>
+    BaseNative expressions are interpreted by a hand-written parser — a tokenizer, a
+    recursive-descent grammar, a scope object. There is no <code>eval</code> and no
+    <code>Function</code> constructor anywhere in the shipped runtime or server; the count is taken
+    from source on every build, and it is {{ stats.unsafeEvalUses }}. A BaseNative page runs under
+    <code>script-src 'self'</code> with no <code>'unsafe-eval'</code> — and unlike the compiled
+    frameworks, that does not depend on a build having happened first.
+  </p>
+  <p>
+    Because a template is never compiled into code, a template is data. It can live in a CMS, come
+    out of a database, or be written by a model, and rendering it cannot turn it into an injection:
+    the parser interprets a deliberate subset — property access, calls into the provided scope,
+    operators, ternaries — and blocklists prototype access. React, Angular and Svelte are safe the
+    opposite way: their templates become code at build time, which is exactly why a template has to
+    go through the build before it can run at all.
+  </p>
+
+  <article data-compare-table>
+    <header><h3>What that posture costs and buys</h3></header>
+    {{ postureTable }}
+  </article>
+
+  <p>
+    The narrow, measured version of that claim: an LLM wrote the same two apps twice, in BaseNative
+    {{ stats.benchBnVersion }} and in React {{ stats.benchReactVersion }} — a server-rendered
+    catalog and an interactive counter-and-list page, sharing one dataset, with identical behavior
+    tests on both sides and every fix logged. With no build pipeline in the way, the BaseNative side
+    needed no tooling fixes at all. Both implementations passed every test. What differed was the
+    path, and the code-size hypothesis failed in public:
+  </p>
+
+  <article data-compare-table>
+    <header><h3>An LLM wrote the same two apps in both</h3></header>
+    {{ benchTable }}
+    <p data-compare-note data-claim>
+      The code-size hypothesis failed again: the line count is a tie, and BaseNative still uses more
+      tokens, because HTML templates carry closing tags. The {{ stats.benchDocsTokens }}-token docs
+      bundle (<code>llms.txt</code> plus the starter guide) that teaches a model the BaseNative API
+      has no break-even through code savings at this task size; what it buys is avoided errors. This
+      run had no app-code bug on either side: the effect diamond that fired twice in the first run —
+      the original benchmark's one app-code fix — did not recur on the current runtime, which
+      settles that pattern in one run. The updated scorecard is on <a href="/ai">/ai</a>.
+    </p>
+    <p data-compare-note>
+      First run in October 2026, against BaseNative 0.6.4. Re-run as a fresh authoring run on {{
+      stats.benchRunDate }} against the published {{ stats.benchBnVersion }} packages, with React
+      still at {{ stats.benchReactVersion }}: the original apps were never committed, so both
+      implementations were rewritten from the same task descriptions, with identical tests and
+      measurement — and this time the benchmark's apps and tests are committed beside the results,
+      so the next re-run reuses them. Measured values changed; the verdict did not.
+    </p>
+    <p data-compare-note>
+      Full method, results and the fix-by-fix log:
+      <a href="https://github.com/DuganLabs/BaseNative/blob/main/docs/blog/2026-10-llm-benchmark.md"
+        >the benchmark write-up</a
+      >.
+    </p>
+  </article>
+</section>
+
+<section id="api" data-bn-nav="API surface">
+  <h2>API <em>surface</em></h2>
+  <p>
+    Fewer primitives means less to learn and less to break. BaseNative's entire reactivity model
+    fits on a whiteboard.
+  </p>
+
+  <article data-compare-table>
+    <header><h3>Concepts and model</h3></header>
+    {{ apiTable }}
+    <p data-compare-note data-claim>
+      The {{ stats.corePrimitives }} primitives are {{ stats.corePrimitiveNames }} — counted from
+      the modules that export them.
+    </p>
+  </article>
+</section>
+
+<section id="counter" data-bn-nav="Counter" data-compare-counter>
+  <h2>Counter: the same app, <em>four ways</em></h2>
+  <p>
+    A reactive counter shows each framework's mental model. BaseNative uses plain HTML with signal
+    expressions — no compilation, no special file format.
+  </p>
+  {{ counterTabs }}
+</section>
+
+<section id="ssr" data-bn-nav="SSR">
+  <h2>SSR and <em>hydration</em></h2>
+  <p data-claim>
+    BaseNative includes server rendering and {{ stats.hydrationStrategies }} built-in lazy hydration
+    strategies out of the box. Most frameworks require extra packages or custom implementations for
+    selective hydration. Server and client interpret the same expressions through the same shared
+    parser, so the markup the server renders is the markup the client hydrates — there is no second
+    template dialect to drift.
+  </p>
+
+  <article data-compare-table>
+    <header><h3>Rendering and hydration</h3></header>
+    {{ ssrTable }}
+  </article>
+</section>
+
+<section id="dx" data-bn-nav="Developer experience">
+  <h2>Developer <em>experience</em></h2>
+  <p>
+    The place BaseNative is furthest behind. None of this is close, and pretending otherwise would
+    waste your afternoon.
+  </p>
+
+  <article data-compare-table>
+    <header><h3>Day-to-day workflow</h3></header>
+    {{ dxTable }}
+  </article>
+</section>
+
+<section id="tradeoffs" data-bn-nav="Tradeoffs">
+  <h2>Honest <em>tradeoffs</em></h2>
+  <p>
+    BaseNative isn't trying to replace React or Angular for every use case. Here's where it
+    genuinely excels and where you should think twice.
+  </p>
+
+  <section>
+    <article data-compare-card="win">
+      <header><h3>Where BaseNative wins</h3></header>
+      <ul role="list" data-compare-list="win">
+        <li>Zero build, zero core deps — ship an HTML file</li>
+        <li data-claim>
+          The reactivity core is {{ stats.coreLines }} lines; the whole runtime is {{
+          stats.runtimeSourceLines }}
+        </li>
+        <li data-claim>{{ stats.hydrationStrategies }} built-in lazy hydration strategies</li>
+        <li>CSP-safe without compilation</li>
+        <li>Valid HTML templates that work without JS</li>
+        <li data-claim>
+          {{ stats.smallerThanReact }}× smaller than React, {{ stats.smallerThanAngular }}× smaller
+          than Angular
+        </li>
+        <li>
+          No lock-in: the component model is semantic HTML itself — walk away and your markup is
+          still just HTML
+        </li>
+      </ul>
+    </article>
+
+    <article data-compare-card="cost">
+      <header><h3>Where others win</h3></header>
+      <ul role="list" data-compare-list="cost">
+        <li>
+          The component model is the platform itself — semantic HTML composed as native DOM, with no
+          framework component layer (or component library ecosystem) on top
+        </li>
+        <li>Ecosystem of one — no third-party component libs</li>
+        <li>Runtime expression parsing has overhead vs compiled output</li>
+        <li>Svelte has the better-polished DX and the mature compiler toolchain</li>
+        <li>No React DevTools, no Angular CLI, no Svelte inspector</li>
+        <li>Solo-maintained — bus factor of one</li>
+        <li>Almost nobody has heard of it — hiring and onboarding start from zero</li>
+      </ul>
+    </article>
+  </section>
+</section>
+
+<section id="choose" data-bn-nav="When to choose">
+  <h2>When to <em>choose</em> BaseNative</h2>
+
+  <section>
+    <article data-compare-card="win">
+      <header><h3>Good fit</h3></header>
+      <ul role="list" data-compare-list="win">
+        <li>Content sites that need light interactivity</li>
+        <li>Projects where you want to own every line</li>
+        <li>Edge-deployed apps on Cloudflare Workers</li>
+        <li>Teams tired of build tool churn</li>
+        <li>Prototypes that need to ship in minutes</li>
+        <li>Embedded widgets in existing pages</li>
+      </ul>
+    </article>
+
+    <article data-compare-card="cost">
+      <header><h3>Probably not</h3></header>
+      <ul role="list" data-compare-list="cost">
+        <li>Large team apps that need enforced architecture</li>
+        <li>Projects requiring deep third-party integrations</li>
+        <li>Apps where a mature devtools inspector is critical workflow</li>
+        <li>Enterprise apps with strict hiring pool requirements</li>
+        <li>Complex SPAs with hundreds of components</li>
+      </ul>
+    </article>
+  </section>
+</section>
+
+<section id="try" data-bn-nav="Try it" data-compare-cta>
+  <h2>Try <em>it</em></h2>
+  <p data-claim>
+    The reactivity core is {{ stats.coreLines }} lines. Read it, understand it, then decide.
+  </p>
+  <nav data-controls aria-label="Next steps">
+    <a
+      href="https://github.com/DuganLabs/BaseNative/blob/main/{{ stats.coreModule }}"
+      role="button"
+      rel="noopener"
+      >Read the {{ stats.coreLines }} lines</a
+    >
+    <a href="/docs" role="button" data-variant="outline">API docs</a>
+    <a href="/components" role="button" data-variant="outline">Browse components</a>
+  </nav>
+</section>

@@ -1,0 +1,110 @@
+nav[variant="pagination"] {
+  display: var(--display-pagination);
+
+  & > ol {
+    display: var(--display-pagination-list);
+    flex-direction: var(--flex-direction-pagination-list);
+    flex-wrap: var(--flex-wrap-pagination-list);
+    align-items: var(--align-pagination-list);
+    gap: var(--spacing-pagination-list-gap);
+    list-style: var(--list-style-pagination-list);
+    margin: var(--spacing-pagination-list-margin);
+    padding: var(--spacing-pagination-list-padding);
+  }
+
+  & > ol > li {
+    display: var(--display-pagination-item);
+    align-items: var(--align-pagination-item);
+    gap: var(--spacing-pagination-item-gap);
+  }
+
+  & > ol > li + li::before {
+    content: var(--content-pagination-separator);
+    color: var(--color-text-pagination-separator);
+  }
+
+  /* Page numbers are one glyph wide; the link box, not the glyph, is
+     the target, so each is at least a 44px square with its label
+     centred. */
+  & > ol > li > a {
+    display: var(--display-inline-flex);
+    align-items: var(--align-center);
+    justify-content: var(--justify-center);
+    min-block-size: var(--size-target-min);
+    min-inline-size: var(--size-target-min);
+    color: var(--color-text-pagination-link);
+    text-decoration: var(--text-decoration-pagination-link);
+    font-family: var(--font-pagination-link-family);
+    font-size: var(--font-pagination-link-size);
+    line-height: var(--font-pagination-link-leading);
+    letter-spacing: var(--font-pagination-link-tracking);
+
+    &:hover {
+      color: var(--color-text-pagination-link-hover);
+      text-decoration: var(--text-decoration-pagination-link-hover);
+    }
+  }
+
+  /* The narrow window's own entries wait for the container query, and
+     so do the Previous and Next chevrons. */
+  & > ol > li[variant="narrow"] {
+    display: var(--display-pagination-item-narrow);
+  }
+
+  & > ol > li > a > svg {
+    display: var(--display-pagination-step-icon);
+    inline-size: var(--size-pagination-step-icon);
+    block-size: var(--size-pagination-step-icon);
+  }
+
+  /* A gap, or Previous on the first page, goes nowhere: it reads as
+     text, not in the link tint. */
+  & > ol > li > a:not([href], [aria-current]) {
+    color: var(--color-text-pagination-inert);
+  }
+
+  /* The current page sits on a tinted pill, the same fill a selected
+     segment uses, so it reads as where you are rather than as a
+     heavier digit. */
+  & > ol > li > a[aria-current] {
+    color: var(--color-text-pagination-current);
+    font-weight: var(--font-pagination-current-weight);
+    background: var(--color-background-pagination-current);
+    border-radius: var(--radius-pagination-current);
+  }
+}
+
+/* Each page link is a 44px square, so the wide window (Previous, 1,
+   a gap, three neighbours, a gap, the last page, Next) needs about
+   28rem. A narrower container switches to the narrow window: the
+   first, current and last pages with a gap between, so either end is
+   one tap away, and Previous and Next shrink to chevrons (their text
+   stays, at zero size, as their name). Five 44px targets and two
+   16px gaps (252px) fit a 320px phone's 254px pane on one row. */
+@container (max-width: 28rem) {
+  nav[variant="pagination"] > ol {
+    gap: var(--spacing-pagination-list-gap-compact);
+  }
+
+  nav[variant="pagination"] > ol > li[variant="wide"] {
+    display: var(--display-pagination-item-compact);
+  }
+
+  nav[variant="pagination"] > ol > li[variant="narrow"] {
+    display: var(--display-pagination-item);
+  }
+
+  nav[variant="pagination"] > ol > li > a:has(> svg) {
+    font-size: var(--font-pagination-step-size-compact);
+  }
+
+  nav[variant="pagination"] > ol > li > a:has(> svg) > svg {
+    display: var(--display-pagination-step-icon-compact);
+  }
+
+  /* A gap takes the row's spare width, split two ways, up to its own
+     cap, so its glyph clears the pill beside it on any phone. */
+  nav[variant="pagination"] > ol > li > a[aria-hidden]:not(:has(> svg)) {
+    min-inline-size: var(--size-pagination-gap-compact-fluid);
+  }
+}

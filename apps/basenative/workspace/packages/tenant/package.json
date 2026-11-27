@@ -1,0 +1,41 @@
+{
+  "name": "@basenative/tenant",
+  "version": "3.3.0",
+  "description": "Multi-tenant middleware with subdomain/path resolution and row-level query scoping",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/tenant"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/tenant#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "multi-tenant",
+    "tenancy",
+    "middleware",
+    "saas"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

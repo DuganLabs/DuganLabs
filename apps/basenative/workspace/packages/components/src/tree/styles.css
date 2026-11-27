@@ -1,0 +1,85 @@
+ul[variant="tree"], ul[variant="treegrid"] {
+  /* Nested toggle buttons run compact in the tree's scope, and leaf
+     items indent by the same padding so every sibling's text shares
+     one edge (item padding, button padding, button border). */
+  --spacing-button-padding-block: var(--spacing-1);
+  --spacing-button-padding-inline: var(--spacing-2);
+  --size-button-block: var(--size-target-min);
+  --spacing-tree-leaf-padding-inline-start: calc(var(--spacing-tree-item-padding-inline) + var(--size-tree-chevron) + var(--spacing-tree-branch-column-gap) + var(--spacing-button-padding-inline) + var(--size-border-button));
+  list-style: var(--list-style-tree);
+  margin-inline: var(--spacing-tree-margin);
+  padding: var(--spacing-tree-padding);
+
+  & > li {
+    padding-block: var(--spacing-tree-item-padding-block);
+    padding-inline: var(--spacing-tree-item-padding-inline);
+    color: var(--color-text-tree-item);
+    font-family: var(--font-tree-item-family);
+    font-size: var(--font-tree-item-size);
+    line-height: var(--font-tree-item-leading);
+    letter-spacing: var(--font-tree-item-tracking);
+    border-radius: var(--size-radius-tree-item);
+
+    &:hover {
+      background-color: var(--color-bkg-tree-item-hover);
+    }
+  }
+
+  /* A branch row leads with its disclosure chevron, the way a Finder
+     outline does: it points to the inline end while collapsed and
+     turns down when the branch opens. The children group spans the
+     row beneath. The toggle reads in the item ink: it names a branch,
+     it is not a link. */
+  & > li[aria-expanded] {
+    display: var(--display-tree-branch);
+    grid-template-columns: var(--grid-template-tree-branch-columns);
+    column-gap: var(--spacing-tree-branch-column-gap);
+    align-items: var(--align-tree-branch);
+
+    & > svg {
+      inline-size: var(--size-tree-chevron);
+      block-size: var(--size-tree-chevron);
+      color: var(--color-text-tree-chevron);
+    }
+
+    & > button {
+      --color-text-button: var(--color-text-tree-item);
+      justify-self: var(--align-start);
+    }
+
+    & > ul {
+      grid-column: var(--grid-column-tree-group);
+    }
+  }
+
+  & > li[aria-expanded="true"] > svg {
+    transform: var(--transform-tree-chevron-expanded);
+  }
+
+  /* A leaf row is as tall as a toggle row, so the list keeps one
+     rhythm whether or not a row expands. Its text starts where a toggle
+     label starts, past the chevron column, button padding and border. */
+  & > li:not([aria-expanded]) {
+    display: var(--display-flex);
+    align-items: var(--align-center);
+    min-block-size: var(--size-target-min);
+    padding-inline-start: var(--spacing-tree-leaf-padding-inline-start);
+  }
+
+  /* A branch's children are its nested list, the role group, straight
+     inside the treeitem; a collapsed branch hides it. */
+  & > li[aria-expanded="false"] > ul {
+    display: var(--display-tree-group-collapsed);
+  }
+
+  & > li > ul {
+    list-style: var(--list-style-tree-group);
+    margin: var(--spacing-tree-group-margin);
+    margin-inline-start: var(--spacing-tree-group-margin-inline-start);
+    padding-inline-start: var(--spacing-tree-group-padding-inline-start);
+    padding-block: var(--spacing-tree-group-padding-block);
+    border-inline-start-width: var(--size-border-tree-group-inline-start);
+    border-inline-start-style: var(--border-style-tree-group-inline-start);
+    border-inline-start-color: var(--color-border-tree-group-inline-start);
+  }
+}

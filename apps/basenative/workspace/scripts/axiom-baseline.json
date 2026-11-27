@@ -1,0 +1,98 @@
+{
+  "examples/express/ai-scorecard.js": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 1,
+    "control-flow": 0
+  },
+  "examples/express/public/highlight-engine.js": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 1,
+    "control-flow": 0
+  },
+  "examples/express/public/playground-preview.html": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 7,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/public/playground.css": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 77,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/public/playground.js": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 8,
+    "css-outside-layer": 0,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/public/specimens.js": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 4,
+    "css-outside-layer": 0,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/public/theme.css": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 1,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/views/builder.html": {
+    "custom-element": 1,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 0,
+    "control-flow": 0
+  },
+  "examples/express/views/compare.html": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 2,
+    "control-flow": 0
+  },
+  "examples/express/views/component.html": {
+    "custom-element": 0,
+    "inline-style": 0,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 7,
+    "control-flow": 0
+  },
+  "examples/express/views/components.html": {
+    "custom-element": 0,
+    "inline-style": 1,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 4,
+    "control-flow": 0
+  },
+  "examples/express/views/docs.html": {
+    "custom-element": 0,
+    "inline-style": 1,
+    "style-write": 0,
+    "css-outside-layer": 0,
+    "div-span": 0,
+    "control-flow": 0
+  }
+}

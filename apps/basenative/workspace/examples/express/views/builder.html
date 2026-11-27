@@ -1,0 +1,19 @@
+{{ hero }}
+
+<section id="visual-builder" data-bn-nav="Canvas" aria-labelledby="visual-builder-heading">
+  <h2 id="visual-builder-heading" data-bn-visually-hidden>Builder canvas</h2>
+  <bn-builder data-bn-builder-root></bn-builder>
+  <article id="generated-code" data-bn-nav="Generated code" data-bn-builder-export-panel hidden>
+    <header>
+      <h3>Generated code</h3>
+      <button type="button" data-bn="bn-builder-action" data-bn-builder-export-copy>
+        Copy code
+      </button>
+    </header>
+    <pre
+      data-bn-builder-export-output
+    ><code><i>// Click Export Code to render your tree as BaseNative source.</i></code></pre>
+  </article>
+</section>
+
+<script type="module" src="/builder.js"></script>

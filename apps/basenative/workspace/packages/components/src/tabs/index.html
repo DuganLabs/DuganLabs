@@ -1,0 +1,23 @@
+<template>
+  <section :variant="variant()">
+    <ul role="tablist" :aria-label="label()">
+      <template @for="tab of tabs()">
+        <li role="presentation">
+          <button type="button" role="tab" :id="tabId(tab)" :aria-selected="selectedAttr(tab)" :aria-controls="panelId(tab)" :tabindex="tabIndex(tab)" :disabled="tab.disabled" @click="select(tab)" @keydown="onKeydown($event, tab)">{{ tab.label }}</button>
+        </li>
+      </template>
+    </ul>
+    <template @for="tab of tabs()">
+      <template @if="isSelected(tab)">
+        <section role="tabpanel" :id="panelId(tab)" :aria-labelledby="tabId(tab)">
+          {{ raw(tab.panelHtml) }}
+        </section>
+      </template>
+      <template @else>
+        <section role="tabpanel" :id="panelId(tab)" :aria-labelledby="tabId(tab)" hidden>
+          {{ raw(tab.panelHtml) }}
+        </section>
+      </template>
+    </template>
+  </section>
+</template>

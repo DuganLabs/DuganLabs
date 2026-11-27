@@ -1,0 +1,166 @@
+# @basenative/runtime
+
+## 3.3.0
+
+No changes in this release.
+
+## 3.2.0
+
+### Minor Changes
+
+- 6d735e2: Devtools move to `@basenative/runtime/devtools` so the runtime bundle stays under 10KB. The component token sheet is the one source for the site palette, with body text that clears WCAG AA and one card elevation.
+
+### Patch Changes
+
+- 67013fd: The package description names the runtime as the signal runtime behind the BaseNative design system.
+
+## 3.1.0
+
+### Patch Changes
+
+- f88c30b: Specimen behaviour moved into the components. The combobox and multiselect now own their filtering (a pure function of the field text), open on focus, and land a chosen label in the composed input; the select's arrow keys open its popover; the dialog family's shared behavior dismisses from the header close control and on Escape outside showModal; the toolbar closes its overflow on Escape; the tree's toggle button toggles through the list's delegated click and focus survives a toggle's re-render; the datagrid's sort control sorts through a delegated header click; toast items and alerts dismiss through their own models; the theme toggle's template binds its change; the virtualizer's template binds its scroll. The catalog pages now only mount the specimens — public/specimens.js builds each view model from the demo's props and hydrates the component's template. In the runtime, a `{{ raw() }}` text interpolation now parses into real nodes on the client, matching the server (it previously stayed literal).
+
+## 3.0.0
+
+No changes in this release.
+
+## 2.4.0
+
+### Patch Changes
+
+- 4f3a5bb: Wire the devtools hooks into the runtime. `signal()`, `computed()`, and `effect()` now register with `enableDevtools()` as they are created — live values, subscriber counts, and disposal state — and `hydrate()` appends each run to the hydration timeline. Previously the registry only filled when user code called `trackSignal`/`trackEffect`/`recordHydration` by hand, so the documented enable-then-inspect flow reported an empty state. Manual track calls now relabel an existing registration instead of duplicating it.
+
+## 2.3.2
+
+### Patch Changes
+
+- fca7129: Effects settle once per write. A `set()` queues subscribers, runs derived computeds until the graph settles, then runs each user effect once. An effect that writes a signal it also read throws `BN_EFFECT_LOOP` and tells the caller to use `.peek()` or write a different signal.
+
+  `class` and `:class` merge. `mergeClass()` is shared by `render()` and `hydrate()`, so `class="item" :class="done() ? 'done' : ''"` keeps both tokens. A false or null binding adds nothing.
+
+  `@basenative/validate` reports React habits (`className`, `htmlFor`, `onClick`, `dangerouslySetInnerHTML`, and `{expr}` text) with the BaseNative replacement. `bn from-jsx` applies the same translation to a draft file.
+
+## 2.3.1
+
+No changes in this release.
+
+## 2.3.0
+
+No changes in this release.
+
+## 2.2.0
+
+No changes in this release.
+
+## 2.1.0
+
+No changes in this release.
+
+## 2.0.1
+
+### Patch Changes
+
+- Fix `:value` and `:checked` bindings on form controls: the binding now also mirrors the resolved value onto the element's `value` / `checked` property, not just the attribute. An attribute write only changes a field's default value, so once a user had typed in an input, signal updates — such as clearing the model after a submit — never reached the visible field. Textarea `:value` did not populate the field at all.
+
+## 2.0.0
+
+### Major Changes
+
+- Unify all 45 BaseNative packages at 2.0.0 under a changesets fixed group.
+
+## 0.6.4
+
+### Patch Changes
+
+- ae4701e: First release on npmjs.org. `@basenative/*` moves off GitHub Packages, so installing any package no longer needs a token.
+
+  Every package now declares a `types` condition for each JavaScript subpath, so TypeScript finds the declarations under `moduleResolution: "bundler"` and `"node16"`; ships without its test files; declares `sideEffects` for bundlers; and is published with an npm provenance attestation through trusted publishing.
+
+  The version moves even where the code did not: the same version number already exists on GitHub Packages with different contents, and reusing it on npm would fail a consumer's lockfile integrity check when it switches registry.
+
+## 0.6.3
+
+### Patch Changes
+
+- 9741b75: Public-readiness metadata sweep, no behavior change:
+
+  - Add a per-package `LICENSE` file (Apache-2.0) — previously only the repo root
+    carried one, so it was never included in the published tarball.
+  - Fix `repository.url`/`homepage`/`bugs.url` to the correct `DuganLabs/BaseNative`
+    casing with a `git+` prefix on `repository.url`, matching npm's convention; add
+    the `bugs` field to `@basenative/eslint-config` and `@basenative/tsconfig`, which
+    were missing it.
+  - Normalize `publishConfig` to `{ "access": "public" }` across every publishable
+    package. The previous per-package `registry` override duplicated the scope
+    mapping `.npmrc` already sets for `@basenative:*` (and that the Release/publish
+    workflows reassert via `actions/setup-node`'s `registry-url`/`scope` inputs), so
+    it only added drift risk and would have blocked a future npmjs registry target.
+  - Fix README `## License` sections that said `MIT` while `package.json` and the
+    repo `LICENSE` say `Apache-2.0` (`auth`, `config`, `date`, `db`, `fetch`, `flags`,
+    `fonts`, `forms`, `i18n`, `icons`, `logger`, `marketplace`, `middleware`,
+    `notify`, `realtime`, `router`, `runtime`, `server`, `tenant`, `upload`,
+    `visual-builder`); add a missing `## License` section to `builder` and `evals`.
+  - Add the missing `README.md` for `@basenative/integrations` (Plaid Link +
+    accounts/transfers, and the pure float-yield-optimization math).
+
+  No `private`/version/`exports` changes. `@basenative/evals`, `fonts`, and `icons`
+  stay private and are not part of this changeset.
+
+## 0.6.2
+
+### Patch Changes
+
+- d21dbdd: `types/index.d.ts` declared only 27 of the package's 47 runtime exports — `raw`, `batch`, `registerPlugin`, the error boundary, devtools, and debug-mode APIs had no type declarations at all, forcing consumers to hand-write module augmentation to use them from TypeScript. Added the missing declarations, and added `types` conditions to the `./shared/expression`, `./shared/escape`, and `./shared/directives` subpath exports (each backed by its own `.d.ts`, previously untyped). A new `types/exports.test.js` guards the package root and each subpath against future drift between declared and actual exports.
+
+## 0.6.1
+
+### Patch Changes
+
+- 40a3472: Mark `browserFeatures`'s initializer (`detectBrowserFeatures()`) as `/* @__PURE__ */` in `src/features.js`. `detectBrowserFeatures` only reads feature flags off its `target` argument, so this lets bundlers drop the call when an entry point pulls in `@basenative/runtime` (e.g. for signals) without using `browserFeatures` — fixing a CodeQL `js/unused-local-variable` finding in one such downstream bundle. No change to `browserFeatures`'s value or behavior for existing consumers. Also removes a tautological assertion (CodeQL `js/unneeded-defensive-code`) from an expression-evaluator fuzz test; test-only.
+
+## 0.6.0
+
+### Minor Changes
+
+- 62d9857: Add a general template-directive extension hook and the `@feature` / `@t` directives.
+
+  - **runtime / server**: new `registerDirective(name, { on: 'template' | 'element', server, client })` in `@basenative/runtime/shared/directives`, consulted by both the SSR renderer and client hydrate/bind loops, so other packages can add directives without the core importing them. Additive; existing directives are unchanged.
+  - **flags**: `<template @feature="flagName">` / `@else`, driven by a synchronous `ctx.$flags` created with the new `createFlagContext(flagManager, context?)`. With no provider the block renders as disabled and a `BN_FEATURE_NO_PROVIDER` diagnostic is emitted.
+  - **i18n**: `<el @t="message.key">fallback</el>` sets the element text from `ctx.$i18n.t(key, ctx)`; re-renders on `onLocaleChange()` client-side. With no provider the existing content is preserved and `BN_T_NO_PROVIDER` is emitted.
+  - **validate / mcp**: both directives are recognised by the validator's known-directive list and listed in the MCP directive reference.
+
+## 0.5.0
+
+### Minor Changes
+
+- d3e979d: Security: close a sandbox escape in the CSP-safe expression evaluator, and escape SSR output by default.
+
+  **Evaluator sandbox escape (runtime — critical).** `safeMemberRead` consulted its blocklist only for string keys, so a non-string computed key such as `x[["constructor"]]` skipped the guard and was coerced to `"constructor"` by the property read itself, reaching `Function` — arbitrary code execution from an ordinary `{{ }}` expression, in both the client runtime and SSR. Keys are now resolved with ToPropertyKey semantics _before_ the blocklist check, and object/array computed keys are rejected outright.
+
+  **SSR output escaping (server — high).** `render()` performed no HTML escaping, so any application rendering user-supplied data was XSS-injectable with no malicious template required. Interpolated values and `:attr` bindings are now HTML-escaped on both server and client (one shared module, so the two sides cannot diverge again); URL-bearing attributes (`href`, `src`, `action`, `formaction`, …) reject `javascript:`, `vbscript:`, `data:`, `blob:` and `file:` schemes and report `BN_UNSAFE_URL`; `'` is escaped in attribute values. Static template markup is never escaped — only substituted data.
+
+  **New API.** `raw(value)`, exported from `@basenative/runtime`, is the explicit per-value opt-out for trusted markup. It does not bypass the URL-scheme guard. `findInterpolations` is exported from `@basenative/runtime/shared/escape` — a linear scanner that replaces the polynomial `{{ }}` regex on the untrusted-input path.
+
+  **Behaviour change.** Templates that relied on unescaped interpolation to inject markup must now wrap those values in `raw()`.
+
+### Patch Changes
+
+- ce9ff49: Fix broken published-package imports and types resolution.
+
+  - `@basenative/runtime`: move `src/shared/expression.js` inside the package and update internal imports from `../../../src/shared/expression.js` to `./shared/expression.js`. Add `./shared/expression` subpath export so server can consume it. Add `types` conditional to the main export.
+  - `@basenative/server`: switch `render.js` to import `evaluateExpression` from `@basenative/runtime/shared/expression`. Add `@basenative/runtime` as a workspace dependency. Add `types` conditional to exports.
+  - `@basenative/router`: add `types` conditional to exports so TypeScript with `moduleResolution: "bundler"` resolves the bundled `types/index.d.ts`.
+
+  Closes DuganLabs/basenative#54, #55, #56.
+
+## 0.4.0
+
+### Minor Changes
+
+- fdfa251: v1.0 release readiness: comprehensive test coverage, complete documentation, deployment examples, and CI/CD hardening.
+  - 682 tests across all 21 packages (was ~250)
+  - Package-level READMEs for npm publishing
+  - Cloudflare Workers and Node.js deployment examples
+  - CLAUDE.md for AI assistant guidance
+  - Root README rewrite for open-source audience
+  - All package.json files have complete npm publishing metadata

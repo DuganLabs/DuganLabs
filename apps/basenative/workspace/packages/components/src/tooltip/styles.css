@@ -1,0 +1,33 @@
+aside[variant="default"] {
+  position: var(--position-tooltip);
+  display: var(--display-tooltip);
+
+  & > p {
+    position: var(--position-tooltip-note);
+    inset-block-end: var(--spacing-tooltip-note-inset-block-end);
+    inset-inline-start: var(--spacing-tooltip-note-inset-inline-start);
+    z-index: var(--layer-tooltip-note);
+    margin: var(--spacing-tooltip-note-margin);
+    padding-block: var(--spacing-tooltip-note-padding-block);
+    padding-inline: var(--spacing-tooltip-note-padding-inline);
+    background-color: var(--color-bkg-tooltip-note);
+    color: var(--color-text-tooltip-note);
+    border-radius: var(--size-radius-tooltip-note);
+    font-family: var(--font-tooltip-note-family);
+    font-size: var(--font-tooltip-note-size);
+    line-height: var(--font-tooltip-note-leading);
+    letter-spacing: var(--font-tooltip-note-tracking);
+    white-space: var(--white-space-tooltip-note);
+    opacity: var(--opacity-tooltip-note);
+    visibility: var(--visibility-tooltip-note);
+    pointer-events: var(--pointer-events-tooltip-note);
+    transition-property: var(--transition-property-tooltip-note);
+    transition-duration: var(--motion-tooltip-note-duration);
+    transition-timing-function: var(--motion-tooltip-note-curve);
+  }
+
+  &:hover > p, &:focus-within > p {
+    opacity: var(--opacity-tooltip-note-shown);
+    visibility: var(--visibility-tooltip-note-shown);
+  }
+}

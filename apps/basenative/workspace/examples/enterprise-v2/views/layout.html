@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — BaseNative Enterprise v2</title>
+  <link rel="stylesheet" href="/bn-css/index.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-bn="page">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <header data-bn="topbar">
+    <a data-bn="brand" href="/">BaseNative</a>
+    <template @if="user">
+      <nav aria-label="Main navigation">
+        <a href="/">Dashboard</a>
+        <a href="/users">Users</a>
+        <a href="/flags">Flags</a>
+      </nav>
+      <div class="user-area">
+        <span class="notification-bell" title="Notifications">
+          &#128276;
+          <template @if="notificationCount > 0">
+            <span class="badge-count">{{ notificationCount }}</span>
+          </template>
+        </span>
+        <div data-bn="avatar" data-size="sm">
+          <template @if="user.avatar_url">
+            <img data-bn="avatar-img" src="{{ user.avatar_url }}" alt="">
+          </template>
+          <template @if="!user.avatar_url">
+            <span data-bn="avatar-initials">{{ userInitial }}</span>
+          </template>
+        </div>
+        <span>{{ user.username }}</span>
+        <span data-bn="badge" data-variant="default">{{ user.role }}</span>
+        <form method="POST" action="/logout" style="margin:0">
+          <button data-bn="button" data-variant="ghost" type="submit">Logout</button>
+        </form>
+      </div>
+    </template>
+    <template @if="!user">
+      <nav aria-label="Main navigation">
+        <a href="/login">Sign In</a>
+        <a href="/register">Register</a>
+      </nav>
+    </template>
+  </header>
+  <main data-bn="content" id="main-content">
+    <div role="status" aria-live="polite" class="visually-hidden"></div>
+    {{ content }}
+  </main>
+  <footer data-bn="footer">BaseNative Enterprise v2 Demo</footer>
+</body>
+</html>

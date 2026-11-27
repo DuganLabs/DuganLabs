@@ -1,0 +1,29 @@
+ol[variant="virtualizer"] {
+  /* The size derivations live on the element rather than the root
+     block. A custom property resolves its calc where it is declared,
+     so a host re-pointing the count tokens on this element feeds the
+     calc from here. */
+  --size-virtualizer-block: calc(var(--size-virtualizer-item-block) * var(--number-virtualizer-viewport-rows));
+  --size-virtualizer-spacer-start-block: calc(var(--size-virtualizer-item-block) * var(--number-virtualizer-spacer-start-count));
+  --size-virtualizer-spacer-end-block: calc(var(--size-virtualizer-item-block) * var(--number-virtualizer-spacer-end-count));
+  display: var(--display-virtualizer);
+  list-style: var(--list-style-virtualizer);
+  margin-inline: var(--spacing-virtualizer-margin);
+  padding: var(--spacing-virtualizer-padding);
+  overflow: var(--overflow-virtualizer);
+  block-size: var(--size-virtualizer-block);
+
+  & > li {
+    display: var(--display-virtualizer-item);
+    align-items: var(--align-virtualizer-item);
+    block-size: var(--size-virtualizer-item-block);
+  }
+
+  & > li:first-child {
+    block-size: var(--size-virtualizer-spacer-start-block);
+  }
+
+  & > li:last-child {
+    block-size: var(--size-virtualizer-spacer-end-block);
+  }
+}

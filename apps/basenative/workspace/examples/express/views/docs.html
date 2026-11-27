@@ -1,0 +1,354 @@
+{{ hero }}
+
+<section id="api-reference" data-bn-nav="Runtime API">
+  <article>
+    <header>
+      <h2>signal(initialValue)</h2>
+      <mark data-status="active">core</mark>
+    </header>
+    <p>
+      Creates a reactive value. Call the accessor to read (and track); call <code>.set()</code> to
+      write. Subscribers re-run automatically.
+    </p>
+    <p>
+      <a
+        href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/runtime.md#signalinitial"
+        rel="noopener"
+        >Full <code>signal()</code> reference in <code>docs/api</code>&nbsp;→</a
+      >
+    </p>
+    <!-- prettier-ignore -->
+    <pre tabindex="0" aria-label="Code example: signal(initialValue)"><code>import { signal } from '@basenative/runtime';
+
+const count = signal(0);
+
+// Read the current value (tracks in effects)
+count();          // → 0
+
+// Write a new value
+count.set(5);
+count.set(count() + 1);
+
+// Read without tracking
+count.peek();     // → 6</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h2>computed(fn)</h2>
+      <mark data-status="active">core</mark>
+    </header>
+    <p>Derives a new signal from others. Re-evaluates only when its dependencies change.</p>
+    <p>
+      <a
+        href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/runtime.md#computedfn"
+        rel="noopener"
+        >Full <code>computed()</code> reference in <code>docs/api</code>&nbsp;→</a
+      >
+    </p>
+    <!-- prettier-ignore -->
+    <pre tabindex="0" aria-label="Code example: computed(fn)"><code>import { signal, computed } from '@basenative/runtime';
+
+const width = signal(10);
+const height = signal(5);
+const area = computed(() => width() * height());
+
+area();  // → 50
+width.set(20);
+area();  // → 100</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h2>effect(fn)</h2>
+      <mark data-status="active">core</mark>
+    </header>
+    <p>
+      Runs a function immediately and re-runs it whenever any signal read inside changes. The
+      returned runner also exposes <code>.dispose()</code>.
+    </p>
+    <p>
+      <a
+        href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/runtime.md#effectfn"
+        rel="noopener"
+        >Full <code>effect()</code> reference in <code>docs/api</code>&nbsp;→</a
+      >
+    </p>
+    <!-- prettier-ignore -->
+    <pre tabindex="0" aria-label="Code example: effect(fn)"><code>import { signal, effect } from '@basenative/runtime';
+
+const name = signal('world');
+
+effect(() => {
+  document.title = `Hello, ${name()}`;
+});
+
+name.set('BaseNative');
+// document.title is now "Hello, BaseNative"</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h2>hydrate(root, context)</h2>
+      <mark data-status="idle">dom</mark>
+    </header>
+    <p>
+      Walks a DOM subtree, binding template directives (<code>@if</code>, <code>@for</code>,
+      <code>@switch</code>) and expression interpolation (<code>{{ }}</code>) to the given context.
+      Hydration diagnostics are available through optional callbacks.
+    </p>
+    <p>
+      <a
+        href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/runtime.md#hydrateroot-ctx-options"
+        rel="noopener"
+        >Full <code>hydrate()</code> reference in <code>docs/api</code>&nbsp;→</a
+      >
+    </p>
+    <!-- prettier-ignore -->
+    <pre tabindex="0" aria-label="Code example: hydrate(root, context)"><code>import { signal, hydrate } from '@basenative/runtime';
+
+const items = signal(['one', 'two']);
+
+hydrate(document.querySelector('[data-app]'), {
+  items,
+});</code></pre>
+  </article>
+</section>
+
+<section id="template-directives" data-bn-nav="Directives">
+  <h2>Template <em>Directives</em></h2>
+  <p>
+    Control flow lives in native <code>&lt;template&gt;</code> elements. Expressions use a safe
+    subset that favors property access, function calls, and simple operators over arbitrary
+    in-template program bodies. The complete directive list, including <code>batch()</code> and
+    <code>registerDirective()</code>, is in the
+    <a
+      href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/runtime.md#template-directives"
+      rel="noopener"
+      ><code>@basenative/runtime</code> reference</a
+    >.
+  </p>
+</section>
+
+<section>
+  <article>
+    <header>
+      <h3>@if / @else</h3>
+      <mark data-status="active">directive</mark>
+    </header>
+    <p>Conditionally render content. The expression is re-evaluated reactively.</p>
+    <pre
+      tabindex="0"
+      aria-label="Code example: @if / @else"
+    ><code>&lt;template @if="isLoggedIn()"&gt;
+  &lt;p&gt;Welcome back!&lt;/p&gt;
+&lt;/template&gt;
+&lt;template @else&gt;
+  &lt;p&gt;Please sign in&lt;/p&gt;
+&lt;/template&gt;</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h3>@for / @empty</h3>
+      <mark data-status="active">directive</mark>
+    </header>
+    <p>
+      Iterate over arrays. Supports <code>track</code> for identity. Loop variables:
+      <code>$index</code>, <code>$first</code>, <code>$last</code>, <code>$even</code>,
+      <code>$odd</code>.
+    </p>
+    <pre
+      tabindex="0"
+      aria-label="Code example: @for / @empty"
+    ><code>&lt;template @for="item of items(); track item.id"&gt;
+  &lt;li&gt;&#123;&#123; item.name &#125;&#125;&lt;/li&gt;
+&lt;/template&gt;
+&lt;template @empty&gt;
+  &lt;li&gt;No items found&lt;/li&gt;
+&lt;/template&gt;</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h3>@switch / @case / @default</h3>
+      <mark data-status="active">directive</mark>
+    </header>
+    <p>
+      Pattern matching for template rendering. Renders the first matching <code>@case</code> or
+      falls through to <code>@default</code>.
+    </p>
+    <pre
+      tabindex="0"
+      aria-label="Code example: @switch / @case / @default"
+    ><code>&lt;template @switch="status()"&gt;
+  &lt;template @case="'active'"&gt;
+    &lt;mark data-status="active"&gt;Running&lt;/mark&gt;
+  &lt;/template&gt;
+  &lt;template @default&gt;
+    &lt;mark data-status="idle"&gt;Unknown&lt;/mark&gt;
+  &lt;/template&gt;
+&lt;/template&gt;</code></pre>
+  </article>
+
+  <article>
+    <header>
+      <h3>Expression binding</h3>
+      <mark data-status="idle">binding</mark>
+    </header>
+    <p>
+      Bind attributes reactively with <code>:</code> prefix. Attach events with
+      <code>@</code> prefix. Interpolate text with <code>{{ }}</code>. For complex event logic, call
+      a named function from the template instead of embedding control flow in the attribute string.
+    </p>
+    <pre
+      tabindex="0"
+      aria-label="Code example: Expression binding"
+    ><code>&lt;!-- Reactive attribute --&gt;
+&lt;img :src="imageUrl()" /&gt;
+
+&lt;!-- Event handler --&gt;
+&lt;button @click="incrementCount()"&gt;
+  Clicked &#123;&#123; count() &#125;&#125; times
+&lt;/button&gt;
+
+&lt;!-- Text interpolation --&gt;
+&lt;p&gt;Hello, &#123;&#123; name() &#125;&#125;&lt;/p&gt;</code></pre>
+  </article>
+</section>
+
+<section id="server-rendering" data-bn-nav="Server rendering">
+  <h2>Server <em>Rendering</em></h2>
+  <p>
+    The SSR module evaluates all directives at request time. It can also emit hydratable markers for
+    diagnostics and future SSR hydration work.
+  </p>
+
+  <article>
+    <header>
+      <h3>render(html, context, options?)</h3>
+      <mark data-status="idle">server</mark>
+    </header>
+    <p>
+      Parses an HTML string containing BaseNative directives and returns resolved HTML.
+      <code>render()</code> is synchronous — the return value is the HTML string, not a promise.
+      Optional render diagnostics and hydratable markers are available through the third argument.
+    </p>
+    <p>
+      <a
+        href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api/server.md#renderhtml-ctx-options"
+        rel="noopener"
+        >Full <code>render()</code> reference in <code>docs/api</code>&nbsp;→</a
+      >
+    </p>
+    <!-- prettier-ignore -->
+    <pre tabindex="0" aria-label="Code example: render(html, context, options?)"><code>import { render } from '@basenative/server';
+
+const html = render(`
+  &lt;template @for="item of items; track item.id"&gt;
+    &lt;li&gt;&#123;&#123; item.name &#125;&#125;&lt;/li&gt;
+  &lt;/template&gt;
+`, {
+  items: [
+    { id: 1, name: 'Alpha' },
+    { id: 2, name: 'Beta' },
+  ]
+});
+// → "&lt;li&gt;Alpha&lt;/li&gt;&lt;li&gt;Beta&lt;/li&gt;"</code></pre>
+  </article>
+</section>
+
+<section id="full-api-reference" data-bn-nav="All packages">
+  <h2>Full <em>API reference</em></h2>
+  <p>
+    This page covers the runtime primitives and server render. Every package has a generated
+    reference under
+    <a href="https://github.com/DuganLabs/BaseNative/blob/main/docs/api" rel="noopener"
+      ><code>docs/api/</code></a
+    >
+    in the repository; the ones you will reach for first:
+  </p>
+  {{ apiRefs }}
+</section>
+
+<section id="design-tokens" data-bn-nav="Design tokens">
+  <h2>Design <em>tokens</em></h2>
+  <p>
+    One sheet, {{ tokenCount }} tokens. Everything in this section is parsed from
+    <code>packages/<wbr>components/<wbr>src/<wbr>tokens.css</code> — the sheet every page links and every component
+    maps from — so it cannot drift from the sheet it shows. Primitives first, then the roles the
+    components actually consume; each role carries its light and dark values side by side. One token
+    sheet holds the primitives and the roles: every component sheet opens by mapping those roles
+    onto its own tokens — no component hard-codes a color, a size, or a radius.
+  </p>
+
+  <article data-bn-design-system>
+    <section>
+      <h3>Roles</h3>
+      <p>
+        {{ roleCount }} semantic roles — labels, backgrounds, fills, separators, and the status
+        colors. A component never names a primitive; it maps a role onto its own token and styles
+        with that.
+      </p>
+      {{ rolesTable }}
+    </section>
+
+    <section>
+      <h3>System colors</h3>
+      <p>The primitive palette the roles are built from.</p>
+      <ul role="list" data-bn-ds-swatches>
+        <template @for="c of systemColors; track c.name">
+          <li>
+            <!-- A colour swatch: a plain span, filled with the token it names. -->
+            <i data-bn-swatch="{{ c.name }}" aria-hidden="true"></i>
+            <code>{{ c.name }}</code>
+            <!-- The token's value as a text run beside its name. -->
+            <span>{{ c.value }}</span>
+          </li>
+        </template>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Materials</h3>
+      <p>
+        Four glass grades, each the same five facets — blur, saturation, tint, highlight, and shadow
+        — so a surface can change grade without changing recipe.
+      </p>
+      {{ materialsTable }}
+    </section>
+
+    <section>
+      <h3>Type</h3>
+      <p>
+        Recipes, not sizes: each name fixes its size, leading, weight, and tracking together. The
+        families and weights they draw from follow the table.
+      </p>
+      {{ typeTable }}
+      <ul role="list" data-bn-ds-fonts>
+        <template @for="f of fonts; track f.name">
+          <!-- The family name and its stack as a text run. -->
+          <li><code>{{ f.name }}</code> <span>{{ f.value }}</span></li>
+        </template>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Scales</h3>
+      <p>The ladders components step along — space, radius, size, motion, and layer.</p>
+      <ul role="list" data-bn-radius-ladder>
+        <template @for="step of radiusSteps; track step.name">
+          <li>
+            <i data-bn-radius="{{ step.name }}" aria-hidden="true"></i>
+            <code>{{ step.name }}</code>
+          </li>
+        </template>
+      </ul>
+      {{ ladderCss }}
+      <template @for="group of scaleTables; track group.title">
+        <h4>{{ group.title }}</h4>
+        {{ group.table }}
+      </template>
+    </section>
+  </article>
+</section>

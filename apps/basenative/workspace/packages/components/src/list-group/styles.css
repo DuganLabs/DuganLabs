@@ -1,0 +1,54 @@
+ul[variant="default"] {
+  display: var(--display-list-group);
+  list-style: var(--list-style-list-group);
+  margin-inline: var(--spacing-list-group-margin);
+  padding: var(--spacing-list-group-padding);
+  background-color: var(--color-bkg-list-group);
+  border-radius: var(--size-radius-list-group);
+  overflow: var(--overflow-list-group);
+
+  & > li {
+    display: var(--display-list-group-item);
+    align-items: var(--align-list-group-item);
+    justify-content: var(--justify-list-group-item);
+    gap: var(--spacing-list-group-item-gap);
+    padding-block: var(--spacing-list-group-item-padding-block);
+    padding-inline: var(--spacing-list-group-item-padding-inline);
+    color: var(--color-text-list-group-item);
+    font-family: var(--font-list-group-item-family);
+    font-size: var(--font-list-group-item-size);
+    line-height: var(--font-list-group-item-leading);
+    letter-spacing: var(--font-list-group-item-tracking);
+  }
+
+  & > li + li {
+    border-block-start-width: var(--size-border-list-group-item-block-start);
+    border-block-start-style: var(--border-style-list-group-item-block-start);
+    border-block-start-color: var(--color-border-list-group-item-block-start);
+  }
+
+  /* A row holding only a link is a navigation cell, so the whole row is
+     the target. The link takes over the row's padding and is at least
+     44px tall, as a table-view cell is. */
+  & > li:has(> a:only-child) {
+    padding-block: var(--spacing-0);
+    padding-inline: var(--spacing-0);
+
+    & > a {
+      display: var(--display-flex);
+      align-items: var(--align-center);
+      flex-grow: var(--flex-grow);
+      min-block-size: var(--size-target-min);
+      padding-block: var(--spacing-list-group-item-padding-block);
+      padding-inline: var(--spacing-list-group-item-padding-inline);
+    }
+  }
+
+  /* A rich item (a nested component, e.g. a card) owns its own padding;
+     the row steps aside — the composition counterpart to the choice
+     notch, where the card reserves room for the group's control. */
+  & > li:has(> article) {
+    padding-block: var(--spacing-list-group-item-padding-block-rich);
+    padding-inline: var(--spacing-list-group-item-padding-inline-rich);
+  }
+}

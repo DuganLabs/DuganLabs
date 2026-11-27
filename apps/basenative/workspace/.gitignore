@@ -1,0 +1,51 @@
+node_modules/
+.nx/
+.agent/
+# .agents/ holds throwaway scan output, EXCEPT the generated component index:
+# that one is a committed contract (CI fails when it drifts from source), so it
+# has to be visible in `git status` rather than needing `git add -f` every time.
+# `.agents/*` rather than `.agents/` so git still descends and sees the negations.
+.agents/*
+!.agents/component-index.json
+!.agents/component-index.md
+agent/
+# Skills installed from a marketplace are not committed. The three vendored
+# design-system forks below ARE committed on purpose: they are forks, not
+# installs, and a marketplace update must never clobber them.
+.claude/skills/*
+!.claude/skills/ds-guard/
+!.claude/skills/ds-extract/
+!.claude/skills/ds-drift/
+.claude/worktrees/
+skills-lock.json
+examples/express/public/basenative.js
+examples/express/public/builder.js
+dist/
+reports/
+test-results/
+playwright-report/
+
+# Local-only sandbox dirs (not part of basenative)
+/dotfiles
+/experiments
+/homelab
+
+.claude/settings.local.json
+
+# Written by scripts/publish-release.mjs so the post-publish smoke test
+# can skip versions that were staged and are not on the registry yet.
+.publish-release-state.json
+
+# Secrets — nx-cloud.env holds NX_CLOUD_ACCESS_TOKEN and is read from the
+# workspace root by nx and nx-mcp. The pre-commit secret scanner has no
+# pattern for Nx Cloud tokens (they are opaque), so exclusion is the control.
+.env
+.env.*
+!.env.example
+nx-cloud.env
+
+# workspace symlinks created for local test runs
+packages/*/node_modules/
+
+# node_modules symlinks (worktree test wiring) — never commit
+packages/*/node_modules

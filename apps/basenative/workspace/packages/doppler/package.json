@@ -1,0 +1,51 @@
+{
+  "name": "@basenative/doppler",
+  "version": "3.3.0",
+  "description": "Thin developer-experience layer around Doppler \u2014 local-dev wrapper, CI helper, project bootstrap, environment validation. BaseNative ships plumbing, never values.",
+  "type": "module",
+  "bin": {
+    "bn-doppler": "./src/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./required": {
+      "types": "./types/required.d.ts",
+      "default": "./src/required.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "templates",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/doppler"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/doppler#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "doppler",
+    "secrets",
+    "env",
+    "cloudflare",
+    "wrangler",
+    "infra"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,150 @@
+table[variant="default"], table[variant="striped"] {
+  inline-size: var(--size-table-inline);
+  border-collapse: var(--border-collapse-table);
+  border-spacing: var(--spacing-table-border-spacing);
+
+  & > caption {
+    text-align: var(--text-align-table-caption);
+    padding-block-end: var(--spacing-table-caption-padding-block-end);
+    color: var(--color-text-table-caption);
+    font-family: var(--font-table-caption-family);
+    font-size: var(--font-table-caption-size);
+    line-height: var(--font-table-caption-leading);
+    letter-spacing: var(--font-table-caption-tracking);
+  }
+
+  & th, & td {
+    padding-block: var(--spacing-table-cell-padding-block);
+    padding-inline: var(--spacing-table-cell-padding-inline);
+    border-block-end-width: var(--size-border-table-cell-block-end);
+    border-inline-end-width: var(--size-border-table-cell-inline-end);
+    border-inline-end-style: var(--border-style-table-cell-inline-end);
+    border-inline-end-color: var(--color-border-table-cell-inline-end);
+    border-block-end-style: var(--border-style-table-cell-block-end);
+    border-block-end-color: var(--color-border-table-cell-block-end);
+    font-family: var(--font-table-cell-family);
+    font-size: var(--font-table-cell-size);
+    line-height: var(--font-table-cell-leading);
+    letter-spacing: var(--font-table-cell-tracking);
+    color: var(--color-text-table-cell);
+    text-align: var(--text-align-table-cell);
+    vertical-align: var(--vertical-align-table-cell);
+    /* Words never break mid-word. break-word only splits a word
+       longer than the whole line, and it does not shrink a column's
+       minimum below its longest word, so no column squeezes a label
+       into one letter per line. Code is the exception, below. */
+    overflow-wrap: var(--overflow-wrap-table-cell);
+    font-variant-numeric: var(--font-variant-numeric-table-cell);
+  }
+
+  /* A numeric column (versions, counts, sizes) is marked with <data>
+     in its heading and cells, and lines up on its trailing edge. */
+  & th:has(> data), & td:has(> data) {
+    text-align: var(--text-align-table-cell-numeric);
+  }
+
+  /* Code wraps at the parts the renderer marks with <wbr> (after a
+     slash, a dot, a snake_case join), and those parts set the column's
+     min-content; a mid-name break is a last resort against overflow. */
+  & td code, & th code {
+    overflow-wrap: var(--overflow-wrap-table-cell-code);
+  }
+
+  /* Column headings are short labels: they hold one line. */
+  & > thead th {
+    white-space: var(--white-space-table-head);
+    background-color: var(--color-bkg-table-head);
+    color: var(--color-text-table-head);
+    font-family: var(--font-table-head-family);
+    font-size: var(--font-table-head-size);
+    font-weight: var(--font-table-head-weight);
+    line-height: var(--font-table-head-leading);
+    letter-spacing: var(--font-table-head-tracking);
+  }
+
+  & > tbody th {
+    font-weight: var(--font-table-row-header-weight);
+  }
+
+  & td[aria-current="date"], & th[aria-current="date"] {
+    background-color: var(--color-bkg-table-cell-today);
+    font-weight: var(--font-table-cell-weight-current);
+  }
+
+  & td[aria-current="true"], & th[aria-current="true"] {
+    box-shadow: var(--shadow-table-cell-selected);
+    font-weight: var(--font-table-cell-weight-current);
+  }
+
+  & td > small, & th > small {
+    color: var(--color-text-table-cell-small);
+    font-size: var(--font-table-cell-size);
+  }
+
+  /* The cell's key: its column heading, carried in the markup and
+     shown only when the table restacks (below), where the header row
+     steps out of the visual flow. In the wide layout the heading
+     already sits at the top of the column, so the key stays hidden. */
+  & td > b {
+    display: var(--display-table-cell-key);
+    color: var(--color-text-table-cell-key);
+    font-family: var(--font-table-cell-key-family);
+    font-size: var(--font-table-cell-key-size);
+    font-weight: var(--font-table-cell-key-weight);
+    line-height: var(--font-table-cell-key-leading);
+    letter-spacing: var(--font-table-cell-key-tracking);
+    padding-block-end: var(--spacing-table-cell-key-padding-block-end);
+  }
+}
+
+table[variant="striped"] > tbody > tr:nth-child(even) {
+  background-color: var(--color-bkg-table-row-striped);
+}
+
+/* Narrow restack. The row header becomes the row's label line, each
+   data cell carries its column heading as a key line, and the header
+   row steps out of the visual flow while staying in the accessibility
+   tree. A restacked cell spans the container, so its words wrap
+   whole; only a token longer than the full line (a global's name, a
+   package spec) breaks, and anywhere lets it break rather than size
+   the whole table past its container. The trigger is
+   the CONTAINER, not the viewport: inside a railed shell a wide
+   viewport can still hand the table a phone-width column, and the
+   table adapts to the space it actually gets. */
+@container (max-width: 40rem) {
+  table[variant="default"], table[variant="striped"] {
+    & > thead {
+      position: var(--position-table-head-restack);
+      inline-size: var(--size-table-head-inline-restack);
+      block-size: var(--size-table-head-block-restack);
+      overflow: var(--overflow-hidden);
+    }
+
+    & > tbody > tr {
+      display: var(--display-table-row-restack);
+      padding-block: var(--spacing-table-row-padding-block-restack);
+      border-block-end-width: var(--size-border-table-row-block-end-restack);
+      border-block-end-style: var(--border-style-table-row-block-end-restack);
+      border-block-end-color: var(--color-border-table-row-block-end-restack);
+    }
+
+    & > tbody th, & > tbody td {
+      display: var(--display-table-cell-restack);
+      border-block-end-width: var(--size-border-table-cell-block-end-restack);
+      padding-block: var(--spacing-table-cell-padding-block-restack);
+      overflow-wrap: var(--overflow-wrap-table-cell-restack);
+      /* The stack owns wrapping. A consumer sheet's nowrap on a cell
+         (a wide-table habit) must not pin a stacked cell open. */
+      white-space: var(--white-space-table-cell-restack);
+    }
+
+    & > tbody td > b {
+      display: var(--display-table-cell-key-restack);
+    }
+
+    /* Stacked, a numeric value reads under its key, not across the row. */
+    & > tbody td:has(> data) {
+      text-align: var(--text-align-table-cell-numeric-restack);
+    }
+  }
+}

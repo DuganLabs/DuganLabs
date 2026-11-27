@@ -1,0 +1,41 @@
+{
+  "name": "@basenative/config",
+  "version": "3.3.0",
+  "description": "Type-safe environment configuration loading and validation",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/config"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/config#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "config",
+    "environment",
+    "dotenv",
+    "env-validation"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

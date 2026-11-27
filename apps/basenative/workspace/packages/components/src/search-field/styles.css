@@ -1,0 +1,30 @@
+search[variant="default"] {
+  display: var(--display-search-field);
+  align-items: var(--align-search-field);
+  gap: var(--spacing-search-field-gap);
+
+  & > label {
+    position: var(--position-search-field-label);
+    inline-size: var(--size-search-field-label-inline);
+    block-size: var(--size-search-field-label-block);
+    overflow: var(--overflow-search-field-label);
+  }
+
+  & > input {
+    flex-grow: var(--flex-grow-search-field-control);
+  }
+
+  & > button:not([variant]) {
+    background-color: var(--color-bkg-search-field-clear);
+    border-width: var(--size-border-search-field-clear);
+    border-radius: var(--size-radius-search-field-clear);
+    color: var(--color-text-search-field-clear);
+    cursor: var(--cursor-search-field-clear);
+    padding-block: var(--spacing-search-field-clear-padding-block);
+    padding-inline: var(--spacing-search-field-clear-padding-inline);
+    font-family: var(--font-search-field-clear-family);
+    font-size: var(--font-search-field-clear-size);
+    line-height: var(--font-search-field-clear-leading);
+    letter-spacing: var(--font-search-field-clear-tracking);
+  }
+}

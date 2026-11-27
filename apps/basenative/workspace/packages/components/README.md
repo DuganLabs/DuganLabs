@@ -1,0 +1,173 @@
+# @basenative/components
+
+> 35 modules of semantic UI components rendered as HTML strings — no framework, no client JavaScript required beyond the opt-in initialisers
+
+Part of the [BaseNative](https://github.com/DuganLabs/basenative) ecosystem — a signal-based web runtime over native HTML.
+
+The package exports 62 symbols from 35 source modules (re-exported through `src/index.js`): 47 `render*` helpers, the toast queue (`createToaster`, `showToast`, `dismissToast`, `renderToastContainer`), the tabs, calendar, pipeline and site-header client-side initialisers (`initTabs`, `initCalendarDragDrop`, `initPipelineDragDrop`, `initSiteHeader`), state stores and helpers, and two small utilities (`buttonVariants`, `layoutGridStyles`). Full reference with options tables, rendered markup and accessibility notes: [docs/api/components.md](../../docs/api/components.md). Type declarations ship in `types/index.d.ts`.
+
+## Install
+
+```bash
+npm install @basenative/components
+```
+
+## Quick Start
+
+```js
+import {
+  renderButton,
+  renderInput,
+  renderAlert,
+  renderTable,
+  renderDialog,
+} from '@basenative/components';
+
+// All components return HTML strings for use with @basenative/server
+const html = `
+  ${renderAlert('Changes saved successfully.', { variant: 'info' })}
+  ${renderButton('Submit', { variant: 'primary', type: 'submit' })}
+  ${renderInput({ name: 'email', label: 'Email', type: 'email', required: true })}
+`;
+```
+
+Two calling conventions exist, and the reference documents which applies to each function:
+
+- content-first: `renderButton(content, options?)`, `renderAlert(content, options?)`, `renderBadge(content, options?)`
+- options-only: everything else, e.g. `renderInput({ name, label, … })`
+
+Most `render*` helpers accept an `attrs` string of extra HTML attributes that is spliced verbatim into the outermost element. `renderPagination`, `renderSpinner`, `renderSkeleton` and `renderLayoutGrid` do not.
+
+The content-first helpers (`renderButton`, `renderAlert`, `renderBadge`) also take `options.text`: an **escaped** label that replaces the unescaped `content` slot. Reach for it whenever the label is data rather than markup — it is the difference between remembering `escapeText()` at every call site and not being able to get it wrong.
+
+## Styles
+
+All styling lives in CSS cascade layers (`reset`, `tokens`, `layout`, `components`, `states`); components carry no inline styles except the geometry of the calendar, virtual list and layout grid.
+
+The simplest option is the bundled entry, which imports every layer in the right order:
+
+```html
+<link rel="stylesheet" href="node_modules/@basenative/components/src/index.css">
+```
+
+```js
+import '@basenative/components/css';
+```
+
+Each layer is also exported individually. **`@basenative/components/layers.css` declares the cascade order (`@layer reset, tokens, layout, components, states;`) and must be loaded first** whenever you import the individual files — otherwise the layers are ordered by first appearance and `states` may lose to `components`:
+
+| Export | Contents |
+|--------|----------|
+| `@basenative/components/css` | `index.css` — imports everything below, in order |
+| `@basenative/components/layers.css` | Layer order declaration — load first |
+| `@basenative/components/reset.css` | `reset` layer |
+| `@basenative/components/tokens.css` | Generated from the DTCG token source in `tokens/` (CTI+ taxonomy): design tokens, light/dark modes (`prefers-color-scheme`, `data-theme`) and density scales |
+| `@basenative/components/layout.css` | `layout` layer |
+| `@basenative/components/components.css` | `components` layer: every `[data-bn]` component |
+| `@basenative/components/states.css` | `states` layer: hover/focus/disabled/loading |
+
+```js
+import '@basenative/components/layers.css'; // first
+import '@basenative/components/tokens.css';
+import '@basenative/components/components.css';
+```
+
+Dark mode: `prefers-color-scheme: dark` or `data-theme="dark"` on any ancestor. Density: `data-density="compact|default|spacious"`.
+
+### Brand foregrounds
+
+Re-pointing `--palette-primary-*` at your brand is only half the job: something has
+to be readable *on top of* those filled boxes. Four tokens name that foreground, so a
+brand built on a light hue (amber, mint, sand) stays legible without forking any CSS:
+
+| Token | Default | Applies to |
+|-------|---------|------------|
+| `--color-text-on-primary` | `--palette-white` | primary button label, `[aria-current="page"]` in pagination, toggle knob when on |
+| `--color-text-on-accent` | `--color-text-on-primary` | checkbox tick, radio dot, data-grid checkbox tick (these sit on `--palette-accent-600`) |
+| `--color-text-on-error` | `--palette-white` | destructive button label |
+| `--color-bkg-toggle-knob-legacy` | `--palette-white` | toggle knob when off (rides the neutral track, not the brand) |
+
+Two more tokens split "the page" from "a thing sitting on the page", which are the
+same colour only on a light theme:
+
+| Token | Default | Applies to |
+|-------|---------|------------|
+| `--color-surface-control` | `--color-surface` | input, textarea, select, combobox input, checkbox, radio, secondary button |
+| `--color-surface-card` | `--color-surface` | card |
+
+```css
+:root {
+  --palette-primary-600: #e8920a;   /* amber brand */
+  --color-text-on-primary: #1a0a00;    /* 7.86:1 — white would be 2.46:1 */
+}
+```
+
+## API
+
+All components are pure functions that return an HTML string. See [docs/api/components.md](../../docs/api/components.md) for options and markup.
+
+### Form Controls
+- `renderButton(content, options)` — Button with `variant` (`primary`, `secondary`, `ghost`, `destructive`), `size` (`sm`, `default`, `lg`), `disabled`, `type`. `options.text` is an escaped label and wins over the `content` HTML slot.
+- `renderInput(options)` — Text input with label, help text, and error state.
+- `renderTextarea(options)` — Multiline text input.
+- `renderCheckbox(options)` — Checkbox with label.
+- `renderRadioGroup(options)` — Group of radio inputs in a `<fieldset>`.
+- `renderToggle(options)` — Toggle/switch input (`role="switch"`).
+- `renderSelect(options)` — `<select>` with option list.
+- `renderField(options)` — The field unit as a public component: label, pre-rendered control, help text and error composed in one `[data-bn="field"]` shell — the same contract the built-in controls render internally, for any other control.
+- `renderFormField(options)` — Compose a whole field in one call: name a built-in control (`input`, `textarea`, `select`, `checkbox`, `radio`, `toggle`) or pass pre-rendered `controlHtml`, and label/help/error come along.
+- `renderCombobox(options)` — `<input>` + `<datalist>` combobox.
+- `renderMultiselect(options)` — Multi-value select with removable tags.
+
+### Feedback
+- `renderAlert(content, options)` — Inline alert with `variant` (`info`, `success`, `warning`, `error`), `dismissible` and `attrs`. `options.text` is an escaped message and wins over the `content` HTML slot.
+- `createToaster(options)` / `showToast(toaster, options)` / `dismissToast(toaster, id)` / `renderToastContainer(position)` — Toast notification system.
+- `renderProgress(options)` / `renderSpinner(options)` — Progress bar and loading spinner.
+- `renderSkeleton(options)` — Skeleton loading placeholder.
+
+### Data Display
+- `renderTable(options)` — Accessible `<table>` with columns and rows config; a column's `render(value, row)` hook fills composite cells (badge, `<time>`, row actions) as an HTML slot, the default is escaped text. Columns take `align` and `numeric` (tabular lining figures, end-aligned, marked on the `<th>` too), `cellAttrs` to splice attributes onto a column's cells, and `srLabel` to name a column with no visible heading; `footer` rows render a `<tfoot>`; `labelCells` (on by default) stamps `data-label` on every body and footer cell, and the shipped stylesheet stacks the table against its own container width, heading each cell from that label — the table is readable at every width, no consumer-side CSS.
+- `renderDataGrid(options)` — Data grid with sorting indicators, row selection, editable cells and a pagination footer. Sortable headers are real `<button>`s inside the `<th>` — keyboard-operable with no client JS.
+- `renderTree(options)` / `renderTreeGrid(options)` — Tree view and tree grid. Items/rows carry a static roving `tabindex` (first `0`, rest `-1`); moving it between items on arrow keys is left to your own keydown handler.
+- `renderVirtualList(options)` — First window of a virtualised list plus a spacer for the full height.
+- `renderBadge(content, options)` — Small status badge with `variant` and `attrs`; `content` is an HTML slot (not escaped), `options.text` is the escaped alternative and wins over it.
+- `renderAvatar(options)` — User avatar with fallback initials.
+- `renderPagination(options)` — Page navigation controls.
+
+### Layout & Navigation
+- `renderCard(options)` — Content card with optional header/footer, plus `id` and `attrs` so it can be labelled (`aria-labelledby`) or bound to.
+- `renderDialog(options)` — Native `<dialog>`, named by its title (`aria-labelledby`) and described by an optional `description` (`aria-describedby`).
+- `renderDrawer(options)` — Side drawer panel with overlay.
+- `renderTabs(options)` — Tabbed content panels with a roving `tabindex`; `initTabs(root, { onChange?, activation? })` wires click / ArrowLeft / ArrowRight / Home / End switching, `aria-selected`, `tabindex` and panel `hidden` toggling (WAI-ARIA APG tabs pattern) and returns `{ select(id), active(), destroy() }`.
+- `renderAccordion(options)` — `<details>`/`<summary>` accordion.
+- `renderBreadcrumb(options)` — Breadcrumb navigation trail.
+- `renderTooltip(options)` — Popover-API tooltip; the trigger renders as a real `<button type="button">` (or your own `<button>`/`<input>` slot, wired in place) since only button-like elements are valid popover invokers.
+- `renderDropdownMenu(options)` — Popover-API dropdown menu.
+- `renderCommandPalette(options)` — Keyboard-driven command palette.
+- `renderLayoutGrid(options)` / `layoutGridStyles()` — Drag-and-drop CSS grid canvas for the visual builder, plus its CSS.
+- `renderSiteNav(options)` — Standalone labelled nav list; the current item's link carries `aria-current="page"`.
+- `renderSiteHeader(options)` — Site header: brand link, real-button nav toggle and primary nav menu; `initSiteHeader(root, { onToggle? })` wires the narrow-viewport toggle (Escape closes and refocuses, outside click closes) and returns `{ open, close, toggle, destroy }`.
+- `renderSiteFooter(options)` — Site footer: brand block, link columns as labelled navs with `<h2>` headings, and a legal bar.
+- `renderAppShell(options)` — Minimal page shell: skip link, header slot, `<main>` landmark and footer slot, with the skip target owned by the shell.
+
+### Marketing & Content
+- `renderHero(options)` — Marketing hero: badge, heading, lead, actions, social proof and an optional visual; `variant: 'page'` renders the compact heading-and-lead page hero. Copy is escaped text (`headingText`/`leadText`) or trusted HTML slots.
+- `renderPricingCard(options)` / `renderPricingCards(options)` — One plan (badge, price, tagline, check-marked features, CTA; `featured` stamps the card and turns the CTA primary), or the whole plan list.
+- `renderFeatureCard(options)` — Icon, tag, title and description for feature grids.
+- `renderStatCard(options)` — Value, label and optional up/down trend indicator.
+- `renderFaq(options)` / `renderFaqItem(options)` — Definition-list FAQ; questions are escaped, answers are HTML slots or escaped `answerText`.
+
+### Scheduling
+- `renderCalendar(options)` — Week view with hourly drop zones and draggable events. Buckets by the local calendar date of each parsed timestamp (or `timeZone`), marks today (`now`), derives the hour range from the events, and repeats multi-day events per day.
+- `renderPipelineBlock(options)` — Draggable card that can be dropped onto the calendar.
+- `renderPipeline(options)` — Kanban board of columns and cards; columns are sections labelled by a header with a card count, cards take an escaped `badge` plus `actions`/`footer` HTML slots, and known `status` values get a token-driven accent.
+- `initCalendarDragDrop(container, { onDrop, dragSource?, snapMinutes? })` / `initPipelineDragDrop(container, { onCardMove })` — Client-side moves by HTML5 drag-and-drop, by tap-to-pick / tap-to-place, or by keyboard (Enter picks, arrows move, Enter drops, Escape cancels); return `{ destroy() }`. Calendar drops report `minute`/`datetime` as well as the slot, `dragSource` lets a sidebar outside the calendar supply payloads, and pipeline drops report the real `position` within the target column.
+- `createCalendarState(options)` / `createPipelineState(options)` — DOM-free stores with collision detection and change callbacks.
+- `eventsCollide(a, b)` / `updateEvent(event, overrides)` / `getEventDuration(start, end)` — Calendar helpers.
+
+### Utilities
+- `buttonVariants(variant?, size?)` — Function returning the class string `bn-button bn-button--{variant} bn-button--{size}` for hand-written markup.
+
+## License
+
+Apache-2.0

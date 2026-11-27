@@ -1,0 +1,39 @@
+ol[variant="pipeline"] {
+  display: var(--display-pipeline);
+  flex-direction: var(--flex-direction-pipeline);
+  gap: var(--spacing-pipeline-gap);
+  list-style: var(--list-style-pipeline);
+  margin-inline: var(--spacing-pipeline-margin);
+  padding: var(--spacing-pipeline-padding);
+  overflow-x: var(--overflow-x-pipeline);
+
+  & > li {
+    min-inline-size: var(--size-pipeline-column-min-inline);
+    flex-grow: var(--flex-grow-pipeline-column);
+    background-color: var(--color-bkg-pipeline-column);
+    border-radius: var(--size-radius-pipeline-column);
+    padding: var(--spacing-pipeline-column-padding);
+    display: var(--display-pipeline-column);
+    flex-direction: var(--flex-direction-pipeline-column);
+    gap: var(--spacing-pipeline-column-gap);
+
+    & > h3 {
+      margin: var(--spacing-pipeline-title-margin);
+      color: var(--color-text-pipeline-title);
+      font-family: var(--font-pipeline-title-family);
+      font-size: var(--font-pipeline-title-size);
+      font-weight: var(--font-pipeline-title-weight);
+      line-height: var(--font-pipeline-title-leading);
+      letter-spacing: var(--font-pipeline-title-tracking);
+    }
+
+    & > ol {
+      list-style: var(--list-style-pipeline-cards);
+      margin: var(--spacing-pipeline-cards-margin);
+      padding: var(--spacing-pipeline-cards-padding);
+      display: var(--display-pipeline-cards);
+      flex-direction: var(--flex-direction-pipeline-cards);
+      gap: var(--spacing-pipeline-cards-gap);
+    }
+  }
+}

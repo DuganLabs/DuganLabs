@@ -1,0 +1,46 @@
+{
+  "name": "@basenative/fonts",
+  "version": "3.3.0",
+  "description": "Self-hosted web fonts for BaseNative — the BaseNative Sans, Serif and Mono families plus Inter, JetBrains Mono, Source Serif 4 and DM Serif Display as woff2, with a ready-made @font-face stylesheet",
+  "type": "module",
+  "exports": {
+    ".": "./fonts.css",
+    "./fonts.css": "./fonts.css",
+    "./src/*.woff2": "./src/*.woff2"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "fonts.css",
+    "src/*.woff2",
+    "README.md",
+    "LICENSE",
+    "OFL.txt"
+  ],
+  "license": "(Apache-2.0 AND OFL-1.1)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/fonts"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/fonts#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "fonts",
+    "woff2",
+    "webfont",
+    "self-hosted",
+    "css"
+  ],
+  "scripts": {
+    "test": "node --test test.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

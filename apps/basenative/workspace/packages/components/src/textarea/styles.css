@@ -1,0 +1,57 @@
+textarea[variant="default"] {
+  box-sizing: var(--box-sizing-textarea);
+  display: var(--display-textarea);
+  inline-size: var(--size-textarea-inline);
+  min-block-size: var(--size-textarea-min-block);
+  max-block-size: var(--size-textarea-max-block);
+  /* Grows with its text up to the max, then scrolls. Where
+     field-sizing is missing the field behaviour sets the height. */
+  field-sizing: var(--field-sizing-textarea);
+  resize: var(--resize-textarea);
+  padding-block: var(--spacing-textarea-padding-block);
+  padding-inline: var(--spacing-textarea-padding-inline);
+  background-color: var(--color-bkg-textarea);
+  color: var(--color-text-textarea);
+  border-width: var(--size-border-textarea);
+  border-style: var(--border-style-textarea);
+  border-color: var(--color-border-textarea);
+  border-radius: var(--size-radius-textarea);
+  font-family: var(--font-textarea-family);
+  font-size: var(--font-textarea-size);
+  font-weight: var(--font-textarea-weight);
+  line-height: var(--font-textarea-leading);
+  letter-spacing: var(--font-textarea-tracking);
+  cursor: var(--cursor-textarea);
+  transition: border-color var(--motion-textarea-duration) var(--motion-textarea-curve), box-shadow var(--motion-textarea-duration) var(--motion-textarea-curve);
+
+  &:hover {
+    border-color: var(--color-border-textarea-hover);
+  }
+
+  &:focus-visible {
+    outline-width: var(--size-border-textarea-outline-focus);
+    outline-style: var(--border-style-textarea-outline-focus);
+    outline-color: var(--color-border-textarea-outline-focus);
+    outline-offset: var(--spacing-textarea-outline-offset-focus);
+    box-shadow: var(--shadow-textarea-focus);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--color-border-textarea-invalid);
+  }
+
+  &::placeholder {
+    color: var(--color-text-textarea-placeholder);
+  }
+
+  &[readonly] {
+    background-color: var(--color-bkg-textarea-readonly);
+  }
+
+  &:disabled {
+    color: var(--color-text-textarea-disabled);
+    background-color: var(--color-bkg-textarea-disabled);
+    cursor: var(--cursor-textarea-disabled);
+  }
+}
+

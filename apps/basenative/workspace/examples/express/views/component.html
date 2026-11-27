@@ -1,0 +1,141 @@
+<article data-bn-component-page>
+  {{ breadcrumb }} {{ hero }}
+
+  <section data-bn-component-quickstart>
+    <header>
+      <h2>Quick start</h2>
+      <p>
+        One directory in <code>@basenative/components</code> — a template, a token sheet, and its
+        logic. <code>create()</code> builds the view model; <code>@basenative/server</code> renders
+        the template against it.
+      </p>
+    </header>
+    <figure>
+      <figcaption>JavaScript</figcaption>
+      <pre tabindex="0" role="group" aria-label="Code sample"><code>{{ quickstart }}</code></pre>
+      <button
+        type="button"
+        data-bn-action="copy-code"
+        aria-label="Copy the quick-start snippet to clipboard"
+      >
+        Copy
+      </button>
+    </figure>
+  </section>
+
+  <section data-bn-component-examples>
+    <header>
+      <h2>Examples</h2>
+      <p>Each block is a real server render — no mockups, no virtual DOM.</p>
+    </header>
+
+    <template @for="example of examples; track example.title">
+      <section data-bn-component-example>
+        <header>
+          <h3>{{ example.title }}</h3>
+          <template @if="example.description">
+            <p>{{ example.description }}</p>
+          </template>
+        </header>
+
+        <figure data-bn-component-preview>
+          <figcaption>Live render</figcaption>
+          <output>{{ example.html }}</output>
+        </figure>
+      </section>
+    </template>
+  </section>
+
+  <section data-bn-component-files>
+    <header>
+      <h2>The component</h2>
+      <p>
+        Three files in <code>packages/<wbr>components/<wbr>src/<wbr>{{ component.slug }}/</code> — nothing else,
+        nowhere else. The registry facts first, then each file in full.
+      </p>
+    </header>
+    <table>
+      <caption data-bn-visually-hidden>
+        {{ component.title }} facts
+      </caption>
+      <tbody>
+        <template @for="fact of facts; track fact.term">
+          <tr>
+            <th scope="row">{{ fact.term }}</th>
+            <td><code>{{ fact.value }}</code></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+
+    <template @for="file of files; track file.name">
+      <figure data-bn-component-source>
+        <figcaption>{{ file.name }}</figcaption>
+        <pre tabindex="0" role="group" aria-label="Code sample"><code>{{ file.code }}</code></pre>
+        <button type="button" data-bn-action="copy-code" aria-label="Copy this file to clipboard">
+          Copy
+        </button>
+      </figure>
+    </template>
+  </section>
+
+  <template @if="related.length">
+    <aside data-bn-component-related aria-label="Related components">
+      <h2>More in <em>{{ component.categoryTitle }}</em></h2>
+      <ul role="list" data-bn-component-grid>
+        <template @for="r of related; track r.slug">
+          <li>
+            <a href="/components/{{ r.slug }}" data-bn-component-card>
+              <header>
+                <h3>{{ r.title }}</h3>
+                <code data-bn-component-tag>&lt;{{ r.tag }}&gt;</code>
+              </header>
+              <p>{{ r.summary }}</p>
+            </a>
+          </li>
+        </template>
+      </ul>
+    </aside>
+  </template>
+
+  <nav data-bn-component-pager aria-label="Component pagination">
+    <template @if="prev">
+      <a href="/components/{{ prev.slug }}" rel="prev">
+        <span aria-hidden="true">←</span> {{ prev.title }}
+      </a>
+    </template>
+    <template @if="!prev">
+      <span></span>
+    </template>
+    <a href="/components" data-bn-component-pager-index>All components</a>
+    <template @if="next">
+      <a href="/components/{{ next.slug }}" rel="next">
+        {{ next.title }} <span aria-hidden="true">→</span>
+      </a>
+    </template>
+    <template @if="!next">
+      <span></span>
+    </template>
+  </nav>
+</article>
+
+<script type="module">
+  for (const btn of document.querySelectorAll('[data-bn-action="copy-code"]')) {
+    btn.addEventListener('click', async () => {
+      const pre = btn.parentElement?.querySelector('pre code');
+      if (!pre) return;
+      try {
+        await navigator.clipboard.writeText(pre.textContent || '');
+        const prev = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        btn.setAttribute('data-bn-copied', '');
+        setTimeout(() => {
+          btn.textContent = prev;
+          btn.removeAttribute('data-bn-copied');
+        }, 1400);
+      } catch {
+        btn.textContent = 'Copy failed';
+      }
+    });
+  }
+</script>

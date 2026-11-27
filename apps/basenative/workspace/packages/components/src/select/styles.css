@@ -1,0 +1,158 @@
+section[variant="select"] {
+  position: var(--position-select);
+  display: var(--display-select);
+
+  & > button {
+    box-sizing: var(--box-sizing-select-trigger);
+    display: var(--display-select-trigger);
+    align-items: var(--align-select-trigger);
+    justify-content: var(--justify-select-trigger);
+    text-align: var(--text-align-select-trigger);
+    gap: var(--spacing-select-trigger-gap);
+    inline-size: var(--size-select-trigger-inline);
+    block-size: var(--size-select-trigger-block);
+    padding-block: var(--spacing-select-trigger-padding-block);
+    padding-inline: var(--spacing-select-trigger-padding-inline);
+    background-color: var(--color-bkg-select-trigger);
+    color: var(--color-text-select-trigger);
+    border-width: var(--size-border-select-trigger);
+    border-style: var(--border-style-select-trigger);
+    border-color: var(--color-border-select-trigger);
+    border-radius: var(--size-radius-select-trigger);
+    font-family: var(--font-select-trigger-family);
+    font-size: var(--font-select-trigger-size);
+    font-weight: var(--font-select-trigger-weight);
+    line-height: var(--font-select-trigger-leading);
+    letter-spacing: var(--font-select-trigger-tracking);
+    cursor: var(--cursor-select-trigger);
+    transition: border-color var(--motion-select-duration) var(--motion-select-curve), box-shadow var(--motion-select-duration) var(--motion-select-curve);
+  }
+
+  & > button > svg {
+    inline-size: var(--size-select-chevron-inline);
+    block-size: var(--size-select-chevron-block);
+    color: var(--color-text-select-chevron);
+    margin-inline-start: var(--spacing-select-chevron-margin-inline-start);
+    transition: transform var(--motion-select-duration) var(--motion-select-curve);
+  }
+
+  & > button[aria-expanded="true"] > svg {
+    transform: var(--transform-select-chevron-open);
+  }
+
+  & > button:hover {
+    border-color: var(--color-border-select-trigger-hover);
+  }
+
+  & > button:focus-visible {
+    outline-width: var(--size-border-select-trigger-outline-focus);
+    outline-style: var(--border-style-select-trigger-outline-focus);
+    outline-color: var(--color-border-select-trigger-outline-focus);
+    outline-offset: var(--spacing-select-trigger-outline-offset-focus);
+    box-shadow: var(--shadow-select-trigger-focus);
+  }
+
+  & > button:disabled {
+    color: var(--color-text-select-trigger-disabled);
+    cursor: var(--cursor-select-trigger-disabled);
+  }
+
+  & > ul {
+    position: var(--position-select-listbox);
+    inset-block-start: var(--spacing-select-listbox-inset-block-start);
+    inset-inline: var(--spacing-select-listbox-inset-inline);
+    margin: var(--spacing-select-listbox-margin);
+    margin-block-start: var(--spacing-select-listbox-margin-block-start);
+    z-index: var(--layer-select-listbox);
+    list-style: var(--list-style-select-listbox);
+    padding: var(--spacing-select-listbox-padding);
+    background-color: var(--color-bkg-select-listbox);
+    border-width: var(--size-border-select-listbox);
+    border-style: var(--border-style-select-listbox);
+    border-color: var(--color-border-select-listbox);
+    border-radius: var(--size-radius-select-listbox);
+    box-shadow: var(--shadow-select-listbox);
+    max-block-size: var(--size-select-listbox-max-block);
+    overflow: var(--overflow-select-listbox);
+  }
+
+  /* An option is its label and a trailing checkmark. The check marks
+     the chosen value (Apple's menu idiom), and the fill marks only the
+     active row the keyboard or pointer is on, so the two never read as
+     one state. */
+  & > ul > li {
+    display: var(--display-select-option);
+    align-items: var(--align-select-option);
+    justify-content: var(--justify-select-option);
+    gap: var(--spacing-select-option-gap);
+    min-block-size: var(--size-select-option-min-block);
+    padding-block: var(--spacing-select-option-padding-block);
+    padding-inline: var(--spacing-select-option-padding-inline);
+    border-radius: var(--size-radius-select-option);
+    color: var(--color-text-select-option);
+    font-family: var(--font-select-option-family);
+    font-size: var(--font-select-option-size);
+    line-height: var(--font-select-option-leading);
+    letter-spacing: var(--font-select-option-tracking);
+    cursor: var(--cursor-select-option);
+  }
+
+  & > ul > li > svg {
+    flex: var(--flex-select-option-check);
+    inline-size: var(--size-select-option-check);
+    block-size: var(--size-select-option-check);
+    color: var(--color-text-select-option-check);
+    visibility: var(--visibility-select-option-check);
+  }
+
+  & > ul > li[aria-selected="true"] > svg {
+    visibility: var(--visibility-select-option-check-selected);
+  }
+
+  & > ul > li[variant="active"] {
+    background-color: var(--color-bkg-select-option-active);
+  }
+
+  /* A touch-first pointer gets the 44px platform target per row. */
+  @media (pointer: coarse) {
+    & > ul > li {
+      min-block-size: var(--size-select-option-min-block-coarse);
+    }
+  }
+}
+
+section[variant="native"] {
+
+  & > select {
+    box-sizing: var(--box-sizing-select-native);
+    display: var(--display-select-native);
+    inline-size: var(--size-select-native-inline);
+    block-size: var(--size-select-native-block);
+    padding-block: var(--spacing-select-native-padding-block);
+    padding-inline: var(--spacing-select-native-padding-inline);
+    background-color: var(--color-bkg-select-native);
+    color: var(--color-text-select-native);
+    border-width: var(--size-border-select-native);
+    border-style: var(--border-style-select-native);
+    border-color: var(--color-border-select-native);
+    border-radius: var(--size-radius-select-native);
+    font-family: var(--font-select-native-family);
+    font-size: var(--font-select-native-size);
+    font-weight: var(--font-select-native-weight);
+    line-height: var(--font-select-native-leading);
+    cursor: var(--cursor-select-native);
+    transition: border-color var(--motion-select-duration) var(--motion-select-curve), box-shadow var(--motion-select-duration) var(--motion-select-curve);
+  }
+
+  & > select:hover {
+    border-color: var(--color-border-select-native-hover);
+  }
+
+  & > select:focus-visible {
+    outline-width: var(--size-border-select-native-outline-focus);
+    outline-style: var(--border-style-select-native-outline-focus);
+    outline-color: var(--color-border-select-native-outline-focus);
+    outline-offset: var(--spacing-select-native-outline-offset-focus);
+    box-shadow: var(--shadow-select-native-focus);
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@basenative/i18n",
+  "version": "3.3.0",
+  "description": "ICU message formatting, locale detection, and @t template directive",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": {
+    "@basenative/runtime": "workspace:^3.3.0"
+  },
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": [
+    "./src/index.js",
+    "./src/directive.js"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/i18n"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/i18n#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "i18n",
+    "internationalization",
+    "icu",
+    "localization",
+    "template-directive"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

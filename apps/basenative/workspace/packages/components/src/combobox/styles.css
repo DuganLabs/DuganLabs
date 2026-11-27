@@ -1,0 +1,69 @@
+section[variant="default"] {
+  --color-bkg-input: var(--color-fill-3);
+  position: var(--position-combobox);
+  display: var(--display-combobox);
+
+  /* The chevron says "this field opens a list", the way the select's
+     trigger does. It sits in the field's end padding, centred on the
+     field's own height (an open list staged in flow grows the section) and lets the
+     pointer through, so a tap on it lands on the input and opens. */
+  & > input {
+    padding-inline-end: var(--spacing-combobox-input-padding-inline-end);
+
+    /* The chevron is the field's one end control: the engine's search
+       clear button would sit beside it, off-system. Escape clears. */
+    &::-webkit-search-cancel-button {
+      display: var(--display-combobox-search-cancel);
+    }
+  }
+
+  & > svg {
+    position: var(--position-combobox-chevron);
+    inset-block-start: var(--spacing-combobox-chevron-inset-block-start);
+    inset-inline-end: var(--spacing-combobox-chevron-inset-inline-end);
+    inline-size: var(--size-combobox-chevron-inline);
+    block-size: var(--size-combobox-chevron-block);
+    color: var(--color-text-combobox-chevron);
+    pointer-events: var(--pointer-events-combobox-chevron);
+    transition: transform var(--motion-combobox-duration) var(--motion-combobox-curve);
+  }
+
+  & > input[aria-expanded="true"] ~ svg {
+    transform: var(--transform-combobox-chevron-open);
+  }
+
+  & > ul {
+    position: var(--position-combobox-listbox);
+    inset-block-start: var(--spacing-combobox-listbox-inset-block-start);
+    inset-inline: var(--spacing-combobox-listbox-inset-inline);
+    z-index: var(--layer-combobox-listbox);
+    list-style: var(--list-style-combobox-listbox);
+    margin: var(--spacing-combobox-listbox-margin);
+    margin-block-start: var(--spacing-combobox-listbox-margin-block-start);
+    padding: var(--spacing-combobox-listbox-padding);
+    background-color: var(--color-bkg-combobox-listbox);
+    border-width: var(--size-border-combobox-listbox);
+    border-style: var(--border-style-combobox-listbox);
+    border-color: var(--color-border-combobox-listbox);
+    border-radius: var(--size-radius-combobox-listbox);
+    box-shadow: var(--shadow-combobox-listbox);
+    max-block-size: var(--size-combobox-listbox-max-block);
+    overflow: var(--overflow-combobox-listbox);
+  }
+
+  & > ul > li {
+    padding-block: var(--spacing-combobox-option-padding-block);
+    padding-inline: var(--spacing-combobox-option-padding-inline);
+    border-radius: var(--size-radius-combobox-option);
+    color: var(--color-text-combobox-option);
+    font-family: var(--font-combobox-option-family);
+    font-size: var(--font-combobox-option-size);
+    line-height: var(--font-combobox-option-leading);
+    letter-spacing: var(--font-combobox-option-tracking);
+    cursor: var(--cursor-combobox-option);
+  }
+
+  & > ul > li[aria-selected="true"] {
+    background-color: var(--color-bkg-combobox-option-selected);
+  }
+}

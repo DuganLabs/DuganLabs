@@ -1,0 +1,90 @@
+button[variant="default"], button[variant="primary"], button[variant="ghost"], button[variant="destructive"],
+a[variant="default"], a[variant="primary"], a[variant="ghost"], a[variant="destructive"] {
+  box-sizing: var(--box-sizing-button);
+  appearance: var(--appearance-button);
+  display: var(--display-button);
+  align-items: var(--align-button);
+  justify-content: var(--justify-button);
+  text-decoration: var(--text-decoration-button);
+  gap: var(--spacing-button-gap);
+  block-size: var(--size-button-block);
+  min-inline-size: var(--size-button-min-inline);
+  padding-block: var(--spacing-button-padding-block);
+  padding-inline: var(--spacing-button-padding-inline);
+  border-width: var(--size-border-button);
+  border-style: var(--border-style-button);
+  border-color: var(--color-border-button);
+  border-radius: var(--size-radius-button);
+  background-color: var(--color-bkg-button);
+  color: var(--color-text-button);
+  font-family: var(--font-button-family);
+  font-size: var(--font-button-size);
+  font-weight: var(--font-button-weight);
+  line-height: var(--font-button-leading);
+  letter-spacing: var(--font-button-tracking);
+  cursor: var(--cursor-button);
+  transition: background-color var(--motion-button-duration) var(--motion-button-curve), border-color var(--motion-button-duration) var(--motion-button-curve), color var(--motion-button-duration) var(--motion-button-curve);
+
+  &:hover {
+    background-color: var(--color-bkg-button-hover);
+    border-color: var(--color-border-button-hover);
+  }
+
+  &:focus-visible {
+    outline-width: var(--size-border-button-outline-focus);
+    outline-style: var(--border-style-button-outline-focus);
+    outline-color: var(--color-border-button-outline-focus);
+    outline-offset: var(--spacing-button-outline-offset-focus);
+    box-shadow: var(--shadow-button-focus);
+  }
+
+  &:active {
+    background-color: var(--color-bkg-button-active);
+  }
+
+  &:disabled {
+    background-color: var(--color-bkg-button-disabled);
+    border-color: var(--color-border-button-disabled);
+    color: var(--color-text-button-disabled);
+    cursor: var(--cursor-button-disabled);
+  }
+
+  /* An anchor button carries its disabled state as aria-disabled
+     (the renderer's contract); it takes the same paint. */
+  &[aria-disabled="true"] {
+    background-color: var(--color-bkg-button-disabled);
+    border-color: var(--color-border-button-disabled);
+    color: var(--color-text-button-disabled);
+    cursor: var(--cursor-button-disabled);
+  }
+}
+
+form:has(:invalid) > button[type="submit"] {
+  background-color: var(--color-bkg-button-disabled);
+  border-color: var(--color-border-button-disabled);
+  color: var(--color-text-button-disabled);
+}
+
+button[variant="destructive"], a[variant="destructive"] {
+  --color-bkg-button: var(--color-danger-solid);
+  --color-bkg-button-hover: var(--color-danger-solid-pressed);
+  --color-bkg-button-active: var(--color-danger-solid-pressed);
+  --color-border-button: var(--color-danger-solid);
+  --color-text-button: var(--color-text-on-danger);
+}
+
+button[variant="ghost"], a[variant="ghost"] {
+  --color-bkg-button: var(--palette-transparent);
+  --color-bkg-button-hover: var(--color-fill-3);
+  --color-bkg-button-active: var(--color-fill-2);
+  --color-border-button: var(--palette-transparent);
+  --color-text-button: var(--color-tint-strong);
+}
+
+button[variant="primary"], a[variant="primary"] {
+  --color-bkg-button: var(--color-tint);
+  --color-bkg-button-hover: var(--color-tint-strong);
+  --color-bkg-button-active: var(--color-tint-strong);
+  --color-border-button: var(--color-tint);
+  --color-text-button: var(--color-text-on-tint);
+}

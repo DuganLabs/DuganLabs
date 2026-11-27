@@ -1,0 +1,32 @@
+# MANUAL-ONLY. Every workflow in this org runs on workflow_dispatch and
+# nothing else: no push, no pull_request, no schedule. The owner runs it
+# from the Actions tab when he wants GitHub minutes spent; everything it
+# does also runs on a developer machine via scripts/pipeline.sh (checks)
+# and the deploy scripts, from the same Doppler config. (2026-09-14)
+name: codeql
+
+# CodeQL security scanning. Lightweight: javascript/typescript, weekly + on PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

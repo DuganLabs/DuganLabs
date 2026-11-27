@@ -1,0 +1,506 @@
+{
+  "display-app-shell-chrome-hidden": {
+    "$value": "{display-none}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "display",
+          "type": null,
+          "item": "app-shell-chrome",
+          "variant": null,
+          "subitem": null,
+          "state": "hidden",
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "inset-app-shell-rail-block-start": {
+    "$value": "{spacing-0}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "inset",
+          "type": null,
+          "item": "app-shell-rail",
+          "variant": null,
+          "subitem": "block-start",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "inset-app-shell-rail-inline-start": {
+    "$value": "{spacing-0}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "inset",
+          "type": null,
+          "item": "app-shell-rail",
+          "variant": null,
+          "subitem": "inline-start",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "position-app-shell-rail": {
+    "$value": "{position-fixed}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "position",
+          "type": null,
+          "item": "app-shell-rail",
+          "variant": null,
+          "subitem": null,
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "size-app-shell-rail-block": {
+    "$value": "{size-full}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "size",
+          "type": null,
+          "item": "app-shell-rail",
+          "variant": null,
+          "subitem": "block",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "size-app-shell-rail-inline": {
+    "$value": "calc(var(--spacing-8) * 6)",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "size",
+          "type": null,
+          "item": "app-shell-rail",
+          "variant": null,
+          "subitem": "inline",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "size-app-shell-main-inline": {
+    "$value": "calc(100% - var(--size-app-shell-rail-inline))",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "size",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "inline",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "size-app-shell-footer-inline": {
+    "$value": "var(--size-app-shell-main-inline)",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "size",
+          "type": null,
+          "item": "app-shell-footer",
+          "variant": null,
+          "subitem": "inline",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "size-app-shell-footer-inline-start": {
+    "$value": "var(--size-app-shell-rail-inline)",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "size",
+          "type": null,
+          "item": "app-shell-footer",
+          "variant": null,
+          "subitem": "inline-start",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-footer-padding-block-end": {
+    "$value": "calc(var(--spacing-8) * 3)",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-footer",
+          "variant": null,
+          "subitem": "padding-block-end",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-block-end": {
+    "$value": "calc(var(--spacing-8) * 3)",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-block-end",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-block-end-rail": {
+    "$value": "{spacing-6}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-block-end",
+          "state": null,
+          "context": "rail"
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-block-start": {
+    "$value": "{spacing-6}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-block-start",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-inline": {
+    "$value": "{spacing-6}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-inline",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-inline-phone": {
+    "$value": "{spacing-4}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-inline",
+          "state": null,
+          "context": "phone"
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-section-gap": {
+    "$value": "{spacing-12}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-section",
+          "variant": null,
+          "subitem": "gap",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-section-gap-rail": {
+    "$value": "{spacing-20}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-section",
+          "variant": null,
+          "subitem": "gap",
+          "state": null,
+          "context": "rail"
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-header-gap": {
+    "$value": "{spacing-7}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": "gap",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-header-gap-rail": {
+    "$value": "{spacing-8}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": "gap",
+          "state": null,
+          "context": "rail"
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-stack-gap": {
+    "$value": "{spacing-4}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-stack",
+          "variant": null,
+          "subitem": "gap",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "display-app-shell-header": {
+    "$value": "{display-flex}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "display",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": null,
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "align-app-shell-header": {
+    "$value": "{align-center}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "align",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": null,
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "justify-app-shell-header": {
+    "$value": "{justify-space-between}",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "justify",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": null,
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-header-padding-block-start": {
+    "$value": "max(var(--spacing-2), env(safe-area-inset-top))",
+    "$type": "string",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": "padding-block-start",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-header-padding-inline": {
+    "$value": "{spacing-app-shell-main-padding-inline-phone}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-header",
+          "variant": null,
+          "subitem": "padding-inline",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-main-padding-block-start-header": {
+    "$value": "{spacing-2}",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell-main",
+          "variant": null,
+          "subitem": "padding-block-start",
+          "state": null,
+          "context": "header"
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-toast-inset-block-end": {
+    "$value": "calc(var(--spacing-8) * 2 + var(--spacing-4) + var(--spacing-safe-bottom))",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell",
+          "variant": null,
+          "subitem": "toast-inset-block-end",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  },
+  "spacing-app-shell-toast-inset-block-end-rail": {
+    "$value": "calc(var(--spacing-4) + var(--spacing-safe-bottom))",
+    "$type": "dimension",
+    "$extensions": {
+      "com.basenative": {
+        "taxonomy": {
+          "category": "spacing",
+          "type": null,
+          "item": "app-shell",
+          "variant": null,
+          "subitem": "toast-inset-block-end-rail",
+          "state": null,
+          "context": null
+        },
+        "system": "trinity"
+      }
+    }
+  }
+}

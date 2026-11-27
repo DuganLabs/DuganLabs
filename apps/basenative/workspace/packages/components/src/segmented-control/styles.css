@@ -1,0 +1,59 @@
+fieldset[variant="segmented-control"] {
+  display: var(--display-segmented-control);
+  inline-size: var(--size-segmented-control-inline);
+  flex-direction: var(--flex-direction-segmented-control);
+  gap: var(--spacing-segmented-control-gap);
+  margin-inline: var(--spacing-segmented-control-margin);
+  padding: var(--spacing-segmented-control-padding);
+  border-width: var(--size-border-segmented-control);
+  background-color: var(--color-bkg-segmented-control);
+  border-radius: var(--size-radius-segmented-control);
+
+  & > legend {
+    position: var(--position-segmented-control-legend);
+    inline-size: var(--size-segmented-control-legend-inline);
+    block-size: var(--size-segmented-control-legend-block);
+    overflow: var(--overflow-segmented-control-legend);
+  }
+
+  & > label {
+    display: var(--display-segmented-control-option);
+    align-items: var(--align-segmented-control-option);
+    padding-block: var(--spacing-segmented-control-option-padding-block);
+    padding-inline: var(--spacing-segmented-control-option-padding-inline);
+    background-color: var(--color-bkg-segmented-control-option);
+    border-radius: var(--size-radius-segmented-control-option);
+    color: var(--color-text-segmented-control-option);
+    font-family: var(--font-segmented-control-option-family);
+    font-size: var(--font-segmented-control-option-size);
+    font-weight: var(--font-segmented-control-option-weight);
+    line-height: var(--font-segmented-control-option-leading);
+    letter-spacing: var(--font-segmented-control-option-tracking);
+    cursor: var(--cursor-segmented-control-option);
+
+    & > input {
+      position: var(--position-segmented-control-control);
+      opacity: var(--opacity-segmented-control-control);
+      inline-size: var(--size-segmented-control-control-inline);
+      block-size: var(--size-segmented-control-control-block);
+    }
+  }
+
+  /* The label is the segment (a button inside it would swallow the
+     label's activation and strand the radio), and it declares its
+     own selected appearance through the option tokens — the choice
+     contract, with the substrate internal to this composite. */
+  & > label:has(> input:checked) {
+    background-color: var(--color-bkg-segmented-control-option-checked);
+    box-shadow: var(--shadow-segmented-control-option-checked);
+    color: var(--color-text-segmented-control-option-checked);
+    font-weight: var(--font-segmented-control-option-weight-checked);
+  }
+
+  & > label:has(> input:focus-visible) {
+    outline-width: var(--size-border-segmented-control-option-outline-focus);
+    outline-style: var(--border-style-segmented-control-option-outline-focus);
+    outline-color: var(--color-border-segmented-control-option-outline-focus);
+    outline-offset: var(--spacing-segmented-control-option-outline-offset-focus);
+  }
+}

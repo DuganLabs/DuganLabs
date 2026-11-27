@@ -1,0 +1,139 @@
+/* A fixed toast stack clears the phone's bottom app bar; on the rail
+   layout the bar is gone and the stack returns to the corner. */
+body:has(> nav[variant="app-bar"]) {
+  --spacing-toast-inset-block-end: var(--spacing-app-shell-toast-inset-block-end);
+}
+
+main[variant="default"] {
+  padding-block-start: var(--spacing-app-shell-main-padding-block-start);
+  padding-block-end: var(--spacing-app-shell-main-padding-block-end);
+  padding-inline: var(--spacing-app-shell-main-padding-inline);
+}
+
+/* Vertical rhythm. The shell owns the space between the page's
+   sections: a section (or a page-level article, and the sections of
+   a page that wraps itself in one article) is set off from
+   whatever comes before and after it by one section gap, so no page
+   can butt a card into the next heading. Inside a section (at any
+   depth), every block surface that follows another (a code card, a
+   table, a list, an article, a nested section, a form, a frame) is a
+   stack, set off by the stack gap whatever its markup. Pages never
+   space these by hand. A component (any element with a variant) owns
+   the layout inside itself, so a grid of tab panels or cards is
+   spaced by its own gap, not shifted down by the stack. The stack is
+   the default flow, so it sits in the layout layer: a host sheet that
+   lays a section out as a grid resets it from any later layer, and a
+   section gap (unlayered) always beats it. */
+@layer layout {
+  main[variant="default"] :is(section, article, aside):not(:where([variant])) > * + :is(figure, table, pre, details, article, section, form, dl, iframe, :is(ul, ol):where([variant])) {
+    margin-block-start: var(--spacing-app-shell-stack-gap);
+  }
+}
+
+main[variant="default"] > * + :is(section, article, aside, form, nav, search),
+main[variant="default"] > :is(section, article, aside, form, nav, search) + *,
+main[variant="default"] > article > * + :is(section, aside),
+main[variant="default"] > article > :is(section, aside) + * {
+  margin-block-start: var(--spacing-app-shell-section-gap);
+}
+
+/* A page header (a stacked hero with a title and lede, no actions)
+   introduces what follows, so it sits closer to it than one section
+   sits to the next. With the full section gap, a tool page opened on
+   80px of nothing between its lede and the tool. */
+main[variant="default"] > figure[variant="stacked"]:not(:has(> figcaption > nav)) + * {
+  margin-block-start: var(--spacing-app-shell-header-gap);
+}
+
+/* The phone masthead. Where the rail is hidden it is the page's top
+   bar, the brand at the start and its actions at the end; past the
+   phone the rail carries its own and this one is hidden. */
+body > header {
+  display: var(--display-app-shell-header);
+  align-items: var(--align-app-shell-header);
+  justify-content: var(--justify-app-shell-header);
+  min-block-size: var(--size-target-min);
+  padding-block-start: var(--spacing-app-shell-header-padding-block-start);
+  padding-inline: var(--spacing-app-shell-header-padding-inline);
+}
+
+body > header + aside + main[variant="default"] {
+  padding-block-start: var(--spacing-app-shell-main-padding-block-start-header);
+}
+
+@media (min-width: 48rem) {
+  body > header {
+    display: var(--display-app-shell-chrome-hidden);
+  }
+
+  body > header + aside + main[variant="default"] {
+    padding-block-start: var(--spacing-app-shell-main-padding-block-start);
+  }
+}
+
+@media (max-width: 47.9375rem) {
+  body > aside[variant="sidebar"] {
+    display: var(--display-app-shell-chrome-hidden);
+  }
+
+  /* The designed phone gutter (Warren, 2026-10-20) — the desktop 24px
+     page gutter stacked on card padding leaves a mostly-void column on
+     a phone, so the inline padding steps down to 16px at phone widths.
+     The desktop rhythm is untouched. */
+  body > main[variant="default"] {
+    padding-inline: var(--spacing-app-shell-main-padding-inline-phone);
+  }
+
+  body > footer[variant="default"] {
+    padding-block-end: var(--spacing-app-shell-footer-padding-block-end);
+  }
+}
+
+@media (min-width: 48rem) {
+  body > aside[variant="sidebar"] {
+    position: var(--position-app-shell-rail);
+    inset-block-start: var(--inset-app-shell-rail-block-start);
+    inset-inline-start: var(--inset-app-shell-rail-inline-start);
+    block-size: var(--size-app-shell-rail-block);
+  }
+
+  /* The rail is fixed, so the main column's inline size is what
+     remains of the viewport beside it. A host sheet's 100% inline
+     size resolves against the full viewport width and pushes the
+     column — and everything in it — past the right edge at tablet
+     widths. The shell owns the layout between its parts, so the
+     deduction lives here. A host max-inline-size still caps it. */
+  main[variant="default"] > * + :is(section, article, aside, form, nav, search),
+  main[variant="default"] > :is(section, article, aside, form, nav, search) + *,
+  main[variant="default"] > article > * + :is(section, aside),
+  main[variant="default"] > article > :is(section, aside) + * {
+    margin-block-start: var(--spacing-app-shell-section-gap-rail);
+  }
+
+  main[variant="default"] > figure[variant="stacked"]:not(:has(> figcaption > nav)) + * {
+    margin-block-start: var(--spacing-app-shell-header-gap-rail);
+  }
+
+  body > main[variant="default"] {
+    margin-inline-start: var(--size-app-shell-rail-inline);
+    inline-size: var(--size-app-shell-main-inline);
+    padding-block-end: var(--spacing-app-shell-main-padding-block-end-rail);
+  }
+
+  /* The footer sits beside the fixed rail too; without the same
+     deduction its first column was painted under the rail. A host
+     can redefine both sizes on the footer to start it on its own
+     content column. */
+  body > footer[variant="default"] {
+    margin-inline-start: var(--size-app-shell-footer-inline-start);
+    inline-size: var(--size-app-shell-footer-inline);
+  }
+
+  body > nav[variant="app-bar"] {
+    display: var(--display-app-shell-chrome-hidden);
+  }
+
+  body:has(> nav[variant="app-bar"]) {
+    --spacing-toast-inset-block-end: var(--spacing-app-shell-toast-inset-block-end-rail);
+  }
+}

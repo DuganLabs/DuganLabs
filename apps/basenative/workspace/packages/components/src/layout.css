@@ -1,0 +1,147 @@
+@layer layout {
+  /* Page Shell */
+  [data-bn="page"] {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* Top Bar */
+  [data-bn="topbar"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3) var(--spacing-7);
+    background: var(--color-surface);
+    border-bottom: var(--size-border) solid var(--color-border);
+  }
+  [data-bn="topbar"] a[data-bn="brand"] {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  [data-bn="topbar"] nav {
+    display: flex;
+    gap: var(--spacing-4);
+  }
+  [data-bn="topbar"] nav a {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--size-radius-legacy-md);
+  }
+  [data-bn="topbar"] nav a:hover {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+  }
+  [data-bn="topbar"] nav a[aria-current="page"] {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* Sidebar */
+  [data-bn="sidebar"] {
+    width: 240px;
+    background: var(--color-surface);
+    border-right: var(--size-border) solid var(--color-border);
+    padding: var(--spacing-4);
+    flex-shrink: 0;
+  }
+  [data-bn="sidebar"] h2 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-6);
+  }
+  [data-bn="sidebar"] a {
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--size-radius-legacy-md);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-1);
+    /* A nav row is a tap target: 44px tall, its label centred in it. */
+    display: flex;
+    align-items: center;
+    min-block-size: var(--size-control);
+  }
+  [data-bn="sidebar"] a:hover { background: var(--color-surface-muted); }
+  [data-bn="sidebar"] a[aria-current="page"] {
+    background: var(--palette-primary-50);
+    color: var(--palette-primary-700);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* A page with a sidebar sets them side by side, and stacks the
+     sidebar above the content on a phone, where 240px of rail would
+     push the content off-screen. */
+  [data-bn="page"]:has(> [data-bn="sidebar"]) {
+    flex-direction: row;
+  }
+  @media (max-width: 48rem) {
+    [data-bn="page"]:has(> [data-bn="sidebar"]) {
+      flex-direction: column;
+    }
+    [data-bn="page"] > [data-bn="sidebar"] {
+      width: auto;
+      border-right: none;
+      border-bottom: var(--size-border) solid var(--color-border);
+    }
+  }
+
+  /* Content Area */
+  [data-bn="content"] {
+    flex: 1;
+    padding: var(--spacing-7);
+    max-inline-size: var(--size-content-max);
+    width: 100%;
+    margin-inline: auto;
+    container-type: inline-size;
+    container-name: page;
+  }
+  [data-bn="content"] h1 {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-6);
+  }
+
+  /* Footer */
+  [data-bn="footer"] {
+    padding: var(--spacing-4) var(--spacing-7);
+    text-align: center;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    border-top: var(--size-border) solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  /* Stats Grid */
+  [data-bn="stats-grid"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+    container-type: inline-size;
+    container-name: stats;
+  }
+
+  /* Form Grid */
+  [data-bn="form-grid"] {
+    display: grid;
+    gap: var(--spacing-4);
+    max-width: 480px;
+  }
+
+  /* Form Actions */
+  [data-bn="form-actions"] {
+    display: flex;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-4);
+  }
+
+  /* Center Card (login/register) */
+  [data-bn="center-card"] {
+    max-width: 420px;
+    margin: var(--spacing-7) auto;
+  }
+}

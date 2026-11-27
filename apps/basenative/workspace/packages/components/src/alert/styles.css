@@ -1,0 +1,64 @@
+aside[variant="info"], aside[variant="success"], aside[variant="warning"], aside[variant="danger"] {
+  display: var(--display-alert);
+  gap: var(--spacing-alert-gap);
+  position: var(--position-alert);
+  padding-block: var(--spacing-alert-padding-block);
+  padding-inline-start: var(--spacing-alert-padding-inline);
+  padding-inline-end: var(--spacing-alert-padding-inline-end);
+  background-color: var(--color-bkg-alert);
+  border-radius: var(--size-radius-alert);
+
+  & > h3 {
+    color: var(--color-text-alert-title);
+    font-family: var(--font-alert-title-family);
+    font-size: var(--font-alert-title-size);
+    font-weight: var(--font-alert-title-weight);
+    line-height: var(--font-alert-title-leading);
+    margin: var(--spacing-alert-title-margin);
+  }
+
+  & > p {
+    color: var(--color-text-alert-body);
+    font-family: var(--font-alert-body-family);
+    font-size: var(--font-alert-body-size);
+    line-height: var(--font-alert-body-leading);
+    margin: var(--spacing-alert-body-margin);
+  }
+}
+
+aside[variant="danger"] {
+  --color-bkg-alert: var(--color-danger-fill);
+  --color-text-alert-title: var(--color-danger-strong);
+}
+
+aside[variant="success"] {
+  --color-bkg-alert: var(--color-success-fill);
+  --color-text-alert-title: var(--color-success-strong);
+}
+
+aside[variant="warning"] {
+  --color-bkg-alert: var(--color-warning-fill);
+  --color-text-alert-title: var(--color-warning-strong);
+}
+
+aside[variant="info"]:has(> button), aside[variant="success"]:has(> button), aside[variant="warning"]:has(> button), aside[variant="danger"]:has(> button) {
+  /* The dismiss control is caller-rendered and any width, so it takes a
+     column of its own instead of a padding reserve sized for an icon. A
+     text button used to sit over the first line of the body. */
+  --spacing-alert-padding-inline-end: var(--spacing-alert-padding-inline-end-dismissible);
+  grid-template-columns: var(--grid-template-alert-dismissible-columns);
+  column-gap: var(--spacing-alert-dismiss-column-gap);
+
+  & > h3,
+  & > p {
+    grid-column: var(--grid-column-alert-text);
+  }
+}
+
+aside[variant="info"] > button, aside[variant="success"] > button, aside[variant="warning"] > button, aside[variant="danger"] > button {
+  position: var(--position-alert-dismiss);
+  grid-column: var(--grid-column-alert-dismiss);
+  grid-row: var(--grid-row-alert-dismiss);
+  align-self: var(--align-alert-dismiss);
+  margin-block-start: var(--spacing-alert-dismiss-margin-block-start);
+}

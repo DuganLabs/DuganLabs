@@ -1,0 +1,437 @@
+/* /playground — page layout and editor chrome.
+ *
+ * The controls themselves (toolbar, select, buttons, tabs, list-group)
+ * are @basenative/components, styled by their own sheets, inlined into
+ * the page by playground-data.js. This sheet owns only the page's own
+ * layout: the workspace grid, the editor panes, the preview stage and
+ * the console region.
+ *
+ * Token names are CTI+: category-first, hyphen-joined
+ * (Category–Type–Item–Variant–Subitem–State), no prefix, no underscores.
+ * The --color-text-syntax-* tokens dress the editors' highlighting; the
+ * --color-text-syntax-token-* set colours the segments of a CTI+ custom
+ * property name (see hlCSS in playground.js). */
+
+/* Playground colors live in the DTCG token source (playground.json). */
+
+/* The workspace is the panels' container: the editors go three-up from
+   its own width, not the viewport's, so the sidebar can never squeeze
+   them. */
+section[aria-label='Playground workspace'] {
+  container: playground-workspace / inline-size;
+  display: grid;
+  gap: var(--spacing-app-shell-stack-gap);
+  min-inline-size: 0;
+  overflow-x: clip;
+}
+/* The workspace and its panes space their parts themselves; the shell's
+   stack margin would push each editor down out of its pane. */
+section[aria-label='Playground workspace'] > *,
+section[aria-label='Playground workspace'] article > *,
+section[aria-label='Playground workspace'] article > header > *,
+.console-region > *,
+.console-body > * {
+  margin-block: 0;
+}
+
+/* ---------- controls row: the toolbar component ---------- */
+section[aria-label='Playground workspace'] section[variant='toolbar'] {
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+section[aria-label='Playground workspace'] > section > label {
+  font-size: 13px;
+  color: var(--color-text-playground-muted);
+  align-self: center;
+}
+/* The select grows into whatever width the toolbar gives it — up to a
+   cap on wide screens, the full row on phones — so the example name
+   shows in full instead of truncating. */
+section[aria-label='Playground workspace'] section[variant='native'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 340px;
+  display: flex;
+}
+section[aria-label='Playground workspace'] section[variant='native'] > select {
+  width: 100%;
+}
+section[aria-label='Playground workspace'] > section > kbd {
+  font-family: var(--font-family-playground-mono);
+  font-size: 11px;
+  color: var(--color-text-playground-muted);
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* ---------- editors: the tabs component's panels ---------- */
+/* One panel at a time under the component's own tab list, filling the
+   width; three side by side only once each gets 360px (three panels
+   and two 16px gaps: 1112px of workspace). */
+section[aria-label='Playground workspace']
+  section[variant='tabs']
+  > section[role='tabpanel']:not([hidden]) {
+  display: flex;
+  min-width: 0;
+}
+section[aria-label='Playground workspace']
+  section[variant='tabs']
+  > section[role='tabpanel']
+  > .pane {
+  flex: 1;
+}
+@container playground-workspace (min-width: 1112px) {
+  section[aria-label='Playground workspace'] section[variant='tabs'] {
+    grid-template-columns: repeat(3, minmax(360px, 1fr));
+  }
+  section[aria-label='Playground workspace'] section[variant='tabs'] > ul[role='tablist'] {
+    display: none;
+  }
+  section[aria-label='Playground workspace']
+    section[variant='tabs']
+    > section[role='tabpanel'][hidden] {
+    display: flex;
+  }
+}
+/* The workspace's panes are tool frames, not prose cards: the host
+   sheet's article inset and block-end margin, and its stacked header,
+   would float each header and editor inside a second frame. */
+section[aria-label='Playground workspace'] article {
+  padding: 0;
+  margin: 0;
+}
+section[aria-label='Playground workspace'] article > header {
+  flex-direction: row;
+  margin: 0;
+}
+.pane {
+  display: flex;
+  flex-direction: column;
+  /* The site's one card. */
+  background: var(--color-bkg-card);
+  border: var(--size-border-card) var(--border-style-card) var(--color-border-card);
+  border-radius: var(--size-radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  min-width: 0;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: var(--size-target-min);
+  box-sizing: border-box;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border-playground);
+  background: var(--color-bkg-playground-surface);
+}
+.pane-head h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-playground);
+}
+.pane-head p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-playground-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The .editor section is the pane's one scroll container: the sheet
+   inside it is sized to the code, and the gutter, highlight layer and
+   textarea scroll with it natively. The textarea never scrolls
+   internally — drags and wheel events land on the section, which every
+   engine scrolls reliably (a textarea's own touch scrolling is the
+   part WebKit drops). The gutter compensates only the horizontal
+   offset so the line numbers stay pinned to the left. Gestures are
+   axis-locked by attachAxisLock in playground.js: the browser never
+   claims a drag, so it cannot start a diagonal scroll. */
+.editor {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 216px;
+  background: var(--color-bkg-playground-editor);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+/* The gutter and the sheet are layers, not a stack: the shell's stack
+   gap would drop the code a line below its line numbers. */
+.editor > * {
+  margin-block: 0;
+}
+.editor .sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100%;
+  min-height: 100%;
+}
+.editor pre,
+.editor textarea {
+  font-family: var(--font-family-playground-mono);
+  font-size: 12.5px;
+  line-height: 1.62;
+  tab-size: 2;
+}
+.editor .gutter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  margin: 0;
+  padding: 10px 8px 10px 0;
+  text-align: right;
+  color: var(--color-text-syntax-comment);
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+  background: var(--color-bkg-playground-editor);
+  z-index: 2;
+}
+.editor .hl {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 10px 12px 10px 50px;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  color: var(--color-text-syntax-plain);
+}
+.editor .hl code {
+  font: inherit;
+}
+/* The highlight layer is a code-block pre; inside the editor it is a
+   transparent layer over the editor surface, not a second card. */
+.editor .hl {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.editor textarea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 10px 12px 10px 50px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--color-text-playground-accent);
+  white-space: pre;
+  overflow: hidden;
+  outline: none;
+}
+/* Highlight colours live on the code-block component (pre/code elements).
+   This sheet is the editor's geometry only. */
+
+/* ---------- stage ---------- */
+section[aria-label='Result'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+section[aria-label='Result'] > article {
+  display: flex;
+  flex-direction: column;
+  /* The site's one card. */
+  background: var(--color-bkg-card);
+  border: var(--size-border-card) var(--border-style-card) var(--color-border-card);
+  border-radius: var(--size-radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  min-width: 0;
+}
+section[aria-label='Result'] > article > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: var(--size-target-min);
+  box-sizing: border-box;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border-playground);
+}
+section[aria-label='Result'] > article > header h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-playground);
+}
+section[aria-label='Result'] > article > header output {
+  font-size: 12px;
+  color: var(--color-text-playground-muted);
+  font-family: var(--font-family-playground-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+section[aria-label='Result'] > article > header output.bad {
+  color: var(--color-text-playground-danger);
+}
+#preview {
+  border: 0;
+  width: 100%;
+  flex: 1;
+  min-height: 380px;
+  background: var(--color-bkg-playground-preview);
+  display: block;
+}
+
+/* ---------- console: its own area under the result ---------- */
+.console-region {
+  /* The site's one card. */
+  background: var(--color-bkg-card);
+  border: var(--size-border-card) var(--border-style-card) var(--color-border-card);
+  border-radius: var(--size-radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.console-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: var(--size-target-min);
+  box-sizing: border-box;
+  padding: 0 0 0 12px;
+}
+.console-head h3 {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-playground);
+}
+.console-head button {
+  block-size: auto;
+  min-inline-size: 0;
+  padding-block: 3px;
+  padding-inline: 9px;
+  font-size: 12.5px;
+}
+.console-body {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 218px;
+  min-height: 96px;
+  padding: 0 8px 8px;
+}
+/* The console's list-group, re-pointed to console density and type. */
+.console-body ul {
+  --color-bkg-list-group: var(--color-bkg-playground-editor);
+  --font-list-group-item-family: var(--font-family-playground-mono);
+  --font-list-group-item-size: 12.5px;
+  --font-list-group-item-leading: 1.5;
+  --spacing-list-group-item-padding-block: 6px;
+  --spacing-list-group-item-padding-inline: 10px;
+}
+.console-body ul > li {
+  justify-content: flex-start;
+  align-items: flex-start;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.console-body .lvl {
+  flex: none;
+  font-weight: 700;
+  font-size: 10.5px;
+  padding-top: 2px;
+  min-width: 34px;
+  color: var(--color-text-playground-muted);
+}
+.console-body li[data-tone='error'] .lvl,
+.console-body li[data-tone='error'] .msg {
+  color: var(--color-text-playground-danger);
+}
+.console-body li[data-tone='warn'] .lvl,
+.console-body li[data-tone='warn'] .msg {
+  color: var(--color-text-playground-warn);
+}
+.console-body li[data-tone='diag'] .lvl,
+.console-body li[data-tone='diag'] .msg {
+  color: var(--color-text-playground-diag);
+}
+.console-empty {
+  margin: 0;
+  padding: 8px 4px;
+  color: var(--color-text-playground-muted);
+  font-family: var(--font-family-playground-sans);
+  font-size: 12.5px;
+}
+
+/* ---------- cheat sheet ---------- */
+footer[aria-label='Quick syntax'] {
+  border-top: 1px solid var(--color-border-playground);
+  padding: 10px 0 14px;
+  margin-top: 16px;
+}
+footer[aria-label='Quick syntax'] p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-playground-muted);
+  line-height: 2;
+}
+footer[aria-label='Quick syntax'] code {
+  font-family: var(--font-family-playground-mono);
+  font-size: 11.5px;
+  color: var(--color-text-playground);
+  background: var(--color-bkg-playground-surface-raised);
+  border: 1px solid var(--color-border-playground);
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+footer[aria-label='Quick syntax'] strong {
+  color: var(--color-text-playground);
+}
+
+/* ---------- responsive ---------- */
+@container playground-workspace (max-width: 1111px) {
+  #preview {
+    min-height: 340px;
+  }
+  /* Tabbed, the selected tab already names the panel; its heading
+     stays for heading navigation but leaves the visual header, which
+     keeps the panel's one-line description. */
+  .pane-head h2 {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@container playground-workspace (max-width: 600px) {
+  /* Narrow, the preview keeps phone proportions instead of the
+     desktop stage's tall frame. */
+  #preview {
+    min-height: 260px;
+  }
+  /* Narrow controls: the select takes the full row instead of the
+     squeezed share next to the buttons. */
+  section[aria-label='Playground workspace'] section[variant='native'] {
+    max-width: none;
+  }
+  section[aria-label='Playground workspace'] > section > kbd {
+    display: none;
+  }
+  .editor {
+    min-height: 240px;
+  }
+  .console-body {
+    max-height: 200px;
+  }
+}

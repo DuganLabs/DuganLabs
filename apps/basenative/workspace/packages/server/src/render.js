@@ -1,0 +1,491 @@
+import { parse } from 'node-html-parser';
+import { evaluateExpression } from '@basenative/runtime/shared/expression';
+import {
+  escapeText,
+  escapeAttr,
+  isRaw,
+  unwrapRaw,
+  isUrlAttribute,
+  sanitizeUrl,
+  findInterpolations,
+  mergeClass,
+} from '@basenative/runtime/shared/escape';
+import { getDirective, listDirectives } from '@basenative/runtime/shared/directives';
+
+function emitDiagnostic(options, diagnostic) {
+  if (typeof options?.onDiagnostic === 'function') {
+    options.onDiagnostic(diagnostic);
+  }
+}
+
+function evaluate(expr, ctx, options) {
+  return evaluateExpression(expr, ctx, options);
+}
+
+// Interpolated values are data, not markup. The client binds through
+// `node.textContent`, which never parses HTML; the server must match that, or the
+// SSR payload is injectable while the hydrated DOM is not. Both sides share
+// @basenative/runtime/shared/escape so they cannot drift apart again.
+function interpolate(text, ctx, options, escape = escapeText) {
+  let out = '';
+  let last = 0;
+  for (const { start, end, expression } of findInterpolations(text)) {
+    out += text.slice(last, start);
+    const value = evaluate(expression, ctx, options);
+    // raw() is an explicit trust assertion about this one value.
+    if (value != null) out += isRaw(value) ? unwrapRaw(value) : escape(value);
+    last = end;
+  }
+  return out + text.slice(last);
+}
+
+function createChildContext(parent, bindings) {
+  return Object.assign(Object.create(parent ?? null), bindings);
+}
+
+function parseFragment(html) {
+  return parse(html, { comment: true });
+}
+
+function wrapFragment(html, label, options, metadata = '') {
+  if (!options?.hydratable) return html;
+  const suffix = metadata ? `:${metadata}` : '';
+  return `<!--bn:${label}${suffix}-->${html}<!--/bn:${label}-->`;
+}
+
+function trackLabel(value) {
+  return encodeURIComponent(String(value));
+}
+
+/** Find the first registered `on: 'template'` directive attribute present on `node`. */
+function findBlockDirective(node) {
+  for (const name of listDirectives()) {
+    const directive = getDirective(name);
+    if (directive?.on === 'template' && node.getAttribute(`@${name}`) != null) {
+      return { name, directive };
+    }
+  }
+  return null;
+}
+
+function processChildren(parent, ctx, options) {
+  const children = parent.childNodes.slice();
+  let index = 0;
+
+  while (index < children.length) {
+    const node = children[index];
+    if (node.nodeType === 1 && node.rawTagName === 'template') {
+      if (node.getAttribute('@defer') != null) {
+        processDefer(node, ctx, options);
+        index++;
+      } else if (node.getAttribute('@if') != null) {
+        index = processIf(children, index, ctx, options);
+      } else if (node.getAttribute('@for') != null) {
+        index = processFor(children, index, ctx, options);
+      } else if (node.getAttribute('@switch') != null) {
+        processSwitch(node, ctx, options);
+        index++;
+      } else {
+        const block = findBlockDirective(node);
+        if (block) {
+          index = processDirectiveBlock(children, index, ctx, options, block.name, block.directive);
+        } else {
+          index++;
+        }
+      }
+      continue;
+    }
+
+    processNode(node, ctx, options);
+    index++;
+  }
+}
+
+function processNode(node, ctx, options) {
+  if (node.nodeType === 3) {
+    const raw = node.rawText;
+    if (raw.includes('{{')) {
+      node.rawText = interpolate(raw, ctx, options);
+    }
+    return;
+  }
+
+  if (node.nodeType !== 1) return;
+
+  const tag = node.rawTagName?.toLowerCase();
+  if (tag === 'style') return;
+  if (tag === 'script' && node.getAttribute('type') !== 'application/json') return;
+
+  let contentDirective = null;
+
+  if (node.rawAttrs) {
+    const attrs = [];
+    let classAt = -1;
+    let sawStaticClass = false;
+    let staticInterpolated = false;
+    let staticClass = '';
+    let sawBoundClass = false;
+    let boundClass = '';
+    for (const { name, value } of parseAttrs(node.rawAttrs)) {
+      if (name === 'class' || name === ':class') {
+        if (classAt === -1) classAt = attrs.length;
+        if (name === 'class') {
+          sawStaticClass = true;
+          if (value && value.includes('{{')) {
+            staticInterpolated = true;
+            staticClass = interpolate(value, ctx, options, (v) => (v == null ? '' : String(v)));
+          } else {
+            staticClass = value ?? '';
+          }
+        } else {
+          sawBoundClass = true;
+          const result = evaluate(value, ctx, options);
+          boundClass = result === false || result == null ? '' : String(unwrapRaw(result));
+        }
+        continue;
+      }
+
+      if (name.startsWith('@')) {
+        const directive = getDirective(name.slice(1));
+        if (directive?.on === 'element' && directive.server) {
+          contentDirective = { directive, value };
+        }
+        continue;
+      }
+
+      if (name.startsWith(':')) {
+        const result = evaluate(value, ctx, options);
+        if (result !== false && result != null) {
+          const attrName = name.slice(1);
+          const resolved = unwrapRaw(result);
+          // Escaping cannot express scheme risk: `javascript:alert(1)` contains no
+          // character that HTML escaping touches, so URL attributes need their own
+          // guard. raw() does not exempt a value from it.
+          if (isUrlAttribute(attrName)) {
+            const safe = sanitizeUrl(resolved);
+            if (safe === null) {
+              emitDiagnostic(options, {
+                code: 'BN_UNSAFE_URL',
+                message: `Blocked a dangerous URL scheme in :${attrName}`,
+                expression: value,
+              });
+              continue;
+            }
+            attrs.push({ name: attrName, value: escapeAttr(safe) });
+            continue;
+          }
+          attrs.push({ name: attrName, value: escapeAttr(resolved) });
+        }
+        continue;
+      }
+
+      if (value && value.includes('{{')) {
+        attrs.push({ name, value: interpolate(value, ctx, options, escapeAttr) });
+        continue;
+      }
+
+      // Static attribute text is the template author's own markup, but the parser
+      // hands it back unquoted: a single-quoted value containing `"` would break
+      // out of the double quotes we re-emit. Neutralise bare quotes only — the
+      // value may legitimately contain entities already, so no full re-escape.
+      attrs.push({ name, value: value ? value.replace(/"/g, '&quot;') : value });
+    }
+
+    if (sawStaticClass || sawBoundClass) {
+      let classValue = null;
+      if (sawBoundClass) {
+        const merged = mergeClass(staticClass, boundClass);
+        classValue = merged ? escapeAttr(merged) : null;
+      } else if (staticInterpolated) {
+        classValue = staticClass ? escapeAttr(staticClass) : null;
+      } else if (sawStaticClass) {
+        classValue = staticClass ? String(staticClass).replace(/"/g, '&quot;') : '';
+      }
+      if (classValue != null) attrs.splice(classAt, 0, { name: 'class', value: classValue });
+    }
+
+    node.rawAttrs = attrs
+      .map(attr => {
+        if (attr.value === '') return attr.name;
+        // Final belt-and-braces quote strip at the exact point of serialisation:
+        // every upstream path (escapeAttr, interpolate, or the static-text
+        // fallback) already removes quotes, but this makes the sink itself
+        // provably quote-free. Idempotent on already-escaped input since
+        // `&quot;` contains no `"`.
+        const safeValue = String(attr.value).replace(/"/g, '&quot;');
+        return `${attr.name}="${safeValue}"`;
+      })
+      .join(' ');
+  }
+
+  if (contentDirective) {
+    const result = contentDirective.directive.server(contentDirective.value, ctx, options);
+    if (result !== undefined) {
+      // Same rule as text-node interpolation: a directive's return value is data
+      // unless explicitly marked raw(). Write the already-escaped markup with
+      // set_content() rather than the textContent setter, whose escaping
+      // behaviour differs between node-html-parser majors (v9 escapes, v7 does
+      // not) and would double-escape here.
+      node.set_content(result == null ? '' : (isRaw(result) ? unwrapRaw(result) : escapeText(String(result))));
+      return;
+    }
+  }
+
+  processChildren(node, ctx, options);
+}
+
+function processIf(children, index, ctx, options) {
+  const ifNode = children[index];
+  const expr = ifNode.getAttribute('@if');
+  let elseNode = null;
+  const next = findNextElementSibling(children, index + 1);
+  if (next?.rawTagName === 'template' && next.getAttribute('@else') != null) {
+    elseNode = next;
+  }
+
+  const condition = evaluate(expr, ctx, options);
+  const source = condition ? ifNode : elseNode;
+
+  if (source) {
+    const content = parseFragment(source.innerHTML);
+    processChildren(content, ctx, options);
+    ifNode.replaceWith(parseFragment(wrapFragment(content.toString(), 'if', options)));
+  } else {
+    ifNode.remove();
+  }
+
+  if (elseNode && elseNode !== ifNode) {
+    elseNode.remove();
+  }
+
+  return index + 1;
+}
+
+/**
+ * Generic server-side dispatch for a plugin-contributed `on: 'template'` directive.
+ * Mirrors processIf: the directive's `server` handler stands in for the `@if`
+ * condition, and a following `<template @else>` sibling is supported the same way.
+ */
+function processDirectiveBlock(children, index, ctx, options, name, directive) {
+  const node = children[index];
+  const value = node.getAttribute(`@${name}`);
+  let elseNode = null;
+  const next = findNextElementSibling(children, index + 1);
+  if (next?.rawTagName === 'template' && next.getAttribute('@else') != null) {
+    elseNode = next;
+  }
+
+  const condition = directive.server ? Boolean(directive.server(value, ctx, options)) : false;
+  const source = condition ? node : elseNode;
+
+  if (source) {
+    const content = parseFragment(source.innerHTML);
+    processChildren(content, ctx, options);
+    node.replaceWith(parseFragment(wrapFragment(content.toString(), name, options)));
+  } else {
+    node.remove();
+  }
+
+  if (elseNode && elseNode !== node) {
+    elseNode.remove();
+  }
+
+  return index + 1;
+}
+
+function processFor(children, index, ctx, options) {
+  const forNode = children[index];
+  const expr = forNode.getAttribute('@for');
+  let emptyNode = null;
+  const next = findNextElementSibling(children, index + 1);
+  if (next?.rawTagName === 'template' && next.getAttribute('@empty') != null) {
+    emptyNode = next;
+  }
+
+  const match = expr.match(/(\w+)\s+of\s+(.+?)(?:\s*;\s*track\s+(.+))?$/);
+  if (!match) {
+    emitDiagnostic(options, {
+      level: 'error',
+      domain: 'template',
+      code: 'BN_FOR_INVALID_SYNTAX',
+      message: `Invalid @for expression "${expr}"`,
+      expression: expr,
+    });
+    return index + 1;
+  }
+
+  const [, itemName, listExpr, trackExpr] = match;
+  const list = evaluate(listExpr, ctx, options) ?? [];
+
+  if (!Array.isArray(list)) {
+    emitDiagnostic(options, {
+      level: 'warn',
+      domain: 'template',
+      code: 'BN_FOR_NON_ARRAY',
+      message: `@for expected an array but received ${typeof list}; rendering nothing`,
+      expression: listExpr,
+    });
+  }
+
+  if (!Array.isArray(list) || list.length === 0) {
+    if (emptyNode) {
+      const content = parseFragment(emptyNode.innerHTML);
+      processChildren(content, ctx, options);
+      forNode.replaceWith(parseFragment(wrapFragment(content.toString(), 'empty', options)));
+      emptyNode.remove();
+    } else {
+      forNode.remove();
+    }
+    return index + 1;
+  }
+
+  const fragments = [];
+  const seenKeys = new Set();
+
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i];
+    const itemCtx = createChildContext(ctx, {
+      [itemName]: item,
+      $index: i,
+      $first: i === 0,
+      $last: i === list.length - 1,
+      $even: i % 2 === 0,
+      $odd: i % 2 !== 0,
+    });
+
+    let metadata = '';
+    if (trackExpr) {
+      const key = evaluate(trackExpr, itemCtx, options);
+      if (seenKeys.has(key)) {
+        emitDiagnostic(options, {
+          level: 'error',
+          domain: 'template',
+          code: 'BN_FOR_DUPLICATE_TRACK_KEY',
+          message: `Duplicate @for track key "${String(key)}" encountered during server render`,
+          expression: trackExpr,
+          key,
+        });
+      }
+      seenKeys.add(key);
+      metadata = `key=${trackLabel(key)}`;
+    }
+
+    const content = parseFragment(forNode.innerHTML);
+    processChildren(content, itemCtx, options);
+    fragments.push(wrapFragment(content.toString(), 'for:item', options, metadata));
+  }
+
+  forNode.replaceWith(parseFragment(wrapFragment(fragments.join(''), 'for', options)));
+  if (emptyNode) emptyNode.remove();
+  return index + 1;
+}
+
+let deferCounter = 0;
+
+function processDefer(templateNode, ctx, options) {
+  const id = `d${deferCounter++}`;
+  const innerHTML = templateNode.innerHTML;
+
+  if (!options._deferred) options._deferred = [];
+  options._deferred.push({ id, html: innerHTML, ctx: Object.assign({}, ctx) });
+
+  const placeholder = parseFragment(
+    `<div data-bn-defer="${id}"></div>` +
+    (options.hydratable ? `<!--bn:defer:${id}-->` : '')
+  );
+  templateNode.replaceWith(placeholder);
+}
+
+function processSwitch(switchNode, ctx, options) {
+  const expr = switchNode.getAttribute('@switch');
+  const value = evaluate(expr, ctx, options);
+
+  let match = null;
+  let defaultTemplate = null;
+  for (const child of switchNode.childNodes) {
+    if (child.nodeType !== 1 || child.rawTagName !== 'template') continue;
+    if (child.getAttribute('@case') != null) {
+      if (!match && evaluate(child.getAttribute('@case'), ctx, options) === value) {
+        match = child;
+      }
+    } else if (child.getAttribute('@default') != null) {
+      defaultTemplate = child;
+    }
+  }
+
+  const source = match ?? defaultTemplate;
+  if (!source) {
+    switchNode.remove();
+    return;
+  }
+
+  const content = parseFragment(source.innerHTML);
+  processChildren(content, ctx, options);
+  switchNode.replaceWith(parseFragment(wrapFragment(content.toString(), 'switch', options)));
+}
+
+function findNextElementSibling(children, index) {
+  for (let i = index; i < children.length; i++) {
+    if (children[i].nodeType === 1) return children[i];
+  }
+  return null;
+}
+
+function parseAttrs(rawAttrs) {
+  const attrs = [];
+  const re = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
+  let match;
+  while ((match = re.exec(rawAttrs)) !== null) {
+    attrs.push({
+      name: match[1],
+      value: match[2] ?? match[3] ?? match[4] ?? '',
+    });
+  }
+  return attrs;
+}
+
+export function render(html, ctx = {}, options = {}) {
+  deferCounter = 0;
+  const root = parseFragment(html);
+  processChildren(root, ctx, options);
+  let output = root.toString();
+  if (options.criticalCss != null) {
+    output = injectCriticalCss(output, options.criticalCss);
+  }
+  return output;
+}
+
+function injectCriticalCss(html, criticalCss) {
+  const css = Array.isArray(criticalCss)
+    ? criticalCss.filter(Boolean).join('\n')
+    : String(criticalCss);
+  if (!css.trim()) return html;
+  const styleTag = `<style data-bn-critical>${css}</style>`;
+  const headOpen = html.match(/<head\b[^>]*>/i);
+  if (!headOpen) return html;
+  const headStart = headOpen.index + headOpen[0].length;
+  const linkMatch = html.slice(headStart).match(/<link\b[^>]*\brel\s*=\s*["']?(?:stylesheet|preload)["']?[^>]*>/i);
+  const insertAt = linkMatch ? headStart + linkMatch.index : headStart;
+  return html.slice(0, insertAt) + styleTag + html.slice(insertAt);
+}
+
+export function resolveDeferred(options) {
+  const deferred = options._deferred || [];
+  return deferred.map(({ id, html, ctx }) => {
+    const content = parseFragment(html);
+    processChildren(content, ctx, options);
+    const rendered = content.toString();
+    return {
+      id,
+      html: rendered,
+      script: `<script data-bn-defer-resolve="${id}">` +
+        `(function(){` +
+        `var t=document.querySelector('[data-bn-defer="${id}"]');` +
+        `if(t){t.innerHTML=${JSON.stringify(rendered)};` +
+        `t.removeAttribute('data-bn-defer');` +
+        `var e=new CustomEvent('bn:defer',{detail:{id:'${id}'}});` +
+        `document.dispatchEvent(e)}` +
+        `})();</script>`,
+    };
+  });
+}

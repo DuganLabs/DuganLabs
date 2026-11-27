@@ -1,0 +1,177 @@
+aside[variant='sidebar'],
+aside[variant='subnav'] {
+  inline-size: var(--size-sidebar-inline);
+  background-color: var(--color-bkg-sidebar);
+  border-inline-end-width: var(--size-border-sidebar-inline-end);
+  border-inline-end-style: var(--border-style-sidebar-inline-end);
+  border-inline-end-color: var(--color-border-sidebar-inline-end);
+  padding-block: var(--spacing-sidebar-padding-block);
+  padding-inline: var(--spacing-sidebar-padding-inline);
+  overflow-y: var(--overflow-sidebar-y);
+
+  /* The masthead. The brand starts the rail and its actions sit at the
+     rail's end, one row above the first group. */
+  & > header {
+    display: var(--display-sidebar-header);
+    align-items: var(--align-sidebar-header);
+    justify-content: var(--justify-sidebar-header);
+    gap: var(--spacing-sidebar-header-gap);
+    min-block-size: var(--size-target-min);
+    margin-block-end: var(--spacing-sidebar-header-margin-block-end);
+  }
+
+  & > nav {
+    display: var(--display-sidebar-nav);
+    gap: var(--spacing-sidebar-nav-gap);
+
+    & > section {
+      display: var(--display-sidebar-section);
+      gap: var(--spacing-sidebar-section-gap);
+
+      & > p {
+        color: var(--color-text-sidebar-heading);
+        font-family: var(--font-sidebar-heading-family);
+        font-size: var(--font-sidebar-heading-size);
+        font-weight: var(--font-sidebar-heading-weight);
+        line-height: var(--font-sidebar-heading-leading);
+        letter-spacing: var(--font-sidebar-heading-tracking);
+        margin: var(--spacing-sidebar-heading-margin);
+        padding-inline: var(--spacing-sidebar-heading-padding-inline);
+      }
+
+      & > ul {
+        display: var(--display-sidebar-list);
+        gap: var(--spacing-sidebar-list-gap);
+        list-style: var(--list-style-sidebar-list);
+        margin: var(--spacing-sidebar-list-margin);
+        padding: var(--spacing-sidebar-list-padding);
+
+        & > li > a,
+        & > li > button {
+          display: var(--display-sidebar-link);
+          min-block-size: var(--size-target-min);
+          align-items: var(--align-sidebar-link);
+          gap: var(--spacing-sidebar-link-gap);
+          padding-block: var(--spacing-sidebar-link-padding-block);
+          padding-inline: var(--spacing-sidebar-link-padding-inline);
+          border-radius: var(--size-radius-sidebar-link);
+          border-width: var(--size-border-none);
+          background-color: var(--palette-transparent);
+          color: var(--color-text-sidebar-link);
+          font-family: var(--font-sidebar-link-family);
+          font-size: var(--font-sidebar-link-size);
+          font-weight: var(--font-sidebar-link-weight);
+          line-height: var(--font-sidebar-link-leading);
+          letter-spacing: var(--font-sidebar-link-tracking);
+          text-decoration: var(--text-decoration-sidebar-link);
+          white-space: var(--white-space-nowrap);
+          cursor: var(--cursor-pointer);
+
+          &:hover {
+            background-color: var(--color-bkg-sidebar-link-hover);
+            color: var(--color-text-sidebar-link-hover);
+          }
+
+          &[aria-current='page'],
+          &[aria-current='true'],
+          &[aria-pressed='true'] {
+            background-color: var(--color-bkg-sidebar-link-current);
+            color: var(--color-text-sidebar-link-current);
+            font-weight: var(--font-sidebar-link-weight-current);
+          }
+
+          &[aria-current='page']:hover,
+          &[aria-current='true']:hover,
+          &[aria-pressed='true']:hover {
+            background-color: var(--color-bkg-sidebar-link-current);
+            color: var(--color-text-sidebar-link-current);
+          }
+
+          & > svg {
+            inline-size: var(--size-sidebar-icon-inline);
+            block-size: var(--size-sidebar-icon-block);
+            flex: var(--flex-sidebar-icon);
+          }
+        }
+      }
+    }
+  }
+}
+
+/* In-page subnav: the page's own nav, one pattern on every page. The
+   same sidebar, laid out in the content column as a sticky bar that
+   pins under the top safe area at every width, phone included. Its
+   links are ONE row that scrolls sideways: it never wraps into a
+   block that eats the screen, the scrollbar is hidden, the trailing
+   edge fades to say there is more, and the scrollspy keeps the
+   current link scrolled into view. A host may pass a header (a
+   search field and its status) that pins with the row. */
+aside[variant='subnav'] {
+  position: var(--position-sidebar-subnav);
+  inset-block-start: var(--inset-sidebar-subnav-block-start);
+  z-index: var(--layer-sidebar-subnav);
+  inline-size: var(--size-full);
+  background-color: var(--color-bkg-sidebar-subnav);
+  backdrop-filter: var(--backdrop-filter-sidebar-subnav);
+  border-width: var(--size-border-sidebar-subnav);
+  border-style: var(--border-style-sidebar-subnav);
+  border-color: var(--color-border-sidebar-subnav);
+  border-radius: var(--size-radius-sidebar-subnav);
+  padding-block: var(--spacing-sidebar-subnav-padding-block);
+  padding-inline: var(--spacing-sidebar-subnav-padding-inline);
+  overflow-y: var(--overflow-y-sidebar-subnav);
+  display: var(--display-sidebar-subnav);
+  flex-direction: var(--flex-direction-sidebar-subnav);
+
+  & > nav {
+    flex: var(--flex-sidebar-subnav-nav);
+    min-inline-size: var(--size-sidebar-subnav-nav-inline-min);
+  }
+
+  & > header {
+    display: var(--display-sidebar-subnav-header);
+    gap: var(--spacing-sidebar-subnav-header-gap);
+    padding-inline: var(--spacing-sidebar-subnav-header-padding-inline);
+    margin-block-end: var(--spacing-sidebar-subnav-header-margin-block-end);
+
+    & > search {
+      inline-size: var(--size-sidebar-subnav-search-inline);
+    }
+  }
+
+  & > nav > section > ul {
+    display: var(--display-flex);
+    flex-direction: var(--flex-direction-row);
+    flex-wrap: var(--flex-wrap-sidebar-subnav-list);
+    gap: var(--spacing-sidebar-subnav-list-gap);
+    padding-inline: var(--spacing-sidebar-subnav-list-padding-inline);
+    scroll-padding-inline: var(--spacing-sidebar-subnav-list-padding-inline);
+    overflow-x: var(--overflow-x-sidebar-subnav-list);
+    overscroll-behavior-inline: var(--overscroll-behavior-sidebar-subnav-list);
+    scrollbar-width: var(--scrollbar-width-sidebar-subnav-list);
+    scroll-snap-type: var(--scroll-snap-type-sidebar-subnav-list);
+    mask-image: var(--mask-sidebar-subnav-list);
+
+    & > li {
+      flex: var(--flex-none);
+      scroll-snap-align: var(--scroll-snap-align-sidebar-subnav-link);
+    }
+  }
+}
+
+/* Wide: ONE row. The links scroll in the leading part of the bar and
+   the search field holds the trailing end, so the pinned bar costs one
+   44px row of the screen, not two. */
+@media (min-width: 64rem) {
+  aside[variant='subnav'] {
+    flex-direction: var(--flex-direction-sidebar-subnav-wide);
+    align-items: var(--align-sidebar-subnav-wide);
+
+    & > header {
+      order: var(--order-sidebar-subnav-header-wide);
+      inline-size: var(--size-sidebar-subnav-header-inline-wide);
+      flex: var(--flex-none);
+      margin-block-end: var(--spacing-sidebar-subnav-header-margin-block-end-wide);
+    }
+  }
+}

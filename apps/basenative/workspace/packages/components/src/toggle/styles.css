@@ -1,0 +1,62 @@
+label:has(> input[variant="switch"]) {
+  display: var(--display-toggle-label);
+  align-items: var(--align-toggle-label);
+  gap: var(--spacing-toggle-gap);
+  color: var(--color-text-toggle);
+  font-family: var(--font-toggle-family);
+  font-size: var(--font-toggle-size);
+  line-height: var(--font-toggle-leading);
+  cursor: var(--cursor-toggle);
+
+  &:has(> input:disabled) {
+    --color-text-toggle: var(--color-text-label-3);
+    --cursor-toggle: var(--cursor-not-allowed);
+  }
+}
+
+input[variant="switch"] {
+  appearance: var(--appearance-toggle);
+  box-sizing: var(--box-sizing-toggle);
+  display: var(--display-toggle);
+  position: var(--position-toggle);
+  margin-inline: var(--spacing-toggle-margin);
+  padding: var(--spacing-toggle-padding);
+  border-width: var(--size-border-toggle);
+  inline-size: var(--size-toggle-inline);
+  block-size: var(--size-toggle-block);
+  border-radius: var(--size-radius-toggle);
+  background-color: var(--color-bkg-toggle);
+  cursor: var(--cursor-toggle);
+  transition: background-color var(--motion-toggle-duration) var(--motion-toggle-curve);
+
+  &::after {
+    content: var(--content-toggle-knob);
+    position: var(--position-toggle-knob);
+    display: var(--display-toggle-knob);
+    inline-size: var(--size-toggle-knob);
+    block-size: var(--size-toggle-knob);
+    inset-inline-start: var(--spacing-toggle-knob-inset);
+    inset-block-start: var(--spacing-toggle-knob-inset);
+    border-radius: var(--size-radius-toggle-knob);
+    background-color: var(--color-bkg-toggle-knob);
+    box-shadow: var(--shadow-toggle-knob);
+    transition: translate var(--motion-toggle-duration) var(--motion-toggle-curve);
+  }
+
+  &:checked {
+    background-color: var(--color-bkg-toggle-checked);
+
+    &::after {
+      translate: var(--spacing-toggle-knob-travel);
+    }
+  }
+
+  &:focus-visible {
+    outline-width: var(--size-border-toggle-outline-focus);
+    outline-style: var(--border-style-toggle-outline-focus);
+    outline-color: var(--color-border-toggle-outline-focus);
+    outline-offset: var(--spacing-toggle-outline-offset-focus);
+    box-shadow: var(--shadow-toggle-focus);
+  }
+}
+

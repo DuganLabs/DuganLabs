@@ -1,0 +1,8 @@
+<template>
+  <figure :variant="variant()">
+    <template @if="hasHeader()">
+      <figcaption>{{ caption() }}{{ raw(actionsHtml()) }}</figcaption>
+    </template>
+    <pre tabindex="0"><code>{{ code() }}</code></pre>
+  </figure>
+</template>

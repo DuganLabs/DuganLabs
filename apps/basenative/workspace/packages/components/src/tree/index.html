@@ -1,0 +1,21 @@
+<template>
+  <ul :variant="variant()" :role="role()" @keydown="onKeydown($event)" @focusin="onFocusin($event)" @click="onClick($event)">
+    <template @for="item of items()">
+      <template @if="item.childrenHtml">
+        <li role="treeitem" :aria-expanded="expandedState(item)" :aria-selected="selectedAttr(item)" :tabindex="tabIndex(item)">
+          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <template @if="item.toggleHtml">
+            {{ raw(item.toggleHtml) }}
+          </template>
+          <template @else>
+            {{ item.label }}
+          </template>
+          {{ raw(item.childrenHtml) }}
+        </li>
+      </template>
+      <template @else>
+        <li role="treeitem" :aria-selected="selectedAttr(item)" :tabindex="tabIndex(item)">{{ item.label }}</li>
+      </template>
+    </template>
+  </ul>
+</template>

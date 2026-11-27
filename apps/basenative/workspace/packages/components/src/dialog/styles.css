@@ -1,0 +1,60 @@
+dialog[variant="default"], dialog[variant="destructive"] {
+  box-sizing: var(--box-sizing-dialog);
+  background-color: var(--color-bkg-dialog);
+  color: var(--color-text-dialog);
+  border-width: var(--size-border-dialog);
+  border-style: var(--border-style-dialog);
+  border-color: var(--color-border-dialog);
+  border-radius: var(--size-radius-dialog);
+  box-shadow: var(--shadow-dialog);
+  padding: var(--spacing-dialog-padding);
+  inline-size: var(--size-dialog-inline);
+  max-inline-size: var(--size-dialog-max-inline);
+  margin: var(--spacing-dialog-margin);
+
+  &[open] {
+    display: var(--display-dialog);
+    gap: var(--spacing-dialog-gap);
+  }
+
+  &::backdrop {
+    background-color: var(--color-bkg-dialog-backdrop);
+  }
+
+  & > header {
+    display: var(--display-dialog-header);
+    align-items: var(--align-dialog-header);
+    justify-content: var(--justify-dialog-header);
+    gap: var(--spacing-dialog-header-gap);
+
+    & > h2 {
+      font-family: var(--font-dialog-title-family);
+      font-size: var(--font-dialog-title-size);
+      font-weight: var(--font-dialog-title-weight);
+      line-height: var(--font-dialog-title-leading);
+      letter-spacing: var(--font-dialog-title-tracking);
+      margin: var(--spacing-dialog-title-margin);
+    }
+  }
+
+  & > p {
+    color: var(--color-text-dialog-body);
+    font-family: var(--font-dialog-body-family);
+    font-size: var(--font-dialog-body-size);
+    line-height: var(--font-dialog-body-leading);
+    margin: var(--spacing-dialog-body-margin);
+  }
+
+  & > footer {
+    display: var(--display-dialog-footer);
+    justify-content: var(--justify-dialog-footer);
+    gap: var(--spacing-dialog-footer-gap);
+  }
+}
+
+dialog[variant="destructive"] {
+  --color-bkg-button: var(--color-danger);
+  --color-bkg-button-hover: var(--color-danger-strong);
+  --color-border-button: var(--color-danger);
+  --color-text-button: var(--color-text-on-danger);
+}

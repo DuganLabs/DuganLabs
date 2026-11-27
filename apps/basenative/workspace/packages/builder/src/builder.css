@@ -1,0 +1,876 @@
+/* Builder tokens — the --bn-* names this sheet consumes, declared here
+   with their only consumer. They were previously declared by the
+   deleted @basenative/platform materials sheet, and briefly by
+   @basenative/components' token sheet; the values are the literal
+   fallbacks every use in this sheet already carries, so what renders
+   does not change. They are legacy names the builder still speaks;
+   the catalog token system (CTI+) does not carry them. */
+:root {
+  --bn-content-leading: 22px;
+  --bn-content-secondary: CanvasText;
+  --bn-content-size: 15px;
+  --bn-elev-2: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --bn-glass-blur: 30px;
+  --bn-glass-rim: Canvas;
+  --bn-glass-saturate: 180%;
+  --bn-glass-sheen: none;
+  --bn-len-1: 1px;
+  --bn-len-2: 2px;
+  --bn-len-4: 4px;
+  --bn-len-6: 6px;
+  --bn-len-8: 8px;
+  --bn-len-12: 12px;
+  --bn-len-16: 16px;
+  --bn-len-32: 32px;
+  --bn-len-36: 36px;
+  --bn-len-44: 44px;
+  --bn-list-surface: Canvas;
+  --bn-plat-color-accents-green: #28c840;
+  --bn-plat-color-accents-orange: #febc2e;
+  --bn-plat-color-accents-red: #ff5f57;
+  --bn-plat-color-fills-tertiary: transparent;
+  --bn-plat-color-labels-primary: CanvasText;
+  --bn-plat-color-separator: GrayText;
+  --bn-plat-material-thick: transparent;
+  --bn-plat-radius-8: 8px;
+  --bn-plat-radius-10: 10px;
+  --bn-plat-radius-12: 12px;
+  --bn-plat-radius-1000: 999px;
+  --bn-stage-glow: none;
+  --bn-stage-paper: canvas;
+  --bn-type-13: 13px;
+}
+@layer components {
+  /* ── Window frame ──────────────────────────────────────────────────
+     The builder is a workbench, not prose: it fills the host's wide
+     column (never the viewport, so it cannot slide under an app-shell
+     rail) and takes a definite, app-like height. Panes scroll internally; the window never grows into a
+     tower driven by the palette's length. Pane layout responds to the
+     WINDOW's width via container queries, so the proportions hold at
+     any embed size. Centring: builder-element.js measures the host
+     column's offset from the viewport centre (an app-shell rail can
+     offset it) into --bn-builder-center-shift, so the breakout centres
+     on the viewport and never clips off the left edge. */
+  .bn-builder {
+    container-type: inline-size;
+    container-name: builder;
+    position: relative;
+    inline-size: 100%;
+    display: grid;
+    grid-template-rows: auto auto;
+    border: var(--bn-len-1, 1px) solid var(--bn-glass-rim, Canvas);
+    border-radius: var(--bn-plat-radius-12, 12px);
+    background: var(--bn-list-surface, Canvas);
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+    font-size: var(--bn-content-size, 15px);
+    line-height: var(--bn-content-leading, 22px);
+    overflow: hidden;
+    box-shadow: var(--bn-elev-2, 0 8px 24px rgba(0, 0, 0, 0.16));
+    backdrop-filter: saturate(var(--bn-glass-saturate, 180%)) blur(var(--bn-glass-blur, 30px));
+  }
+
+  /* The body, not the window, takes the workbench height: the window
+     is the size container and cannot query itself, but its body can,
+     so a window stacked at any embed width (a phone, or a column
+     beside an app-shell rail) drops the fixed height and grows with
+     its sections while the page scrolls. The clamp leaves room for
+     the toolbar row. */
+  .bn-builder__body {
+    block-size: clamp(30rem, calc(74dvh - 3.75rem), 48rem);
+    min-block-size: 0;
+    display: grid;
+    /* The host's stack rhythm spaces page blocks; inside the window
+       frame the toolbar and body sit flush. */
+    margin: 0;
+  }
+
+  /* ── Toolbar ─────────────────────────────────────────────────────── */
+  bn-builder,
+  bn-builder-canvas,
+  bn-builder-inspector,
+  bn-builder-palette,
+  bn-builder-tree {
+    display: contents;
+  }
+
+  .bn-builder__toolbar {
+    justify-content: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bn-len-8, 8px);
+    padding: var(--bn-len-8, 8px) var(--bn-len-12, 12px);
+    border-block-end: 1px solid var(--bn-plat-color-separator, GrayText);
+    background: var(--bn-plat-material-thick, transparent);
+  }
+
+  .bn-builder__toolbar nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bn-len-6, 6px);
+  }
+
+  .bn-builder__traffic {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bn-len-6, 6px);
+    margin: 0;
+  }
+
+  .bn-builder__traffic i {
+    display: block;
+    inline-size: var(--bn-len-12, 12px);
+    block-size: var(--bn-len-12, 12px);
+    border-radius: var(--bn-plat-radius-1000, 999px);
+  }
+
+  .bn-builder__traffic i:nth-child(1) {
+    background: var(--bn-plat-color-accents-red, #ff5f57);
+  }
+
+  .bn-builder__traffic i:nth-child(2) {
+    background: var(--bn-plat-color-accents-orange, #febc2e);
+  }
+
+  .bn-builder__traffic i:nth-child(3) {
+    background: var(--bn-plat-color-accents-green, #28c840);
+  }
+
+  .bn-builder__title {
+    margin: 0;
+    font-size: var(--bn-content-size, 15px);
+    font-weight: 600;
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+  }
+
+  .bn-builder__btn,
+  [data-bn-builder-export-copy] {
+    appearance: none;
+    /* 44px targets at every width, as the palette's are. */
+    min-height: var(--bn-len-44, 44px);
+    padding: 0 var(--bn-len-12, 12px);
+    border: 1px solid transparent;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .bn-builder__btn:hover:not(:disabled) {
+    background: var(--bn-glass-rim, rgba(255, 255, 255, 0.22));
+  }
+
+  .bn-builder__btn:active:not(:disabled) {
+    background: var(--bn-plat-material-thick, transparent);
+  }
+
+  /* Disabled reads as disabled without fading to illegible: the system
+     fill and the secondary label (legible, 4.5:1), never opacity over
+     the brand. */
+  .bn-builder__btn:disabled,
+  .bn-builder__btn[data-bn-builder-action='export']:disabled {
+    background: var(--color-bkg-button-disabled);
+    color: var(--color-text-label-2);
+    cursor: default;
+  }
+
+  .bn-builder__btn[data-bn-builder-action='export'] {
+    background: var(--site-brand);
+    color: var(--site-brand-ink);
+    font-weight: 600;
+  }
+
+  .bn-builder__btn[data-bn-builder-action='export']:hover:not(:disabled) {
+    background: var(--site-brand);
+    filter: brightness(1.08);
+  }
+
+  .bn-builder__btn:focus-visible,
+  .bn-builder__canvas-surface:focus-visible,
+  .bn-palette__btn:focus-visible,
+  .bn-palette__query:focus-visible,
+  .bn-tree__label:focus-visible,
+  .bn-tree__toggle:focus-visible,
+  .bn-inspector__input:focus-visible,
+  .bn-inspector__select:focus-visible {
+    outline: 2px solid var(--site-brand);
+    outline-offset: 1px;
+  }
+
+  /* ── Panes ─────────────────────────────────────────────────────────
+     Wide: one left column — Components over Layers, Figma-style — the
+     canvas in the middle, and a full-height inspector rail on the
+     right. Both left sections stay visible at once (adding a component
+     shows it land in the tree) and each scrolls on its own. Narrow:
+     the canvas leads, the left column stacks beneath it, inspector
+     last. */
+  .bn-builder__panes {
+    display: grid;
+    grid-template-areas: 'sidebar canvas inspector';
+    grid-template-columns: 16rem minmax(0, 1fr) 18rem;
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  @container builder (max-width: 72rem) {
+    .bn-builder__panes {
+      grid-template-columns: 13.5rem minmax(0, 1fr) 15.5rem;
+    }
+  }
+
+  @container builder (max-width: 46rem) {
+    .bn-builder__panes {
+      grid-template-areas:
+        'canvas'
+        'sidebar'
+        'inspector';
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      block-size: auto;
+    }
+  }
+
+  .bn-builder__pane {
+    overflow: auto;
+    padding: var(--bn-len-12, 12px);
+    min-block-size: 0;
+    /* The host sheet puts a block-end margin on <section>; inside the
+       window frame the panes sit flush, marginless. */
+    margin: 0;
+  }
+
+  .bn-builder__sidebar {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+    border-inline-end: 1px solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  .bn-builder__pane--palette {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 0 1 55%;
+    min-block-size: 0;
+  }
+
+  .bn-builder__pane--layers {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1 1 auto;
+    min-block-size: 0;
+    border-block-start: 1px solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  /* bn-builder-tree is display:contents, so the tree list itself is
+     the pane's scrolling child. */
+  .bn-builder__pane--layers .bn-tree {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+  }
+
+  .bn-builder__pane--canvas {
+    grid-area: canvas;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bn-stage-paper, canvas);
+    background-image: var(--bn-stage-glow, none);
+  }
+
+  .bn-builder__pane--inspector {
+    grid-area: inspector;
+    border-inline-start: var(--bn-len-1, 1px) solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  @container builder (max-width: 46rem) {
+    .bn-builder__sidebar {
+      border-inline-end: 0;
+      border-block-start: 1px solid var(--bn-plat-color-separator, GrayText);
+    }
+
+    .bn-builder__pane--inspector {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--bn-plat-color-separator, GrayText);
+    }
+
+    /* The palette section is short when stacked: the search field's
+       label goes (its placeholder carries the same words) so the
+       list keeps a full row visible above the fold of its scroller. */
+    .bn-palette__search-label {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  .bn-builder__heading {
+    margin: 0 0 var(--bn-len-8, 8px);
+    font-size: var(--bn-type-13, 13px);
+    font-weight: 600;
+    color: var(--bn-content-secondary, CanvasText);
+    flex: none;
+  }
+
+  /* ── Canvas ──────────────────────────────────────────────────────── */
+  .bn-builder__canvas-surface {
+    flex: 1;
+    min-block-size: 0;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-8, 8px);
+    border: 1px solid var(--bn-plat-color-separator, GrayText);
+    border-radius: var(--bn-plat-radius-12, 12px);
+    padding: var(--bn-len-16, 16px);
+    background: var(--bn-list-surface, Canvas);
+    overflow: auto;
+  }
+
+  /* Empty, the surface itself is the drop zone: dashed, on the stage. */
+  .bn-builder__canvas-surface:has(> .bn-builder__empty) {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .bn-builder__canvas-surface[data-bn-drop-active='true'] {
+    border-color: var(--site-brand);
+    box-shadow: 0 0 0 1px var(--site-brand) inset;
+  }
+
+  .bn-builder__empty {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: var(--bn-len-8, 8px);
+    margin: 0;
+    padding: var(--bn-len-16, 16px);
+    text-align: center;
+    color: var(--bn-content-secondary, CanvasText);
+  }
+
+  .bn-builder__empty svg {
+    inline-size: var(--bn-len-36, 36px);
+    block-size: var(--bn-len-36, 36px);
+    flex: none;
+    overflow: visible;
+  }
+
+  .bn-builder__empty-title {
+    margin: 0;
+    max-inline-size: 26rem;
+    text-wrap: balance;
+    font-size: var(--bn-content-size, 15px);
+    font-weight: 600;
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+  }
+
+  .bn-builder__empty-hint {
+    margin: 0;
+    max-inline-size: 26rem;
+    text-wrap: balance;
+    font-size: var(--bn-type-13, 13px);
+  }
+
+  .bn-builder__canvas-surface [data-bn-node] {
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    padding: var(--bn-len-8, 8px);
+  }
+
+  .bn-builder__canvas-surface [data-bn-node]:hover,
+  .bn-builder__canvas-surface [data-bn-hover='true'] {
+    border-color: var(--site-brand);
+  }
+
+  .bn-builder__canvas-surface [data-bn-selected='true'] {
+    border-color: var(--site-brand);
+    box-shadow: 0 0 0 1px var(--site-brand) inset;
+  }
+
+  /* ── Palette ─────────────────────────────────────────────────────── */
+  .bn-palette {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-12, 12px);
+    flex: 1;
+    min-block-size: 0;
+  }
+
+  .bn-palette__search {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-4, 4px);
+    flex: none;
+  }
+
+  .bn-palette__search-label {
+    font-size: var(--bn-type-13, 13px);
+    color: var(--bn-content-secondary, CanvasText);
+  }
+
+  .bn-palette__query {
+    appearance: none;
+    /* Palette controls are 44px touch targets at every width. */
+    min-height: var(--bn-len-44, 44px);
+    width: 100%;
+    border: 1px solid var(--bn-plat-color-separator, GrayText);
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: var(--bn-list-surface, Canvas);
+    color: inherit;
+    padding: var(--bn-len-4, 4px) var(--bn-len-8, 8px);
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+  }
+
+  .bn-palette [data-bn-palette-groups] {
+    overflow-y: auto;
+    flex: 1;
+    min-block-size: 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-16, 16px);
+    padding-inline-end: var(--bn-len-2, 2px);
+  }
+
+  .bn-palette__heading {
+    margin: 0 0 var(--bn-len-4, 4px);
+    font-size: var(--bn-type-13, 13px);
+    font-weight: 600;
+    color: var(--bn-content-secondary, CanvasText);
+  }
+
+  /* Scoped under .bn-palette on purpose: the host site's sheet styles
+     ul[role="list"] as a settings list (padded flex rows), which would
+     otherwise win on specificity and inflate every palette row. */
+  .bn-palette .bn-palette__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-1, 1px);
+  }
+
+  /* Beats the site sheet's section ul[role="list"] > li rules (0,2,3):
+     palette rows carry no settings-list padding, fill, or accent edge. */
+  .bn-builder .bn-palette__list > li.bn-palette__item {
+    display: block;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    font-size: var(--bn-type-13, 13px);
+  }
+
+  .bn-palette__btn {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bn-len-8, 8px);
+    min-height: var(--bn-len-44, 44px);
+    padding: var(--bn-len-4, 4px) var(--bn-len-8, 8px);
+    border: 0;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: transparent;
+    color: inherit;
+    cursor: grab;
+    text-align: start;
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+  }
+
+  .bn-palette__btn:hover {
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+  }
+
+  .bn-palette__btn:active {
+    cursor: grabbing;
+  }
+
+  .bn-palette__label {
+    font-weight: 500;
+  }
+
+  .bn-palette__type {
+    font-family: ui-monospace, monospace;
+    font-size: var(--bn-type-13, 13px);
+    color: var(--bn-content-secondary, CanvasText);
+    opacity: 0.75;
+  }
+
+  .bn-palette__empty {
+    color: var(--bn-content-secondary, CanvasText);
+    margin: 0;
+  }
+
+  /* ── Layers (tree) ─────────────────────────────────────────────────
+     Rows share the palette's density (32px, 1px gaps): a disclosure
+     toggle and the label on one line, the children group wrapped
+     beneath and indented so nesting reads at a glance. */
+  .bn-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-1, 1px);
+  }
+
+  .bn-tree__children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-inline-start: var(--bn-len-12, 12px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-1, 1px);
+  }
+
+  .bn-tree__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .bn-tree__row > .bn-tree__children {
+    flex: 1 1 100%;
+  }
+
+  .bn-tree__toggle {
+    appearance: none;
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: var(--bn-len-16, 16px);
+    block-size: var(--bn-len-16, 16px);
+    padding: 0;
+    border: 0;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: transparent;
+    color: var(--bn-content-secondary, CanvasText);
+    cursor: pointer;
+  }
+
+  button.bn-tree__toggle:hover {
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+  }
+
+  span.bn-tree__toggle {
+    cursor: default;
+  }
+
+  .bn-tree__toggle svg {
+    inline-size: var(--bn-len-12, 12px);
+    block-size: var(--bn-len-12, 12px);
+    rotate: 90deg;
+    transition: rotate 120ms ease;
+  }
+
+  .bn-tree__row--collapsed > .bn-tree__toggle svg {
+    rotate: 0deg;
+  }
+
+  .bn-tree__label {
+    display: flex;
+    flex: 1;
+    min-inline-size: 0;
+    gap: var(--bn-len-8, 8px);
+    min-height: var(--bn-len-32, 32px);
+    align-items: center;
+    padding: var(--bn-len-4, 4px) var(--bn-len-8, 8px);
+    border: 0;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .bn-tree__label:hover,
+  .bn-tree__row--hover > .bn-tree__label {
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+  }
+
+  .bn-tree__type {
+    font-weight: 600;
+    flex: none;
+  }
+
+  .bn-tree__summary {
+    color: var(--bn-content-secondary, CanvasText);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-inline-size: 0;
+  }
+
+  .bn-tree__row--selected > .bn-tree__label {
+    background: var(--site-brand);
+    color: var(--site-brand-ink);
+  }
+
+  .bn-tree__row--selected .bn-tree__summary {
+    color: inherit;
+  }
+
+  .bn-tree__empty,
+  .bn-inspector__empty {
+    color: var(--bn-content-secondary, CanvasText);
+    margin: 0;
+    font-size: var(--bn-type-13, 13px);
+  }
+
+  /* ── Inspector ───────────────────────────────────────────────────── */
+  .bn-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-12, 12px);
+  }
+
+  .bn-inspector__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-1, 1px);
+    padding-block-end: var(--bn-len-8, 8px);
+    border-block-end: 1px solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  .bn-inspector__title {
+    margin: 0;
+    font-size: var(--bn-content-size, 15px);
+    font-weight: 600;
+  }
+
+  .bn-inspector__id {
+    margin: 0;
+    font-family: ui-monospace, monospace;
+    font-size: var(--bn-type-13, 13px);
+    color: var(--bn-content-secondary, CanvasText);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bn-inspector__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-12, 12px);
+  }
+
+  .bn-inspector__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bn-len-4, 4px);
+  }
+
+  /* A mounted enum control (the site's custom select) sits on the
+     field's own 4px rhythm, not the page stack's margin. */
+  .bn-inspector__field[data-bn-enum-host] > section {
+    margin-block: 0;
+  }
+
+  .bn-inspector__field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--bn-len-8, 8px);
+  }
+
+  .bn-inspector__label {
+    font-size: var(--bn-type-13, 13px);
+    color: var(--bn-content-secondary, CanvasText);
+  }
+
+  .bn-inspector__input,
+  .bn-inspector__select {
+    appearance: none;
+    min-height: var(--bn-len-32, 32px);
+    border: 1px solid var(--bn-plat-color-separator, GrayText);
+    background: var(--bn-list-surface, Canvas);
+    color: inherit;
+    padding: var(--bn-len-4, 4px) var(--bn-len-8, 8px);
+    border-radius: var(--bn-plat-radius-8, 8px);
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+    width: 100%;
+  }
+
+  .bn-inspector__checkbox {
+    inline-size: var(--bn-len-16, 16px);
+    block-size: var(--bn-len-16, 16px);
+    margin: 0;
+    accent-color: var(--site-brand);
+  }
+
+  .bn-inspector__actions {
+    display: flex;
+    gap: var(--bn-len-8, 8px);
+    padding-block-start: var(--bn-len-12, 12px);
+    border-block-start: 1px solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  .bn-inspector__btn {
+    appearance: none;
+    flex: 1;
+    min-height: var(--bn-len-32, 32px);
+    padding: 0 var(--bn-len-12, 12px);
+    border: 1px solid transparent;
+    border-radius: var(--bn-plat-radius-8, 8px);
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+    font: inherit;
+    font-size: var(--bn-type-13, 13px);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .bn-inspector__btn:hover {
+    background: var(--bn-glass-rim, rgba(255, 255, 255, 0.22));
+  }
+
+  .bn-inspector__btn:focus-visible {
+    outline: 2px solid var(--site-brand);
+    outline-offset: 1px;
+  }
+
+  .bn-inspector__btn--danger {
+    color: var(--bn-plat-color-accents-red, #ff5f57);
+  }
+
+  /* ── Export panel (site view, styled here with the app) ──────────── */
+  [data-bn-builder-export-panel] {
+    position: relative;
+    inline-size: 100%;
+    margin-block-start: var(--bn-len-16, 16px);
+    border: 1px solid var(--bn-glass-rim, Canvas);
+    border-radius: var(--bn-plat-radius-12, 12px);
+    background: var(--bn-list-surface, Canvas);
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+    overflow: hidden;
+    box-shadow: var(--bn-elev-2, 0 8px 24px rgba(0, 0, 0, 0.16));
+  }
+
+  [data-bn-builder-export-panel] > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bn-len-8, 8px);
+    padding: var(--bn-len-8, 8px) var(--bn-len-12, 12px);
+    border-block-end: 1px solid var(--bn-plat-color-separator, GrayText);
+  }
+
+  [data-bn-builder-export-panel] h3 {
+    margin: 0;
+    font-size: var(--bn-content-size, 15px);
+    font-weight: 600;
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+  }
+
+  /* The host sheet styles bare <pre> as a light code card; inside this
+     dark panel the output sits directly on the panel surface instead. */
+  [data-bn-builder-export-output] {
+    margin: 0;
+    padding: var(--bn-len-16, 16px);
+    overflow: auto;
+    max-block-size: 26rem;
+    background: var(--bn-plat-color-fills-tertiary, transparent);
+    color: var(--bn-plat-color-labels-primary, CanvasText);
+    border: 0;
+    border-radius: 0;
+    font-family: ui-monospace, monospace;
+    font-size: var(--bn-type-13, 13px);
+    line-height: 1.55;
+  }
+
+  /* ── Legacy organism chrome inside the canvas ──────────────────────
+     Placed legacy kit organisms (window, sheet…) still stamp data-bn;
+     these rules keep their frames neutral inside the builder. */
+  .bn-builder[data-bn='bn-window'] {
+    border: var(--bn-len-1, 1px) solid var(--bn-glass-rim, Canvas);
+    background-image: var(--bn-glass-sheen, none);
+  }
+
+  .bn-builder [data-bn='bn-window-titlebar'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bn-len-8, 8px);
+    padding: var(--bn-len-8, 8px) var(--bn-len-12, 12px);
+  }
+
+  .bn-builder [data-bn='bn-window-titlebar'] nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bn-len-8, 8px);
+    margin-inline-start: auto;
+  }
+
+  .bn-builder [data-bn='bn-window-body'] {
+    padding: 0;
+    min-block-size: 0;
+  }
+
+  .bn-builder [data-bn='bn-sidebar'],
+  .bn-builder [data-bn='bn-inspector'] {
+    min-inline-size: 0;
+    max-inline-size: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* Stacked phone sections are content-sized: each shows all it holds,
+     the canvas keeps a drop zone a thumb can hit, and the component and
+     layer lists cap their height and scroll inside it. Last in the
+     layer, so it outranks the wide-window pane rules above. */
+  @container builder (max-width: 46rem) {
+    .bn-builder__body {
+      block-size: auto;
+    }
+
+    .bn-builder__pane,
+    .bn-builder__pane--palette,
+    .bn-builder__pane--layers,
+    .bn-palette,
+    .bn-palette [data-bn-palette-groups],
+    .bn-builder__pane--layers .bn-tree {
+      overflow: visible;
+      flex: none;
+    }
+
+    .bn-builder__pane--canvas {
+      min-block-size: 18rem;
+    }
+
+    /* Wide, the titlebar nav rides the row's inline end. Stacked, it
+       wraps to a row of its own, so it centres under the title rather
+       than hanging off to one side. */
+    .bn-builder [data-bn='bn-window-titlebar'].bn-builder__toolbar nav {
+      margin-inline-start: 0;
+    }
+
+    .bn-palette [data-bn-palette-groups] {
+      overflow-y: auto;
+      max-block-size: 20rem;
+    }
+
+    .bn-builder__pane--layers .bn-tree {
+      overflow-y: auto;
+      max-block-size: 16rem;
+    }
+  }
+}

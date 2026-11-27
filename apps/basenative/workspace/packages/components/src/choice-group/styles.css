@@ -1,0 +1,45 @@
+/* The control's size is its token, full stop — the input rule below
+   pins the min sizes to the same token because a host sheet's generic
+   bare-input rules carry a 44px touch minimum that would otherwise
+   clamp this 20px control up and over the substrate's reserved
+   notch. */
+fieldset[variant="choice-group"] {
+  display: var(--display-choice-group);
+  gap: var(--spacing-choice-group-gap);
+  margin-inline: var(--spacing-choice-group-margin);
+  padding: var(--spacing-choice-group-padding);
+  border-width: var(--size-border-choice-group);
+
+  & > legend {
+    color: var(--color-text-choice-group-legend);
+    font-family: var(--font-choice-group-legend-family);
+    font-size: var(--font-choice-group-legend-size);
+    font-weight: var(--font-choice-group-legend-weight);
+    line-height: var(--font-choice-group-legend-leading);
+    margin-block-end: var(--spacing-choice-group-legend-margin-block-end);
+    /* The legend's text starts on the options' edge, so the UA's legend
+       padding (or any host rule) must not indent it. */
+    padding-inline: var(--spacing-choice-group-legend-padding-inline);
+  }
+
+  & > label {
+    display: var(--display-choice-group-option);
+    position: var(--position-choice-group-option);
+    cursor: var(--cursor-choice-group-option);
+
+    & > input {
+      position: var(--position-choice-group-control);
+      inline-size: var(--size-choice-group-control);
+      block-size: var(--size-choice-group-control);
+      min-inline-size: var(--size-choice-group-control);
+      min-block-size: var(--size-choice-group-control);
+      inset-inline-start: var(--spacing-choice-group-control-inset-inline-start);
+      inset-block-start: var(--spacing-choice-group-control-inset-block-start);
+      z-index: var(--layer-choice-group-control);
+      accent-color: var(--color-accent-choice-group-control);
+      margin: var(--spacing-choice-group-control-margin);
+    }
+
+  }
+}
+

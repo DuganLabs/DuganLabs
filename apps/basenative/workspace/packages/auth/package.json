@@ -1,0 +1,50 @@
+{
+  "name": "@basenative/auth",
+  "version": "3.3.0",
+  "description": "Authentication, session management, RBAC, and OAuth2/OIDC for BaseNative apps",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./rbac": {
+      "types": "./types/rbac.d.ts",
+      "default": "./src/rbac.js"
+    },
+    "./middleware": {
+      "types": "./types/middleware.d.ts",
+      "default": "./src/middleware.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/auth"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/auth#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "authentication",
+    "sessions",
+    "rbac",
+    "oauth",
+    "password-hashing"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

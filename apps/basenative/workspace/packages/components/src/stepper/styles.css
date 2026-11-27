@@ -1,0 +1,62 @@
+ol[variant="stepper"] {
+  display: var(--display-stepper);
+  flex-direction: var(--flex-direction-stepper);
+  gap: var(--spacing-stepper-gap);
+  list-style: var(--list-style-stepper);
+  margin-inline: var(--spacing-stepper-margin);
+  padding: var(--spacing-stepper-padding);
+
+  & > li {
+    display: var(--display-stepper-item);
+    flex-direction: var(--flex-direction-stepper-item);
+    flex-grow: var(--flex-grow-stepper-item);
+    gap: var(--spacing-stepper-item-gap);
+    padding-block-start: var(--spacing-stepper-item-padding-block-start);
+    border-block-start-width: var(--size-border-stepper-item-block-start);
+    border-block-start-style: var(--border-style-stepper-item-block-start);
+    border-block-start-color: var(--color-border-stepper-item-block-start);
+    color: var(--color-text-stepper-item);
+    font-family: var(--font-stepper-item-family);
+    font-size: var(--font-stepper-item-size);
+    font-weight: var(--font-stepper-item-weight);
+    line-height: var(--font-stepper-item-leading);
+    letter-spacing: var(--font-stepper-item-tracking);
+  }
+
+  & > li > strong {
+    display: var(--display-stepper-disc);
+    align-items: var(--align-stepper-disc);
+    justify-content: var(--justify-stepper-disc);
+    inline-size: var(--size-stepper-disc-inline);
+    block-size: var(--size-stepper-disc-block);
+    border-radius: var(--size-radius-stepper-disc);
+    background-color: var(--color-bkg-stepper-disc);
+    color: var(--color-text-stepper-disc);
+    font-weight: var(--font-stepper-disc-weight);
+  }
+
+  & > li > small {
+    color: var(--color-text-stepper-detail);
+    font-family: var(--font-stepper-detail-family);
+    font-size: var(--font-stepper-detail-size);
+    line-height: var(--font-stepper-detail-leading);
+    letter-spacing: var(--font-stepper-detail-tracking);
+  }
+}
+
+/* Step states are item-level variants — the item re-points its own
+   rail, disc, and label tokens per state. */
+ol[variant="stepper"] > li[variant="complete"] {
+  --color-border-stepper-item-block-start: var(--color-tint);
+  --color-text-stepper-item: var(--color-text-label);
+  --color-bkg-stepper-disc: var(--color-tint);
+  --color-text-stepper-disc: var(--color-text-on-tint);
+}
+
+ol[variant="stepper"] > li[variant="current"] {
+  --color-border-stepper-item-block-start: var(--color-tint);
+  --color-text-stepper-item: var(--color-text-label);
+  --font-stepper-item-weight: var(--font-weight-semibold);
+  --color-bkg-stepper-disc: var(--color-tint-fill);
+  --color-text-stepper-disc: var(--color-tint-strong);
+}

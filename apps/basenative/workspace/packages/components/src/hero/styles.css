@@ -1,0 +1,104 @@
+figure[variant="stacked"], figure[variant="overlay"], figure[variant="split"] {
+  display: var(--display-hero);
+  gap: var(--spacing-hero-gap);
+  margin-inline: var(--spacing-hero-margin);
+  position: var(--position-hero);
+
+  & > img, & > picture, & > svg {
+    inline-size: var(--size-hero-media-inline);
+    border-radius: var(--size-radius-hero-media);
+  }
+
+  & > figcaption {
+    display: var(--display-hero-caption);
+    gap: var(--spacing-hero-caption-gap);
+
+    & > p:first-child {
+      color: var(--color-text-hero-eyebrow);
+      font-family: var(--font-hero-eyebrow-family);
+      font-size: var(--font-hero-eyebrow-size);
+      font-weight: var(--font-hero-eyebrow-weight);
+      line-height: var(--font-hero-eyebrow-leading);
+      letter-spacing: var(--font-hero-eyebrow-tracking);
+      margin: var(--spacing-hero-eyebrow-margin);
+    }
+
+    & > h1, & > h2 {
+      color: var(--color-text-hero-title);
+      font-family: var(--font-hero-title-family);
+      font-size: var(--font-hero-title-size);
+      font-weight: var(--font-hero-title-weight);
+      line-height: var(--font-hero-title-leading);
+      letter-spacing: var(--font-hero-title-tracking);
+      margin: var(--spacing-hero-title-margin);
+    }
+
+    & > :is(h1, h2) ~ p {
+      color: var(--color-text-hero-lede);
+      font-family: var(--font-hero-lede-family);
+      font-size: var(--font-hero-lede-size);
+      font-weight: var(--font-hero-lede-weight);
+      line-height: var(--font-hero-lede-leading);
+      letter-spacing: var(--font-hero-lede-tracking);
+      margin: var(--spacing-hero-lede-margin);
+    }
+
+    & > nav {
+      display: var(--display-hero-actions);
+      flex-wrap: var(--flex-wrap-hero-actions);
+      align-items: var(--align-hero-actions);
+      gap: var(--spacing-hero-actions-gap);
+      margin-block-start: var(--spacing-hero-actions-margin-block-start);
+    }
+  }
+}
+
+figure[variant="stacked"] {
+  background-color: var(--color-bkg-hero);
+  border-width: var(--size-border-hero);
+  border-style: var(--border-style-hero);
+  border-color: var(--color-border-hero);
+  border-radius: var(--size-radius-hero);
+  padding-block: var(--spacing-hero-padding-block);
+  padding-inline: var(--spacing-hero-padding-inline);
+}
+
+figure[variant="overlay"] {
+  & > img, & > picture, & > svg {
+    inline-size: var(--size-hero-overlay-media-inline);
+    block-size: var(--size-hero-overlay-media-block);
+  }
+
+  & > figcaption {
+    position: var(--position-hero-overlay-caption);
+    inset-block-end: var(--inset-hero-overlay-caption-block-end);
+    inset-inline: var(--inset-hero-overlay-caption-inline);
+    background-color: var(--color-bkg-hero-overlay-caption);
+    backdrop-filter: var(--backdrop-filter-hero-overlay-caption);
+    border-radius: var(--size-radius-hero-overlay-caption);
+    padding-block: var(--spacing-hero-overlay-caption-padding-block);
+    padding-inline: var(--spacing-hero-overlay-caption-padding-inline);
+  }
+}
+
+figure[variant="split"] {
+  background-color: var(--color-bkg-hero);
+  border-width: var(--size-border-hero);
+  border-style: var(--border-style-hero);
+  border-color: var(--color-border-hero);
+  border-radius: var(--size-radius-hero);
+  padding-block: var(--spacing-hero-padding-block);
+  padding-inline: var(--spacing-hero-padding-inline);
+  grid-template-columns: var(--grid-template-hero-split-columns);
+  align-items: var(--align-center);
+
+  & > img, & > picture, & > svg {
+    border-radius: var(--size-radius-hero-split-media);
+  }
+}
+
+@media (max-width: 40rem) {
+  figure[variant="split"] {
+    --grid-template-hero-split-columns: 1fr;
+  }
+}

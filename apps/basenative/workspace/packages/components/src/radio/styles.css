@@ -1,0 +1,40 @@
+fieldset[variant="default"] {
+  display: var(--display-radio);
+  gap: var(--spacing-radio-gap);
+  margin-inline: var(--spacing-radio-margin);
+  padding: var(--spacing-radio-padding);
+  border-width: var(--size-border-radio);
+
+  & > legend {
+    color: var(--color-text-radio-legend);
+    font-family: var(--font-radio-legend-family);
+    font-size: var(--font-radio-legend-size);
+    font-weight: var(--font-radio-legend-weight);
+    line-height: var(--font-radio-legend-leading);
+    margin-block-end: var(--spacing-radio-legend-margin-block-end);
+    /* The legend's text starts on the options' edge, so the UA's legend
+       padding (or any host rule) must not indent it. */
+    padding-inline: var(--spacing-radio-legend-padding-inline);
+  }
+
+  & > label {
+    display: var(--display-radio-option);
+    align-items: var(--align-radio-option);
+    gap: var(--spacing-radio-option-gap);
+    color: var(--color-text-radio-option);
+    font-family: var(--font-radio-option-family);
+    font-size: var(--font-radio-option-size);
+    line-height: var(--font-radio-option-leading);
+    cursor: var(--cursor-radio-option);
+    /* The 44px target is the option row's, and the ring keeps its own size. */
+    min-block-size: var(--size-radio-option-min-block);
+
+    & > input {
+      inline-size: var(--size-radio-control);
+      block-size: var(--size-radio-control);
+      accent-color: var(--color-accent-radio-control);
+      margin: var(--spacing-radio-control-margin);
+    }
+  }
+}
+

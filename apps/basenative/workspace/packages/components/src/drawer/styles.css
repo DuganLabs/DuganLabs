@@ -1,0 +1,51 @@
+dialog[variant="drawer"] {
+  box-sizing: var(--box-sizing-drawer);
+  inline-size: var(--size-drawer-inline);
+  max-inline-size: var(--size-drawer-max-inline);
+  block-size: var(--size-drawer-block);
+  margin-block: var(--spacing-drawer-margin-block);
+  margin-inline-start: var(--spacing-drawer-margin-inline-start);
+  margin-inline-end: var(--spacing-drawer-margin-inline-end);
+  padding: var(--spacing-drawer-padding);
+  background-color: var(--color-bkg-drawer);
+  color: var(--color-text-drawer);
+  border-width: var(--size-border-drawer);
+  border-start-start-radius: var(--size-radius-drawer-start-start);
+  border-end-start-radius: var(--size-radius-drawer-end-start);
+  box-shadow: var(--shadow-drawer);
+
+  &::backdrop {
+    background-color: var(--color-bkg-drawer-backdrop);
+  }
+
+  & > header {
+    display: var(--display-drawer-header);
+    align-items: var(--align-drawer-header);
+    justify-content: var(--justify-drawer-header);
+    gap: var(--spacing-drawer-header-gap);
+
+    & > h2 {
+      margin: var(--spacing-drawer-title-margin);
+      font-family: var(--font-drawer-title-family);
+      font-size: var(--font-drawer-title-size);
+      font-weight: var(--font-drawer-title-weight);
+      line-height: var(--font-drawer-title-leading);
+      letter-spacing: var(--font-drawer-title-tracking);
+    }
+  }
+
+  & > p {
+    font-family: var(--font-drawer-body-family);
+    font-size: var(--font-drawer-body-size);
+    line-height: var(--font-drawer-body-leading);
+    letter-spacing: var(--font-drawer-body-tracking);
+    color: var(--color-text-drawer-body);
+  }
+
+  & > footer {
+    display: var(--display-drawer-footer);
+    justify-content: var(--justify-drawer-footer);
+    gap: var(--spacing-drawer-footer-gap);
+    margin-block-start: var(--spacing-drawer-footer-margin-block-start);
+  }
+}

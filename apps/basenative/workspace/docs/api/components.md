@@ -1,0 +1,1760 @@
+# @basenative/components API
+
+Every function in this package is a pure `render*` helper that returns an HTML string (or a small state helper for toasts, calendars and pipelines). Markup is semantic HTML tagged with `data-bn="…"` attributes; there is no client-side JavaScript except the opt-in initialisers — `initTabs`, `initDrawer`, `initCommandPalette`, `initDataGrid`, `initTree`, `initMultiselect`, `initVirtualList`, `initDropdownMenu`, `initSiteHeader` and the drag-and-drop initialisers — each of which takes the rendered root element, works off the `data-bn` hooks and native ARIA attributes, re-queries them on every interaction, and returns a handle with `destroy()`.
+
+All `render*` functions accept an `attrs` option unless the table says otherwise: a raw string of extra HTML attributes spliced verbatim into the outermost element (for example `attrs: 'data-testid="save" aria-describedby="hint"'`). Content options (`content`, `body`, `title`, `label`, …) are inserted as HTML, not escaped, unless noted.
+
+## Styling
+
+Load the bundled stylesheet (it imports every layer in cascade order):
+
+```html
+<link rel="stylesheet" href="node_modules/@basenative/components/src/index.css" />
+```
+
+or, with a bundler, `import '@basenative/components/css'`.
+
+The individual layers are also exported. `./layers.css` contains only the `@layer reset, tokens, layout, components, states;` declaration that fixes the cascade order, so it must be loaded **first** when importing layers individually:
+
+| Export | File | Layer |
+|--------|------|-------|
+| `./css` | `src/index.css` | imports all of the below in order |
+| `./layers.css` | `src/layers.css` | declares layer order — load first |
+| `./reset.css` | `src/reset.css` | `reset` |
+| `./tokens.css` | `src/tokens.css` | `tokens` (design tokens, density scales) |
+| `./theme.css` | `src/theme.css` | `tokens` (light/dark palettes) |
+| `./layout.css` | `src/layout.css` | `layout` |
+| `./components.css` | `src/components.css` | `components` |
+| `./states.css` | `src/states.css` | `states` |
+
+## Escaping Policy
+
+Every renderer uses the runtime's shared `escapeText` / `escapeAttr` (`@basenative/runtime/shared/escape`):
+
+- **Escaped** — every attribute interpolation (`id`, `name`, `value`, `placeholder`, `alt`, `src`, `href`, `aria-*`, `data-*`, variant/size/position fragments) and every text-semantic field (`label`, `helpText`, `error`, `caption`, `emptyMessage`, item labels, tooltip content, breadcrumb labels, avatar name, tree/table cell values, calendar and pipeline titles).
+- **Not escaped (HTML slots)** — designated composition points documented on each parameter as "HTML slot: not escaped; pass trusted markup only": button content, card header/body/footer, alert content, badge content, dialog/drawer body and footer, accordion and tab panel content, dropdown/tooltip trigger, menu/command/tree icons, breadcrumb separator, pipeline card `actions`/`footer`, a Table or DataGrid column's `render()` result, a custom `renderItem`, and every `attrs` option.
+
+```js
+renderInput({ name: 'q', label: '<b>Not bold</b>' })   // label is escaped
+renderButton('<b>Bold</b>')                             // content is a slot
+```
+
+## Deterministic Ids
+
+```js
+import { nextId, resetIds } from '@basenative/components';
+
+resetIds();            // once per SSR request, before rendering
+nextId('dialog');      // 'bn-dialog-1'
+```
+
+Renderers that need an id draw from a module counter, never `Math.random()`, so two renders of the same page produce identical markup. Every renderer honours an explicit `id` option first. Hydration matches server and client markup by id, so pass explicit `id`s to hydrated components, or render the same components in the same order on both sides and call `resetIds()` per request.
+
+## Button
+
+`renderButton(content, options?)` → `string`. `buttonVariants(variant?, size?)` → `string` returns the class string `bn-button bn-button--{variant} bn-button--{size}` for hand-written markup.
+
+```js
+renderButton('Submit', { variant: 'primary', type: 'submit' })
+buttonVariants('ghost', 'sm') // 'bn-button bn-button--ghost bn-button--sm'
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `text` | `string` | — | Escaped label; replaces the unescaped `content` slot when present |
+| `variant` | `'primary' \| 'secondary' \| 'destructive' \| 'ghost'` | `'primary'` | Emitted as `data-variant` |
+| `size` | `'default' \| 'sm' \| 'lg'` | `'default'` | Emitted as `data-size` |
+| `disabled` | `boolean` | `false` | Adds `disabled` |
+| `type` | `string` | `'button'` | `type` attribute |
+| `attrs` | `string` | `''` | Extra attributes |
+
+Renders:
+
+```html
+<button data-bn="button" data-variant="primary" data-size="default" type="submit">Submit</button>
+```
+
+Accessibility: a native `<button>`; `type="button"` by default so it does not submit forms accidentally.
+
+## Input
+
+`renderInput(options)` → `string`
+
+```js
+renderInput({ name: 'email', label: 'Email', type: 'email', required: true, error: 'Required' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | `name` attribute; also the default `id` |
+| `type` | `string` | `'text'` | `type` attribute |
+| `label` | `string` | — | Renders a `<label for>` |
+| `placeholder` | `string` | `''` | Escaped |
+| `value` | `string` | `''` | Escaped |
+| `required` | `boolean` | `false` | |
+| `disabled` | `boolean` | `false` | |
+| `helpText` | `string` | `''` | Help line, id `{id}-help` |
+| `error` | `string` | `''` | Error line with `role="alert"`; sets `aria-invalid="true"` |
+| `id` | `string` | `name` | |
+| `attrs` | `string` | `''` | Extra attributes on the `<input>` |
+
+Renders:
+
+```html
+<div data-bn="field">
+  <label for="email">Email</label>
+  <input data-bn="input" type="email" id="email" name="email" value="" placeholder="" required aria-describedby="email-error" aria-invalid="true" />
+  <span data-bn="field-error" id="email-error" role="alert">Required</span>
+</div>
+```
+
+Accessibility: label is associated via `for`/`id`; `aria-describedby` points at the help or error line; errors use `role="alert"`.
+
+## Textarea
+
+`renderTextarea(options)` → `string`
+
+```js
+renderTextarea({ name: 'bio', label: 'Bio', rows: 5 })
+```
+
+Same options as Input minus `type`, plus `rows` (`number`, default `3`). `value` is HTML-escaped. Renders `<div data-bn="field">` containing `<label>`, `<textarea data-bn="textarea">`, optional `[data-bn="field-help"]` and `[data-bn="field-error"][role="alert"]`.
+
+Accessibility: `aria-invalid="true"` when `error` is set; `aria-describedby` lists the help (`{id}-help`) and/or error (`{id}-error`) ids, same as Input.
+
+## Checkbox
+
+`renderCheckbox(options)` → `string`
+
+```js
+renderCheckbox({ name: 'agree', label: 'I agree to terms', checked: false })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | |
+| `label` | `string` | `''` | Text inside the `<span>` |
+| `checked` | `boolean` | `false` | |
+| `disabled` | `boolean` | `false` | |
+| `value` | `string` | `''` | Escaped; omitted when empty |
+| `id` | `string` | `name` | |
+| `attrs` | `string` | `''` | Extra attributes on the wrapping `<label>` |
+
+Renders:
+
+```html
+<label data-bn="checkbox-label"><input data-bn="checkbox" type="checkbox" id="agree" name="agree" /><span>I agree to terms</span></label>
+```
+
+Accessibility: the input is wrapped by its label, so the whole row is clickable and the accessible name comes from the label text.
+
+## Radio Group
+
+`renderRadioGroup(options)` → `string`
+
+```js
+renderRadioGroup({
+  name: 'plan',
+  label: 'Plan',
+  items: [{ value: 'free', label: 'Free' }, { value: 'pro', label: 'Pro' }],
+  selected: 'free',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | Shared `name`; each radio gets id `{name}-{value}` |
+| `label` | `string` | — | Rendered as `<legend>` |
+| `items` | `Array<string \| { value, label, disabled? }>` | `[]` | |
+| `selected` | `string` | `''` | Value of the checked radio |
+| `disabled` | `boolean` | `false` | Disables all radios |
+| `attrs` | `string` | `''` | Extra attributes on the `<fieldset>` |
+
+Renders:
+
+```html
+<fieldset data-bn="radio-group"><legend>Plan</legend>
+  <label data-bn="radio-label"><input data-bn="radio" type="radio" id="plan-free" name="plan" value="free" checked /><span>Free</span></label>
+  …
+</fieldset>
+```
+
+Accessibility: `<fieldset>`/`<legend>` group the radios under one accessible name.
+
+## Toggle / Switch
+
+`renderToggle(options)` → `string`
+
+```js
+renderToggle({ name: 'notifications', label: 'Enable notifications' })
+```
+
+Options: `name`, `label`, `checked`, `disabled`, `id` (default `name`), `attrs` (on the wrapping `<label>`). Renders:
+
+```html
+<label data-bn="toggle-label"><input data-bn="toggle" type="checkbox" role="switch" id="notifications" name="notifications" /><span>Enable notifications</span></label>
+```
+
+Accessibility: native checkbox with `role="switch"`.
+
+## Select
+
+`renderSelect(options)` → `string`
+
+```js
+renderSelect({
+  name: 'country',
+  label: 'Country',
+  placeholder: 'Select...',
+  items: [{ value: 'us', label: 'USA' }, { value: 'uk', label: 'UK' }],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | |
+| `label` | `string` | — | `<label for>` |
+| `items` | `Array<string \| { value, label, disabled? }>` | `[]` | Values and labels are escaped |
+| `selected` | `string` | `''` | |
+| `placeholder` | `string` | `''` | Disabled first option with `value=""`, selected when nothing else is |
+| `required` | `boolean` | `false` | |
+| `disabled` | `boolean` | `false` | |
+| `helpText` | `string` | `''` | Help line, id `{id}-help` |
+| `error` | `string` | `''` | Error line with `role="alert"`; sets `aria-invalid` |
+| `id` | `string` | `name` | |
+| `attrs` | `string` | `''` | Extra attributes on the `<select>` |
+
+Renders `<div data-bn="field">` with `<label>`, `<select data-bn="select">…</select>` and optional `[data-bn="field-help"]` and `[data-bn="field-error"]`.
+
+Accessibility: `aria-invalid="true"` when `error` is set; `aria-describedby` lists the help (`{id}-help`) and/or error (`{id}-error`) ids, same as Input.
+
+## Field
+
+`renderField(options)` → `string`
+
+The form-field unit as a public component: label, control, help text and error composed as one piece of markup. This is the same shell Input, Textarea and Select compose internally, exported so any other control — a composite widget, a framework-rendered input, a one-off control — gets the identical contract instead of a local rebuild.
+
+```js
+renderField({
+  id: 'email',
+  label: 'Email',
+  control: '<input data-bn="input" id="email" name="email" type="email" aria-describedby="email-help" />',
+  helpText: 'We never share it.',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | `string` | — | Field id; the help span is `{id}-help`, the error span `{id}-error` |
+| `label` | `string` | — | `<label for>`; escaped. Omitted when empty |
+| `control` | `string` | — | Pre-rendered control markup (HTML slot: not escaped) |
+| `helpText` | `string` | `''` | Help line, id `{id}-help`; escaped |
+| `error` | `string` | `''` | Error line with `role="alert"`, id `{id}-error`; escaped |
+
+Renders `<div data-bn="field">` with the label, the control markup verbatim, and the optional `[data-bn="field-help"]` / `[data-bn="field-error"]` spans. The control is responsible for pointing its own `aria-describedby` at the ids (the built-in controls do).
+
+### Live validation
+
+`bindFieldValidation(root = document)` → `void` · `import { bindFieldValidation } from '@basenative/components';`
+
+The field's report, bound once over a root. The browser's constraint validation is the source (`required`, `type`, `pattern`, `min`/`max`/`step`, `minlength`/`maxlength`; on a pattern mismatch the control's `title` is the message). A control reports once it has been edited and left, then re-reports on every input so the error clears the moment the value is valid. Reporting sets `aria-invalid` on the control, shows the message in the field's `<output>` in place of its `<small>` hint and points `aria-describedby` at whichever shows. A submit of a form that holds fields reports every field and focuses the first invalid control; the form gets `novalidate` so the fields report instead of the browser bubble (without script, native validation still guards the submit). `reportField(control)` reports one control and returns whether it is valid.
+
+### Variants and parts (registry `field`, `input`, `textarea`)
+
+The registry field (`section[variant]`) takes these props on top of `label`, `controlId`, `controlHtml`, `hint` and `error`. All styling is token-only; every built-in button is a ≥44px target.
+
+| Prop | Effect |
+|------|--------|
+| `variant: 'inline'` | Label beside the control (`minmax(6rem, 10rem)` column); stacks under 36rem |
+| `variant: 'drop'` | File drop zone: the label is the zone and the native file input lies over it, transparent, so click, keyboard and drop all work without script; chosen names show in an `<output id="{controlId}-files">` (`filesText` is the empty text). There is no drag-over highlight: hover and focus restyle the zone |
+| `variant: 'code'` + `length`, `name` | One-time code: one numeric box per digit (`inputmode="numeric"`, the first `autocomplete="one-time-code"`), the joined value in a hidden input named `name`. Paste or autofill spreads across the boxes; Backspace and the arrows move between them. Under 18rem a six-digit code breaks into rows of three rather than shrink a box below 44px |
+| `required` / `optional` | A visual `*` (`aria-hidden`; the control's own `required` is what is announced) or a read "Optional" word in the label |
+| `success` | A confirmation `<output id="{controlId}-success">`; hidden while the field is invalid |
+| `reveal: true` | Password Show button (`aria-pressed` toggle) that swaps the control's `type` |
+| `clearable: true` | Clear button, shown only while there is text; empties the control, emits `input` and returns focus |
+| `stepper: true` | − / + buttons that call the native `stepDown`/`stepUp` and disable at `min`/`max` |
+| `prefix` / `suffix` | Text inside the box, joined to the control's `aria-describedby` |
+| `leadingHtml` / `trailingHtml` | A caller's button or link at the box edge; it keeps its own variant |
+| `count: true` (+ control `maxlength`) | A live `n / max` counter beside the hint |
+
+Input adds `variant: 'sm' \| 'lg'` (16px type minimum, so iOS never zooms; every size ≥44px), `accept` and `multiple`, and styles `readonly` (focusable, selectable) apart from `disabled`. Number and tel inputs use tabular figures. Textarea grows with its content (`field-sizing: content`, with a script fallback where unsupported) up to six control heights and takes `readonly`. A plain `<fieldset>` with a `<legend>` inside a registry `form` groups fields.
+
+## Form Field
+
+`renderFormField(options)` → `string`
+
+Compose a whole field in one call: name a built-in control and every other option forwards to that control's renderer, so control-specific options (`type`, `items`, `rows`, `checked`, `selected`, …) behave exactly as documented for the control itself.
+
+```js
+renderFormField({ control: 'input', name: 'email', label: 'Email', type: 'email', helpText: 'We never share it.' })
+renderFormField({ control: 'select', name: 'plan', label: 'Plan', items: ['Free', 'Pro'] })
+renderFormField({ controlHtml: '<input id="legacy" />', name: 'legacy', label: 'Legacy', error: 'Required' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `control` | `'input' \| 'textarea' \| 'select' \| 'checkbox' \| 'radio' \| 'toggle'` | `'input'` | Which built-in control to render; ignored when `controlHtml` is given |
+| `controlHtml` | `string` | — | Pre-rendered control markup, wrapped in the Field shell |
+| `name` | `string` | — | Field name; also the default field id |
+| `label` | `string` | — | Field label (the group legend for `radio`); escaped |
+| `helpText` | `string` | `''` | Escaped |
+| `error` | `string` | `''` | Escaped |
+| … | | | Every other option forwards to the control's renderer |
+
+`input` / `textarea` / `select` accept label, helpText and error natively and wire `aria-describedby` themselves. `checkbox` / `radio` / `toggle` carry their label inline and have no help/error channel, so when `helpText` or `error` is given the composer wraps their markup in the Field shell (without a second label) and the help/error spans render inside the same `[data-bn="field"]` container. An unknown `control` name throws a `TypeError`.
+
+## Combobox
+
+`renderCombobox(options)` → `string`. A text input backed by a native `<datalist>`.
+
+```js
+renderCombobox({ name: 'city', label: 'City', items: ['Berlin', 'Boston', { value: 'sf', label: 'San Francisco' }] })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | |
+| `label` | `string` | — | `<label for>` |
+| `items` | `Array<string \| { value, label }>` | `[]` | `<datalist>` options; value and label are escaped |
+| `placeholder` | `string` | `''` | |
+| `required` | `boolean` | `false` | |
+| `disabled` | `boolean` | `false` | |
+| `value` | `string` | `''` | |
+| `id` | `string` | `bn-combobox-{name}` | `bn-combobox-{n}` when `name` is absent; `{id}-list` is the datalist id |
+| `attrs` | `string` | `''` | Extra attributes on the `<input>` |
+
+Renders:
+
+```html
+<div data-bn="combobox">
+  <label for="bn-combobox-city" data-bn="label">City</label>
+  <input type="text" id="bn-combobox-city" name="city" list="bn-combobox-city-list" value="" placeholder="" data-bn="combobox-input" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+  <datalist id="bn-combobox-city-list"><option value="Berlin">Berlin</option>…</datalist>
+</div>
+```
+
+Accessibility: `role="combobox"`, `aria-autocomplete="list"`; the `<datalist>` gives native keyboard suggestions without JavaScript.
+
+## Multiselect
+
+`renderMultiselect(options)` → `string`. Selected values render as removable tags in front of a search input backed by a `<datalist>` of the item labels; a hidden `<select multiple>` carries the form value. Pair with `initMultiselect` on the client to make the tags editable.
+
+```js
+renderMultiselect({ name: 'tags', label: 'Tags', items: ['a11y', 'css', 'html'], selected: ['css'] })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | — | `name` of the hidden `<select>` |
+| `label` | `string` | — | Also the search input's `aria-label` (falls back to `'Search'`) |
+| `items` | `Array<string \| { value, label }>` | `[]` | |
+| `selected` | `string[]` | `[]` | Pre-selected values |
+| `placeholder` | `string` | `'Select items...'` | Search input placeholder |
+| `disabled` | `boolean` | `false` | Adds `data-disabled` to the wrapper and `disabled` to the select |
+| `id` | `string` | `bn-multiselect-{name}` | `bn-multiselect-{n}` when `name` is absent |
+| `attrs` | `string` | `''` | Extra attributes on the search `<input>` |
+
+Renders:
+
+```html
+<div data-bn="multiselect">
+  <label for="bn-multiselect-tags" data-bn="label">Tags</label>
+  <div data-bn="multiselect-container">
+    <div data-bn="multiselect-tags"><span data-bn="tag" data-value="css">css<button type="button" data-bn="tag-remove" aria-label="Remove css">×</button></span></div>
+    <input type="text" data-bn="multiselect-search" placeholder="Select items..." autocomplete="off" aria-label="Tags" list="bn-multiselect-tags-options">
+  </div>
+  <datalist id="bn-multiselect-tags-options"><option value="a11y"></option>…</datalist>
+  <select id="bn-multiselect-tags" name="tags" multiple hidden>…</select>
+</div>
+```
+
+Accessibility: each remove button has an `aria-label`; the hidden native select keeps the value submittable; the `<datalist>` gives the search input native, script-free suggestions.
+
+### `initMultiselect(root, options?)` → `MultiselectController`
+
+```js
+import { initMultiselect } from '@basenative/components';
+
+const tags = initMultiselect(document.querySelector('[data-bn="multiselect"]'), {
+  onChange: values => form.set('tags', values), // user-driven changes only
+});
+tags.add('html');   // silent; false when unknown or already selected
+tags.remove('css'); // silent
+tags.values();      // ['html'] — read from the <select>
+tags.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `onChange` | `(values: string[]) => void` | — | Called after every user-driven change with the selected values in option order |
+
+The hidden `<select multiple>` is the source of truth: every path changes an `<option>`'s `selected` first and the tags second, so a form submit always matches what is shown. A click on a tag's × deselects that value, removes the tag and moves focus to the search input. In the input, Backspace on an empty value removes the last tag; Enter, or picking a `<datalist>` suggestion (the input's `change`), selects the item whose label or value matches the typed text, appends its tag and clears the input. `add(value)` / `remove(value)` reflect state without calling `onChange` and return whether anything changed; `destroy()` removes every listener.
+
+## Alert
+
+`renderAlert(content, options?)` → `string`. The first argument is the message HTML; there is no `type`/`message` option.
+
+```js
+renderAlert('Changes saved!', { variant: 'success', dismissible: true })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `text` | `string` | — | Escaped message; replaces the unescaped `content` slot when present |
+| `variant` | `'info' \| 'success' \| 'warning' \| 'error'` | `'info'` | Emitted as `data-variant` |
+| `dismissible` | `boolean` | `false` | Adds a dismiss button |
+| `attrs` | `string` | `''` | Extra attributes on the container |
+
+Renders:
+
+```html
+<div data-bn="alert" data-variant="success" role="status">
+  <span data-bn="alert-content">Changes saved!</span>
+  <button data-bn="alert-dismiss" type="button" aria-label="Dismiss">×</button>
+</div>
+```
+
+Accessibility: `error` and `warning` use `role="alert"` (assertive); `info` and `success` use `role="status"` (polite).
+
+## Toast
+
+Client side: `createToaster(options?)` → `Toaster`, `showToast(toaster, options?)` → toast id (`string`), `dismissToast(toaster, id)`. Server side: `renderToastContainer(position?)` → `string`.
+
+```js
+import { createToaster, showToast, dismissToast } from '@basenative/components';
+
+const toaster = createToaster({ position: 'top-right', duration: 5000 });
+const id = showToast(toaster, { message: 'Saved!', variant: 'success' });
+dismissToast(toaster, id);
+```
+
+| Function | Option | Type | Default |
+|----------|--------|------|---------|
+| `createToaster` | `position` | `'top-right' \| 'top-left' \| 'bottom-right' \| 'bottom-left'` | `'top-right'` |
+| `createToaster` | `duration` | `number` (ms) | `5000` |
+| `showToast` | `id` | `string` | next deterministic `bn-toast-<n>` id |
+| `showToast` | `message` | `string` | `''` |
+| `showToast` | `variant` | `'info' \| 'success' \| 'warning' \| 'error'` | `'info'` |
+| `showToast` | `duration` | `number` (ms; `0` or negative disables auto-dismiss) | `toaster.duration` |
+
+`Toaster` is `{ position, duration, toasts }` where `toasts` is a `Signal<ToastItem[]>` from `@basenative/runtime`; render the queue with your own template. `renderToastContainer('top-right')` (the argument is the position string, not a toaster) renders:
+
+```html
+<div data-bn="toast-container" data-position="top-right" role="region" aria-live="polite" aria-label="Notifications"></div>
+```
+
+## Table
+
+`renderTable(options)` → `string`
+
+```js
+import { escapeAttr, escapeText } from '@basenative/runtime/shared/escape';
+
+renderTable({
+  columns: [
+    { key: 'name', label: 'Name', sortable: true },
+    { key: 'status', label: 'Status', render: (value, row) => renderBadge(escapeText(value), { variant: row.status === 'paid' ? 'success' : 'default' }) },
+    { key: 'start', label: 'Start', render: value => `<time datetime="${escapeAttr(value)}">${escapeText(formatDate(value))}</time>` },
+    { key: 'amount', label: 'Amount', numeric: true },
+  ],
+  rows: [{ name: 'Alice', status: 'paid', start: '2025-06-02', amount: '$1,240' }],
+  footer: [{ name: 'Total', amount: '$1,240' }],
+  labelCells: true,
+  emptyMessage: 'No data',
+  caption: 'Users',
+  attrs: 'data-testid="users"',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `columns` | `Array<{ key, label, srLabel?, sortable?, align?, numeric?, render?, cellAttrs? }>` | `[]` | `sortable` adds `data-sortable` to the `<th>`; `align` (`'start'` \| `'center'` \| `'end'`) and `numeric` are described below; `render(value, row)` is an HTML slot: not escaped; escape any data you interpolate — a nullish result renders an empty cell. `srLabel` and `cellAttrs` are described below the table |
+| `rows` | `Array<Record<string, unknown>>` | `[]` | Without `render`, cell values are stringified and escaped |
+| `footer` | `Array<Record<string, unknown>>` | `[]` | `<tfoot>` rows (totals, subtotals), read with the same keys and the same `render` / `cellAttrs` hooks as the body; the first cell of each is a `<th scope="row">`, so a totals row is announced as a row heading rather than as data |
+| `emptyMessage` | `string` | `'No data'` | Single full-width row when `rows` is empty (`render` is not consulted) |
+| `emptyContent` | `string` | `''` | HTML slot used instead of `emptyMessage` — for an empty state with its own call to action. Not escaped |
+| `caption` | `string` | `''` | `<caption>` |
+| `labelCells` | `boolean` | `true` | Stamp `data-label="<column label>"` on every body and footer cell — the shipped stylesheet's stacked presentation heads each cell with it at narrow container widths; `false` opts out (the table then scrolls horizontally when narrow) |
+| `attrs` | `string` | `''` | Spliced onto the `[data-bn="table-container"]` wrapper |
+
+Column options: `key`, `label`, `sortable`, `align`, `numeric`, `render(value, row)`
+(HTML slot), plus `cellAttrs` (raw attribute markup on that column's cells, footer
+included; a string or a `(value, row) => string`) and `srLabel` (a visually-hidden
+accessible name for a column with no visible `label`, so the `<th>` is never empty).
+For numeric alignment reach for `numeric` rather than hand-rolling it through
+`cellAttrs`: it is styled by the shipped stylesheet and it marks the `<th>` too.
+
+Renders `<div data-bn="table-container"><table data-bn="table"><caption>…</caption><thead><tr><th scope="col" data-sortable>Name</th></tr></thead><tbody>…</tbody></table></div>`. Header cells carry `scope="col"`. Composite cells (a two-line name, a `<time>`, a badge, row-action buttons) belong in `render`; `renderDataGrid` offers the same hook when you also want sorting indicators, selection and a footer.
+
+### Columns of figures
+
+`numeric: true` emits `data-numeric` on the `<th>` and every cell in the column, and implies `align: 'end'`. The CSS gives those cells `font-variant-numeric: tabular-nums lining-nums` and `white-space: nowrap`, so digits sit on a fixed grid and a value never wraps mid-number. An explicit `align` wins over the alignment `numeric` implies.
+
+The heading is marked alongside its cells deliberately: a left-aligned `Amount` header over right-aligned figures is the most common data-table defect, because it breaks the vertical edge the eye tracks down the column.
+
+**Decimal alignment is the caller's half of the contract.** Right alignment plus tabular figures aligns decimal points only when every cell in the column carries the same number of fraction digits — `$8,000.00` and `$310,500` in one column cannot be aligned by any amount of CSS. Pick one precision per column and render nulls at that precision too (`—` in the units position, not an empty cell).
+
+### Responsive stacking
+
+Stacking ships with the component; it is not a recipe the caller wires up. The `[data-bn="table-container"]` wrapper is a named container (`container-name: table`), and in `states.css` a `@container table (max-width: 40rem)` block restacks the table against the width it actually has: each row becomes a block, each cell a line headed by its own `data-label`, and long unbroken content wraps instead of clipping. The renderer knows nothing about the breakpoint — the transform is keyed to the container, so the same table stacks in a phone-width card and stays a table in a wide one.
+
+That is why `labelCells` defaults to `true`: the labels are the contract the stack reads, and a table that cannot reflow is broken at the widths it will actually be given. A column with no visible `label` stamps its `srLabel` as the `data-label` instead, so an actions column still gets a heading. Pass `labelCells: false` to opt out — cells carry no labels, the stack cannot name them, and the container falls back to horizontal scrolling when narrow. `<thead>` stays in the DOM either way (the stacked presentation only clips it out of the layout), so the accessibility tree is unchanged at every width and the transform is purely presentational.
+
+## Data Grid
+
+`renderDataGrid(options)` → `string`. Sortable, selectable, paginated grid with a scroll region and a "Showing x–y of z" footer. Pair with `initDataGrid` on the client for sorting, selection and arrow-key navigation.
+
+```js
+renderDataGrid({
+  columns: [
+    { key: 'name', label: 'Name', sortable: true, width: '40%' },
+    { key: 'total', label: 'Total', render: (v) => `$${v}` },
+  ],
+  rows: [{ id: 'r1', name: 'Acme', total: 120 }],
+  sortBy: 'name', sortDir: 'asc', selectable: true, selectedRows: ['r1'],
+  page: 1, pageSize: 50, totalRows: 300, caption: 'Invoices',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `columns` | `DataGridColumn[]` | `[]` | `{ key, label, sortable?, width?, resizable?, editable?, render?(value, row) }` |
+| `rows` | `object[]` | `[]` | `row.id` (else the index) becomes `data-row-id` |
+| `sortBy` | `string` | — | Key of the sorted column (adds `data-sorted` and an arrow) |
+| `sortDir` | `'asc' \| 'desc'` | `'asc'` | |
+| `page` | `number` | `1` | 1-indexed, footer only |
+| `pageSize` | `number` | `50` | Footer only — rows are not sliced |
+| `totalRows` | `number` | `rows.length` | Footer total |
+| `selectable` | `boolean` | `false` | Select-all header checkbox plus a checkbox per row |
+| `selectedRows` | `Array<string \| number>` | `[]` | Row ids whose checkbox is checked |
+| `emptyMessage` | `string` | `'No data'` | |
+| `caption` | `string` | — | `<caption>` and the scroll region's `aria-label` (falls back to `'Data grid'`) |
+| `id` | `string` | `bn-datagrid-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="datagrid" id="bn-datagrid-x">
+  <div data-bn="datagrid-scroll" role="region" aria-label="Invoices" tabindex="0">
+    <table data-bn="datagrid-table" role="grid">
+      <caption>Invoices</caption>
+      <thead><tr><th data-bn="datagrid-th-select"><input type="checkbox" aria-label="Select all" data-bn="datagrid-select-all"></th>
+        <th data-bn="datagrid-th" data-key="name" data-sortable data-sorted="asc" aria-sort="ascending" style="width:40%" scope="col"><button type="button" data-bn="datagrid-th-button">Name ↑</button></th>…</tr></thead>
+      <tbody><tr data-bn="datagrid-row" data-row-id="r1">
+        <td data-bn="datagrid-td-select"><input type="checkbox" checked aria-label="Select row r1" data-bn="datagrid-row-select" data-row-id="r1"></td>
+        <td data-bn="datagrid-td" data-key="name">Acme</td>…</tr></tbody>
+    </table>
+  </div>
+  <div data-bn="datagrid-footer"><span data-bn="datagrid-info">Showing 1–50 of 300</span></div>
+</div>
+```
+
+A `sortable` column's header is a real `<button type="button" data-bn="datagrid-th-button">` inside the `<th>` — the WAI-ARIA APG sortable-column-header pattern — so it is reachable with Tab and activatable with Enter/Space in every browser with no client-side JavaScript; a non-`sortable` column's `<th>` stays plain text. The currently-sorted `<th>` also carries `aria-sort="ascending"|"descending"`. `initDataGrid` turns that button's `click` into a sort; without it the markup is a static table, the same division of labour as Table's `data-sortable`.
+
+Accessibility: the scroll region is focusable (`tabindex="0"`) and labelled; every checkbox has an `aria-label`; `editable` columns render `contenteditable` cells; sortable headers are real, keyboard-operable `<button>`s (see above). Cell values are not escaped — escape user data in `render`.
+
+### `initDataGrid(wrapper, options?)` → `DataGridController`
+
+```js
+import { initDataGrid } from '@basenative/components';
+
+const grid = initDataGrid(document.querySelector('[data-bn="datagrid"]'), {
+  onSort: ({ key, dir }) => router.navigate(`?sort=${key}&dir=${dir}`), // paged data: re-fetch
+  onSelectionChange: ids => bulkActions.enable(ids.length > 0),
+});
+grid.sort('total', 'desc'); // silent: moves the indicator only
+grid.select(['r1', 'r3']);  // silent: checks those rows, reconciles select-all
+grid.selected();            // ['r1', 'r3']
+grid.sortState();           // { key: 'total', dir: 'desc' } or null
+grid.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `onSort` | `({ key, dir }) => void` | — | Called on a header click. When given, the rows are the caller's to re-render or re-fetch — the only correct answer for paged data. Without it the rows in the DOM are reordered in place by that column's cell text, numeric-aware and stable |
+| `onSelectionChange` | `(ids: string[]) => void` | — | Called after every checkbox change with the selected `data-row-id`s |
+
+- A click on a sortable header's button sorts by that column, ascending first and flipping on the next click: `data-sorted` and `aria-sort` move to that `<th>` (the others lose theirs) and the header text's ↑/↓ follows.
+- The select-all checkbox checks or clears every row checkbox; the row checkboxes keep select-all `checked` when all rows are selected, `indeterminate` when some are, and clear when none are. Selected `<tr>`s carry `aria-selected="true"`. The select-all state is reconciled from the rows on init, so a server-rendered partial selection shows as indeterminate.
+- Every cell gets a roving `tabindex` (0 on the first header cell, -1 elsewhere): ArrowLeft / ArrowRight move along the row, ArrowUp / ArrowDown along the column, Home / End to the row's first / last cell, Ctrl+Home / Ctrl+End to the grid's. Left / Right are left alone inside a `contenteditable` cell so the caret still moves.
+- Headers, rows and checkboxes are re-queried on every interaction; `sort()` and `select()` never fire the callbacks.
+
+## Tree
+
+`renderTree(options)` → `string`. Pair with `initTree` on the client for expand/collapse, selection and the APG tree keys.
+
+```js
+renderTree({
+  items: [{ id: 'src', label: 'src', children: [{ id: 'index', label: 'index.js' }] }],
+  expanded: new Set(['src']),
+  selected: 'index',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `TreeNode[]` | `[]` | `{ id?, label, icon?, children? }`; `id` falls back to `label` |
+| `expanded` | `Set<string>` | `new Set()` | Node ids whose children are shown; every other parent's group is rendered `hidden` |
+| `selected` | `string` | — | Id of the selected node |
+| `id` | `string` | `bn-tree-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<ul data-bn="tree" id="bn-tree-x" role="tree">
+  <li data-bn="tree-item" role="treeitem" tabindex="0" aria-expanded="true" aria-selected="false" data-node-id="src" data-level="0">
+    <div data-bn="tree-item-content"><button data-bn="tree-toggle" aria-label="Collapse" type="button">▾</button><span data-bn="tree-label">src</span></div>
+    <ul data-bn="tree-children" role="group">
+      <li data-bn="tree-item" role="treeitem" tabindex="-1" aria-expanded="false" aria-selected="false" data-node-id="lib" data-level="1">
+        <div data-bn="tree-item-content"><button data-bn="tree-toggle" aria-label="Expand" type="button">▸</button><span data-bn="tree-label">lib</span></div>
+        <ul data-bn="tree-children" role="group" hidden>…</ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+```
+
+Accessibility: `role="tree"` / `treeitem` / `group`; toggles are labelled Expand/Collapse. Leaf nodes carry no `aria-expanded` attribute and no group. Every parent renders its `[data-bn="tree-children"]` group — `hidden` when collapsed — so expanding on the client is an attribute flip. `[data-bn="tree-item"]` carries a static roving `tabindex`: the first item in document order gets `tabindex="0"`, every other item gets `tabindex="-1"`, so Tab reaches the tree; `initTree` moves it as the arrow keys move focus.
+
+### `initTree(tree, options?)` → `TreeController`
+
+```js
+import { initTree } from '@basenative/components';
+
+const files = initTree(document.querySelector('[data-bn="tree"]'), {
+  onToggle: (id, expanded) => expandedIds[expanded ? 'add' : 'delete'](id),
+  onSelect: id => openFile(id),
+});
+files.expand('src');       // silent; false when unknown, a leaf, or already expanded
+files.collapse('src');     // silent
+files.select('index.js');  // silent: aria-selected + roving tabindex
+files.selected();          // 'index.js' or null
+files.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `onToggle` | `(id, expanded, item) => void` | — | After a user expands or collapses a node |
+| `onSelect` | `(id, item) => void` | — | After a user selects a node |
+
+- A click on a node's toggle flips `aria-expanded`, shows or hides its group and relabels the toggle (Expand / Collapse, ▸ / ▾). A click on the rest of the row selects the node — `aria-selected="true"` on the item, `data-selected` on its content — and moves focus there.
+- With focus on a node: ArrowDown / ArrowUp move to the next / previous visible node (nodes inside a `hidden` group are skipped), Home / End to the first / last; ArrowRight expands a collapsed node or moves into an expanded one's first child; ArrowLeft collapses an expanded node or moves to the parent; Enter and Space select. On the toggle button, Enter and Space are its native click and are left alone.
+- The roving `tabindex` follows focus, starting on the selected node (or the first). Nodes are re-queried on every interaction; `expand()`, `collapse()` and `select()` never fire the callbacks.
+
+## Tree Grid
+
+`renderTreeGrid(options)` → `string`. A `<table role="treegrid">` whose first column is indented per nesting level.
+
+```js
+renderTreeGrid({
+  columns: [{ key: 'name', label: 'Name' }, { key: 'size', label: 'Size' }],
+  items: [{ id: 'src', name: 'src', size: '—', children: [{ name: 'index.js', size: '2 KB' }] }],
+  expanded: new Set(['src']),
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `columns` | `Array<{ key, label }>` | `[]` | |
+| `items` | `TreeGridNode[]` | `[]` | Column values keyed by `key`, plus `id?` (falls back to the first column's value) and `children?` |
+| `expanded` | `Set<string>` | `new Set()` | |
+| `id` | `string` | `bn-treegrid-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders `<table data-bn="treegrid" role="treegrid">` with `<th scope="col">` headers and one `<tr data-bn="treegrid-row" role="row" aria-level="1" data-node-id="src">` per visible node; a row with children also carries `aria-expanded` (`"true"` or `"false"`), while leaf rows carry no `aria-expanded` attribute. The first cell is prefixed with `<span data-level="0">▸ </span>`.
+
+Like Tree, `[data-bn="treegrid-row"]` carries a static roving `tabindex` (first row `0`, every other row `-1`), but unlike Tree there is no `initTreeGrid()` to move it, and collapsed rows are not rendered at all — a caller that wants arrow-key roving or client-side expand must add its own keydown handler and re-render with an updated `expanded` set.
+
+## Virtual List
+
+`renderVirtualList(options)` → `string`. Server-renders only the first window of items inside a spacer sized for the whole list; `initVirtualList` swaps the window on scroll. Without it the first window is all that ever renders.
+
+```js
+renderVirtualList({
+  items: rows,
+  itemHeight: 32,
+  containerHeight: 480,
+  renderItem: (row, i) => `<div data-bn="virtual-item" data-index="${i}">${row.name}</div>`,
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `T[]` | `[]` | |
+| `itemHeight` | `number` (px) | `40` | |
+| `containerHeight` | `number` (px) | `400` | |
+| `renderItem` | `(item, index) => string` | `defaultRenderItem` — escaped `${item}` in `[data-bn="virtual-item"]` | |
+| `overscan` | `number` | `5` | Extra items rendered beyond the visible count (applied twice) |
+| `id` | `string` | `bn-virtual-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="virtualizer" id="bn-virtual-x" style="height:400px;overflow:auto">
+  <div data-bn="virtual-spacer" style="height:{items.length * itemHeight}px;position:relative">
+    <div data-bn="virtual-window" style="position:absolute;top:0;left:0;right:0" data-item-height="40" data-total="{items.length}">…</div>
+  </div>
+</div>
+```
+
+### `initVirtualList(container, options)` → `VirtualListController`
+
+```js
+import { initVirtualList } from '@basenative/components';
+
+const list = initVirtualList(document.querySelector('[data-bn="virtualizer"]'), {
+  items: rows,                                    // required: the array the server rendered from
+  renderItem: (row, i) => `<div data-bn="virtual-item" data-index="${i}">${escapeText(row.name)}</div>`,
+});
+list.range();        // { start, end } currently rendered (end exclusive)
+list.scrollTo(500);  // item 500 to the top of the container
+list.setItems(next); // swap the data, resize the spacer, re-render
+list.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `T[]` | required | Only the first window is in the DOM, so the initialiser cannot recover the rest; it throws without this |
+| `renderItem` | `(item, index) => string` | `defaultRenderItem` | The same markup `renderVirtualList` uses when omitted |
+| `itemHeight` | `number` (px) | the window's `data-item-height` | |
+| `overscan` | `number` | `5` | Items rendered above and below the viewport |
+
+On every `scroll` the visible index range is recomputed from `scrollTop`, the container's height and `itemHeight`; when it changes, the window is re-rendered from `items.slice(start, end)` and repositioned with `top`. The first `update()` runs on init. `defaultRenderItem(item, index)` is also exported.
+
+## Pagination
+
+`renderPagination(options)` → `string`. Returns `''` when `totalPages <= 1`.
+
+```js
+renderPagination({ currentPage: 2, totalPages: 10, baseUrl: '/users' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `currentPage` | `number` | `1` | 1-indexed |
+| `totalPages` | `number` | `1` | |
+| `baseUrl` | `string` | `''` | `?page=N` (or `&page=N`) is appended |
+| `window` | `number` | `2` | Page links either side of the current page; gaps become `…` |
+
+Renders `<nav data-bn="pagination" aria-label="Pagination"><ul>…</ul></nav>` with `rel="prev"`/`rel="next"` links, `aria-current="page"` on the active link, `aria-disabled="true"` spans at the ends and `[data-bn="pagination-ellipsis"]` gaps. `attrs` is not supported.
+
+## Badge
+
+`renderBadge(content, options?)` → `string`. `content` is an HTML slot: not escaped; pass trusted markup only (see [Escaping Policy](#escaping-policy)). For data, pass `options.text` instead — it is escaped and wins over `content`.
+
+```js
+renderBadge('Active', { variant: 'success' })              // literal markup/text
+renderBadge('', { text: job.status, variant: 'warning' })  // data — escaped for you
+```
+
+`variant`: `'default' | 'primary' | 'success' | 'warning' | 'error'` (default `'default'`; escaped). `attrs` is spliced onto the `<span>`. Renders `<span data-bn="badge" data-variant="success">Active</span>`.
+
+## Card
+
+`renderCard(options)` → `string`
+
+```js
+renderCard({ header: 'Title', body: '<p>Content</p>', footer: 'Footer' })
+```
+
+Options: `header`, `body`, `footer` (HTML strings, default `''`; header/footer omitted when empty), `variant` (`string`, default `'default'`, emitted as `data-variant`), `id` (escaped, emitted only when present) and `attrs`. `id` + `attrs` are what let a card be labelled (`aria-labelledby`) or bound to by a client runtime. Renders:
+
+```html
+<article data-bn="card" data-variant="default">
+  <header data-bn="card-header">Title</header>
+  <div data-bn="card-body"><p>Content</p></div>
+  <footer data-bn="card-footer">Footer</footer>
+</article>
+```
+
+## Avatar
+
+`renderAvatar(options)` → `string`. Shows an image, or up to two initials derived from `name` (`'?'` when no name).
+
+```js
+renderAvatar({ name: 'Ada Lovelace', size: 'lg' })
+renderAvatar({ src: '/ada.png', alt: 'Ada Lovelace', shape: 'square' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `src` | `string` | — | Image URL |
+| `alt` | `string` | `''` | Image alt; falls back to `name` |
+| `name` | `string` | — | Source of the initials and the fallback label |
+| `size` | `'sm' \| 'default' \| 'lg' \| 'xl'` | `'default'` | |
+| `shape` | `'circle' \| 'square'` | `'circle'` | |
+| `attrs` | `string` | `''` | |
+
+Without `src`: `<span data-bn="avatar" data-size="lg" data-shape="circle" role="img" aria-label="Ada Lovelace"><span data-bn="avatar-initials">AL</span></span>` (the `aria-label` falls back to `'Avatar'`). With `src`: `<span data-bn="avatar" data-size="lg" data-shape="circle"><img src="…" alt="Ada Lovelace" data-bn="avatar-img"></span>` — the wrapper carries no `role`, since the `<img>`'s `alt` already gives it an accessible name.
+
+## Progress
+
+`renderProgress(options)` → `string`
+
+```js
+renderProgress({ value: 75, max: 100, label: 'Upload progress' })
+```
+
+Options: `value` (default `0`), `max` (default `100`), `label` (escaped `aria-label`), `attrs`. Renders `<progress data-bn="progress" value="75" max="100" aria-label="Upload progress">75%</progress>` — the text content is the percentage fallback.
+
+## Spinner
+
+`renderSpinner(options)` → `string`
+
+```js
+renderSpinner({ size: 'lg', label: 'Loading data' })
+```
+
+Options: `size` (`'sm' | 'default' | 'lg'`, default `'default'`) and `label` (`aria-label`, default `'Loading'`). Renders `<span data-bn="spinner" data-size="lg" role="status" aria-label="Loading data"><span aria-hidden="true"></span></span>`. `attrs` is not supported.
+
+## Skeleton
+
+`renderSkeleton(options)` → `string`
+
+```js
+renderSkeleton({ width: '200px', height: '1rem', count: 3 })
+```
+
+Options: `width` (default `'100%'`), `height` (default `'1rem'`), `variant` (`'text' | 'circle'`, default `'text'`), `count` (default `1`). Renders `count` copies of `<div data-bn="skeleton" data-variant="text" style="width:200px;height:1rem" aria-hidden="true"></div>`. `attrs` is not supported.
+
+## Dialog
+
+`renderDialog(options)` → `string`. Native `<dialog>`; `modal` selects the semantics the client should apply — a modal dialog (`aria-modal="true" data-modal="true"`) is opened with `showModal()`, a non-modal one (`data-modal="false"`) with `show()`.
+
+```js
+renderDialog({
+  title: 'Delete project?',
+  description: 'This cannot be undone.',
+  content: '<p>All 12 files will be removed.</p>',
+  footer: renderButton('Delete', { variant: 'destructive' }),
+  size: 'sm',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `title` | `string` | — | `<h2 data-bn="dialog-title" id="{id}-title">`; the `<dialog>` gets `aria-labelledby` |
+| `description` | `string` | — | Escaped `<p data-bn="dialog-description" id="{id}-description">` at the top of the body; the `<dialog>` gets `aria-describedby` |
+| `content` | `string` | `''` | Body HTML (slot) |
+| `open` | `boolean` | `false` | Adds `open` |
+| `modal` | `boolean` | `true` | `true` adds `aria-modal="true" data-modal="true"`; `false` adds `data-modal="false"` |
+| `closable` | `boolean` | `true` | Renders the close button |
+| `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | |
+| `footer` | `string` | `''` | Footer HTML |
+| `id` | `string` | `bn-dialog-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<dialog data-bn="dialog" data-size="sm" id="bn-dialog-x" aria-modal="true" data-modal="true" aria-labelledby="bn-dialog-x-title" aria-describedby="bn-dialog-x-description">
+  <div data-bn="dialog-header"><h2 data-bn="dialog-title" id="bn-dialog-x-title">Delete project?</h2><button data-bn="dialog-close" aria-label="Close" type="button">×</button></div>
+  <div data-bn="dialog-body"><p data-bn="dialog-description" id="bn-dialog-x-description">This cannot be undone.</p><p>All 12 files will be removed.</p></div>
+  <div data-bn="dialog-footer">…</div>
+</dialog>
+```
+
+Accessibility: the native `<dialog>` handles focus trapping and Escape when opened with `showModal()`; the dialog is named by its title (`aria-labelledby`) and, when `description` is given, described by it (`aria-describedby`); the close button is labelled.
+
+## Drawer
+
+`renderDrawer(options)` → `string`. Side panel; the overlay is rendered as a sibling **before** the `<aside>`.
+
+```js
+renderDrawer({ title: 'Filters', content: '<form>…</form>', position: 'left', open: true })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `title` | `string` | — | |
+| `content` | `string` | `''` | |
+| `open` | `boolean` | `false` | Adds `data-open` to the drawer and overlay |
+| `position` | `'left' \| 'right'` | `'right'` | Emitted as `data-position` |
+| `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | |
+| `closable` | `boolean` | `true` | |
+| `overlay` | `boolean` | `true` | Renders `[data-bn="drawer-overlay"]` |
+| `id` | `string` | `bn-drawer-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="drawer-overlay" data-open></div><aside data-bn="drawer" data-position="left" data-size="default" id="bn-drawer-x" data-open role="dialog" aria-modal="true">
+  <div data-bn="drawer-header"><h2 data-bn="drawer-title">Filters</h2><button data-bn="drawer-close" aria-label="Close" type="button">×</button></div>
+  <div data-bn="drawer-body">…</div>
+</aside>
+```
+
+A closed drawer is rendered `inert`, so nothing inside it is tabbable or exposed to assistive technology while it is off-screen. Pair it with `initDrawer` on the client — the markup is not usable without it.
+
+### `initDrawer(drawer, options?)` → `DrawerController`
+
+```js
+import { initDrawer } from '@basenative/components';
+
+const filters = initDrawer(document.querySelector('[data-bn="drawer"]'), { dismissible: true });
+document.querySelector('#open-filters').addEventListener('click', () => filters.open());
+filters.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dismissible` | `boolean` | `true` | Whether a click on the overlay closes the drawer |
+| `overlay` | `Element \| null` | preceding sibling | The scrim, when it is not the `[data-bn="drawer-overlay"]` rendered immediately before the `<aside>` |
+| `onChange` | `(open: boolean) => void` | — | Called after every open and close |
+
+Returns `{ open(), close(), toggle(), isOpen(), destroy() }`. `open()` removes `inert`, adds `data-open` to the drawer and overlay, and moves focus to the close button (or to the panel itself when `closable: false`); `close()` removes `data-open` from both, returns focus to the element that had it before `open()`, then sets `inert`. The close button, a click on the overlay (unless `dismissible: false`) and Escape all close it; `destroy()` removes every listener it added.
+
+Accessibility: `role="dialog" aria-modal="true"`; `initDrawer` handles focus on open and close because `<aside>` is not a native dialog, but it does not trap Tab inside the panel.
+
+## Tabs
+
+`renderTabs(options)` → `string`
+
+```js
+renderTabs({
+  tabs: [
+    { id: 'overview', label: 'Overview', content: '<p>…</p>' },
+    { id: 'settings', label: 'Settings', content: '<form>…</form>', disabled: true },
+  ],
+  activeTab: 'overview',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `tabs` | `Array<{ id, label, content?, disabled? }>` | `[]` | |
+| `activeTab` | `string` | first tab's id | |
+| `variant` | `'default' \| 'pills'` | `'default'` | |
+| `id` | `string` | `bn-tabs-{n}` | Prefixes every tab and panel id |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="tabs" data-variant="default" id="t">
+  <div data-bn="tab-list" role="tablist">
+    <button data-bn="tab" role="tab" type="button" tabindex="0" id="t-tab-overview" aria-selected="true" aria-controls="t-panel-overview" data-tab="overview">Overview</button>
+    <button data-bn="tab" role="tab" type="button" tabindex="-1" id="t-tab-settings" aria-selected="false" aria-controls="t-panel-settings" data-tab="settings" disabled>Settings</button>
+  </div>
+  <div data-bn="tab-panel" role="tabpanel" id="t-panel-overview" aria-labelledby="t-tab-overview">…</div>
+  <div data-bn="tab-panel" role="tabpanel" id="t-panel-settings" aria-labelledby="t-tab-settings" hidden>…</div>
+</div>
+```
+
+Accessibility: full `tablist`/`tab`/`tabpanel` wiring with `aria-controls` and `aria-labelledby`; inactive panels are `hidden`; tab buttons carry a roving `tabindex` (0 on the active tab — or the first enabled one when the active tab is disabled or unknown — and -1 elsewhere).
+
+### initTabs
+
+`initTabs(root, options?)` → `{ select(id), active(), destroy() }`. Client-side switching for a rendered `[data-bn="tabs"]` element, implementing the WAI-ARIA APG tabs pattern so consumers stop re-implementing it:
+
+```js
+import { initTabs } from '@basenative/components';
+
+const tabs = initTabs(document.querySelector('#t'), {
+  onChange: (id, tab) => router.navigate(`?view=${id}`), // user-driven changes only
+  activation: 'automatic',                                 // or 'manual'
+});
+tabs.select('settings'); // reflect app state; silent (no onChange)
+tabs.active();           // 'settings'
+tabs.destroy();
+```
+
+- Click and ArrowLeft / ArrowRight / Home / End switch tabs, wrapping at the ends and skipping disabled tabs; `aria-selected` and the roving `tabindex` follow the selection and every panel except the selected one (matched through `aria-controls`) is `hidden`. Arrow keys call `preventDefault()`; other keys are left alone.
+- `activation: 'automatic'` (default) selects as focus moves; `'manual'` moves focus and the roving `tabindex` only, and the tab's native click (Enter / Space / pointer) selects.
+- On init the widget is reconciled from the `aria-selected="true"` tab (or the first enabled tab when none is selected).
+- `select(id)` returns `false` for an unknown id and never fires `onChange` or moves focus, so a route can keep its own signal as the source of truth. Tabs and panels are re-queried on every interaction, so tabs added later are picked up; a tabs widget nested inside `root` is ignored — init it on its own root.
+
+## Accordion
+
+`renderAccordion(options)` → `string`. Native `<details>`/`<summary>`.
+
+```js
+renderAccordion({
+  items: [{ title: 'Shipping', content: '<p>…</p>', open: true }, { title: 'Returns', content: '<p>…</p>' }],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `Array<{ title, content, open? }>` | `[]` | `title` is escaped text; `content` is an HTML slot: not escaped |
+| `multiple` | `boolean` | `false` | When false every `<details>` shares `name="{id}"`, so only one can be open |
+| `id` | `string` | `bn-accordion-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders `<div data-bn="accordion" id="…">` containing `<details data-bn="accordion-item" name="…" open><summary data-bn="accordion-header">Shipping</summary><div data-bn="accordion-content">…</div></details>` per item.
+
+Accessibility: native disclosure semantics and keyboard handling; no JavaScript needed.
+
+## Breadcrumb
+
+`renderBreadcrumb(options)` → `string`
+
+```js
+renderBreadcrumb({ items: [{ label: 'Home', href: '/' }, { label: 'Projects', href: '/projects' }, { label: 'Alpha' }] })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `Array<{ label, href? }>` | `[]` | The last item is rendered as plain text; the others as links |
+| `separator` | `string` | `'/'` | Rendered `aria-hidden` after each link |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<nav data-bn="breadcrumb" aria-label="Breadcrumb">
+  <ol data-bn="breadcrumb-list">
+    <li data-bn="breadcrumb-item"><a href="/">Home</a><span data-bn="breadcrumb-separator" aria-hidden="true">/</span></li>
+    <li data-bn="breadcrumb-item" aria-current="page">Alpha</li>
+  </ol>
+</nav>
+```
+
+## List Group
+
+`renderListGroup(options)` → `string`
+
+The inset grouped list — the shape platform settings and index pages are built from (the iOS grouped list is the reference form), for rows that are facts and links rather than data. An optional section heading and explanatory footer frame one raised surface; rows with an `href` are links and grow a chevron, rows without one are facts and can carry a `value` on the trailing edge. Hairline separators are inset to the label edge, so the rows read as one surface, not a stack of cards.
+
+```js
+renderListGroup({
+  header: 'Packages',
+  footer: 'Every package has a generated reference.',
+  items: [
+    { label: '@basenative/runtime', href: '/docs/runtime', value: 'core' },
+    { label: 'Version', value: '2.2.0' },
+  ],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `header` | `string` | — | Section heading; escaped text |
+| `headingLevel` | `2 \| 3 \| 4` | `2` | The heading's level |
+| `footer` | `string` | — | Explanatory text under the surface; escaped |
+| `items` | `Array<{ label, href?, value?, icon?, current? }>` | `[]` | `label`/`value` are escaped text, `href` an escaped attribute, `icon` an HTML slot (an SVG glyph): not escaped; `current` (with an `href`) marks the row `aria-current="page"` |
+| `label` | `string` | — | The section's `aria-label`, used when no header is given |
+| `attrs` | `string` | `''` | Extra attributes on the `<section>` |
+
+Renders `<section data-bn="list-group">` with an optional `<h2 data-bn="list-group-header">` (level per `headingLevel`), a `<ul data-bn="list-group-rows">` whose rows are `<a data-bn="list-group-row">` (links, with `<span data-bn="list-group-chevron">`) or `<span data-bn="list-group-row">` (facts), each holding `<span data-bn="list-group-label">` and an optional `<span data-bn="list-group-value">`, and an optional `<p data-bn="list-group-footer">`.
+
+## Tooltip
+
+`renderTooltip(options)` → `string`. Popover-API tooltip: a trigger `<button>` with `popovertarget` followed by a `popover` span.
+
+Per the HTML spec, only button-like elements (`<button>`, and `<input
+type="button|submit|reset|image">`) can be popover invokers — a `<span
+popovertarget>` never opens by click or keyboard, in any browser. `trigger`
+is therefore always rendered as one of those elements:
+
+- Plain text, or any markup not already starting with `<button` or `<input`,
+  is wrapped in a fresh `<button type="button">`.
+- A `trigger` that already starts with `<button` or `<input`
+  (case-insensitive) is used **in place**, not wrapped — nesting one
+  interactive element inside another is invalid HTML — and instead gets
+  `data-bn="tooltip-trigger"`, `popovertarget`, `popovertargetaction="toggle"`,
+  `aria-describedby` and `attrs` spliced onto that existing tag.
+
+```js
+renderTooltip({ trigger: 'Hover me', content: 'More information', position: 'bottom' })
+// or, supplying your own invoker:
+renderTooltip({ trigger: '<button type="button">?</button>', content: 'More information', position: 'bottom' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `content` | `string` | — | Tooltip text; escaped (not an HTML slot) |
+| `trigger` | `string` | — | HTML slot: not escaped; pass trusted markup only. Wrapped in a `<button type="button">` invoker unless it already starts with `<button` or `<input` |
+| `position` | `string` | `'top'` | Emitted as `data-position` |
+| `id` | `string` | `bn-tooltip-{n}` | Popover id |
+| `attrs` | `string` | `''` | Extra attributes spliced onto the trigger invoker |
+
+Renders, for a plain-text or non-invoker `trigger`:
+
+```html
+<button type="button" data-bn="tooltip-trigger" popovertarget="id" popovertargetaction="toggle" aria-describedby="id">Hover me</button><span data-bn="tooltip" id="id" popover data-position="bottom" role="tooltip">More information</span>
+```
+
+or, for `trigger: '<button type="button">?</button>'`:
+
+```html
+<button data-bn="tooltip-trigger" popovertarget="id" popovertargetaction="toggle" aria-describedby="id" type="button">?</button><span data-bn="tooltip" id="id" popover data-position="bottom" role="tooltip">More information</span>
+```
+
+Accessibility: `role="tooltip"`; the trigger is always a real button-like invoker, so it is reachable by Tab and toggles the popover natively on click or Enter/Space; `aria-describedby` on the trigger points at the tooltip id.
+
+## Dropdown Menu
+
+`renderDropdownMenu(options)` → `string`. Popover-API menu: open, Escape and light dismiss need no script. Pair with `initDropdownMenu` on the client for the arrow keys and close-on-select.
+
+```js
+renderDropdownMenu({
+  trigger: 'Actions',
+  items: [
+    { label: 'Rename', action: 'rename', shortcut: 'F2' },
+    { separator: true },
+    { label: 'Delete', action: 'delete', disabled: true },
+  ],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `trigger` | `string` | — | Trigger button HTML |
+| `items` | `Array<{ label, action?, icon?, shortcut?, disabled? } \| { separator: true }>` | `[]` | `action` becomes `data-action` |
+| `position` | `string` | `'bottom-start'` | Emitted as `data-position` |
+| `id` | `string` | `bn-dropdown-{n}` | Popover id |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="dropdown">
+  <button data-bn="dropdown-trigger" popovertarget="bn-dropdown-x" type="button">Actions</button>
+  <div data-bn="dropdown-menu" id="bn-dropdown-x" popover data-position="bottom-start" role="menu">
+    <button data-bn="dropdown-item" role="menuitem" data-action="rename" type="button">Rename<span data-bn="dropdown-shortcut">F2</span></button>
+    <hr data-bn="dropdown-separator" role="separator">
+    <button data-bn="dropdown-item" role="menuitem" data-action="delete" aria-disabled="true" type="button">Delete</button>
+  </div>
+</div>
+```
+
+Accessibility: `role="menu"`/`menuitem`/`separator`; disabled items use `aria-disabled` (they stay focusable). Arrow-key navigation comes from `initDropdownMenu`.
+
+### `initDropdownMenu(root, options?)` → `DropdownMenuController`
+
+```js
+import { initDropdownMenu } from '@basenative/components';
+
+const actions = initDropdownMenu(document.querySelector('[data-bn="dropdown"]'), {
+  onSelect: action => run(action), // after the popover hides
+});
+actions.open();   // showPopover(); focus lands on the first item
+actions.close();
+actions.isOpen();
+actions.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `onSelect` | `(action, item) => void` | — | Called with the activated item's `data-action`; `aria-disabled` items do not activate |
+
+When the popover opens (its `toggle` event) focus moves to the first item — or the last, when it was opened with ArrowUp on the trigger. ArrowDown / ArrowUp move between items, wrapping at the ends; Home / End go to the first / last; ArrowDown / ArrowUp on the trigger open the menu. Disabled items stay in the arrow order but do not activate. Activating an item (its click, so Enter / Space too) hides the popover, which returns focus to the trigger natively.
+
+## Command Palette
+
+`renderCommandPalette(options)` → `string`. Cmd+K style `<dialog>` with a search input and grouped commands. Pair with `initCommandPalette` on the client — the footer's "↑↓ Navigate / ↵ Select / Esc Close" names the keys it binds.
+
+```js
+renderCommandPalette({
+  commands: [
+    { id: 'new', label: 'New file', shortcut: '⌘N', group: 'File' },
+    { id: 'theme', label: 'Toggle theme', group: 'View' },
+  ],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `commands` | `Array<{ id?, label, action?, group?, icon?, shortcut? }>` | `[]` | Grouped by `group` (default `'Commands'`); `data-action` is `action ?? id`; each item gets `id="{id}-item-{n}"` |
+| `placeholder` | `string` | `'Type a command...'` | |
+| `open` | `boolean` | `false` | Adds `open` |
+| `id` | `string` | `bn-command-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<dialog data-bn="command-palette" id="bn-command-x">
+  <div data-bn="command-header"><input data-bn="command-input" type="text" placeholder="Type a command..." role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="bn-command-x-list" autocomplete="off" autofocus></div>
+  <div data-bn="command-list" id="bn-command-x-list" role="listbox">
+    <div data-bn="command-group" role="group" aria-label="File">
+      <div data-bn="command-group-label">File</div>
+      <button data-bn="command-item" role="option" id="bn-command-x-item-0" data-action="new" type="button"><span data-bn="command-label">New file</span><kbd data-bn="command-shortcut">⌘N</kbd></button>
+    </div>
+  </div>
+  <div data-bn="command-footer"><span>↑↓ Navigate</span><span>↵ Select</span><span>Esc Close</span></div>
+</dialog>
+```
+
+Accessibility: `combobox` input (`aria-controls` the list, `aria-activedescendant` the highlighted item once initialised) over a `listbox` of `option`s grouped with labelled `group`s. Filtering and the keys come from `initCommandPalette`.
+
+### `initCommandPalette(dialog, options?)` → `CommandPaletteController`
+
+```js
+import { initCommandPalette } from '@basenative/components';
+
+const palette = initCommandPalette(document.querySelector('[data-bn="command-palette"]'), {
+  onSelect: action => commands[action](), // after the dialog closes
+  hotkey: 'Mod+K',                         // Meta or Ctrl + K toggles it
+});
+palette.open();        // clears the filter, showModal(), focuses the input
+palette.filter('set'); // returns the visible items
+palette.active();      // data-action of the highlighted command, or null
+palette.close();
+palette.destroy();
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `onSelect` | `(action, item) => void` | — | Called with the activated command's `data-action` after the dialog closes |
+| `hotkey` | `string` | — | e.g. `'Mod+K'` (Mod is Meta or Ctrl); a document-level keydown that toggles the palette |
+
+Typing in the input filters the commands by case-insensitive substring of their label — non-matching items and then-empty groups are `hidden` — and the first visible command becomes the highlighted one (`aria-selected` on the item, `aria-activedescendant` on the input). ArrowDown / ArrowUp move the highlight through the visible commands, wrapping at the ends; Enter or a click activates one, which closes the dialog and calls `onSelect`; Escape closes without selecting. Items without an `id` get one on init. Items are re-queried on every interaction.
+
+## Calendar
+
+`renderCalendar(options)` → `string`. A CSS-grid week view (7 days from `startDate`) with one drop-zone slot per hour and draggable event blocks.
+
+```js
+renderCalendar({
+  startDate: '2025-06-02',
+  events: [{ id: '1', title: 'Site visit', start: '2025-06-02T09:00', end: '2025-06-02T11:00', assignee: 'Ana' }],
+  hours: { start: 7, end: 19 },
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `startDate` | `string` (YYYY-MM-DD) | — | First rendered day |
+| `events` | `CalendarEvent[]` | `[]` | `{ id, title, start, end, status?, color?, assignee? }` |
+| `hours` | `{ start?, end? }` | derived | Rendered hour range. Whichever bound is omitted is derived from the events: 7 (or 19) widened to cover the earliest start / latest end of every rendered day segment, clamped to 0–24 |
+| `timeZone` | `string` | runtime zone | IANA zone used to bucket, position and time-format events |
+| `toLocalDate` | `(value) => 'YYYY-MM-DD'` | — | Overrides only the day an event datetime is bucketed into (and the `now` → today mapping); hour rows still come from `timeZone` / local getters |
+| `now` | `Date \| string \| number \| null` | `new Date()` | Instant marked as today; `null` renders no marker |
+| `emptyMessage` | `string` | `'No events'` | Shown when `events` is empty |
+| `id` | `string` | `bn-calendar-{n}` | |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="calendar" id="bn-calendar-x">
+  <div data-bn="calendar-grid" style="--bn-calendar-hours: 12; --bn-calendar-cols: 7;">
+    <div data-bn="calendar-corner"></div>
+    <div data-bn="calendar-day-header" data-date="2025-06-02">Mon 6/2</div>…
+    <div data-bn="calendar-day-header" data-date="2025-06-04" data-today aria-current="date">Wed 6/4</div>…
+    <div data-bn="calendar-time-gutter"><div data-bn="calendar-time-label" data-hour="7" style="grid-row: 1">7am</div>…</div>
+    <div data-bn="calendar-day-column" data-date="2025-06-02" style="grid-column: 2">
+      <div data-bn="calendar-slot" data-date="2025-06-02" data-hour="7" style="grid-row: 1"></div>…
+      <div data-bn="calendar-event" draggable="true" tabindex="0" aria-describedby="bn-calendar-x-help" data-date="2025-06-02" data-hour="9" data-minute="0" data-event-id="1" title="Site visit" style="grid-row: 3 / span 2;">
+        <span data-bn="calendar-event-title">Site visit</span><span data-bn="calendar-event-assignee">Ana</span><span data-bn="calendar-event-time">9:00 AM – 11:00 AM</span>
+      </div>
+    </div>
+    <div data-bn="calendar-day-column" data-date="2025-06-04" data-today style="grid-column: 4">…</div>
+  </div>
+  <p data-bn="calendar-help" id="bn-calendar-x-help">Press Enter or Space to pick up, arrow keys to move by time and day, Enter to drop, Escape to cancel; or tap the event, then a time slot.</p>
+  <div data-bn="calendar-status" aria-live="polite" aria-atomic="true"></div>
+</div>
+```
+
+Every event is focusable (`tabindex="0"`) and `aria-describedby` the calendar's one visually hidden `[data-bn="calendar-help"]` node (`<id>-help`); `data-date` / `data-hour` / `data-minute` carry its visible start for the keyboard path, and `[data-bn="calendar-status"]` is the polite live region `initCalendarDragDrop` announces pick-up, moves and drops in. Both nodes are hidden with the `[data-bn="sr-only"]` recipe.
+
+**Rows.** The time gutter and each day column are subgrids spanning the outer grid's hour rows, so hour `h` is subgrid row `h - hours.start + 1` (7am is row 1 on the default 7–19 grid) for labels, slots and events alike. An event's `grid-row` start and span are always integers; an event that does not start or end on the hour also carries `--bn-calendar-event-rows`, `--bn-calendar-event-lead` and `--bn-calendar-event-trail` (the fraction of an hour trimmed off the top and bottom of its row span), which `components.css` turns into an inset offset — a 9:30–10:30 event renders `grid-row: 3 / span 2; --bn-calendar-event-rows: 2; --bn-calendar-event-lead: 0.5; --bn-calendar-event-trail: 0.5;`.
+
+**Day bucketing.** Events are placed by the local calendar date and hour of their parsed `start`/`end` — never by string prefix — so the UTC ISO timestamps APIs return (`2025-06-03T03:00:00Z`) land on the day they fall on in the runtime's zone (or in `timeZone`), and the local-time strings `createCalendarState().moveEvent()` produces round-trip correctly. Events whose `start` cannot be parsed are skipped.
+
+**Multi-day events.** An event whose end date is later than its start date is repeated in every day column it covers, clipped to each day (`start → 24:00`, `0:00 → 24:00`, …, `0:00 → end`); each segment carries the same `data-event-id` plus `data-continues="after" | "both" | "before"`, and `components.css` squares off the continuing edge. An event ending exactly at midnight gets no segment on the following day.
+
+**Today.** The header and column whose date matches `now` get `data-today` (the header also gets `aria-current="date"`), styled through `--bn-calendar-today-header-bg`, `--bn-calendar-today-text` and `--bn-calendar-today-bg`. Pass `now` explicitly for deterministic SSR output (`null` disables the marker).
+
+Event times are formatted with `toLocaleTimeString` in the server's locale, in `timeZone` when given. `status` becomes `data-status` — `scheduled`, `in_progress`, `completed`, `invoiced`, `paid` and `cancelled`/`canceled` are styled through the semantic status tokens (`--bn-calendar-event-color` / `--bn-calendar-event-bg`), and `color` overrides `--bn-calendar-event-color`.
+
+## Pipeline Block
+
+`renderPipelineBlock(options)` → `string`. A draggable card for use outside the calendar (e.g. an unscheduled-jobs sidebar); dropping it on a calendar slot reports `sourceType: 'pipeline'`.
+
+```js
+renderPipelineBlock({ id: 'job-7', title: 'Install boiler', subtitle: 'Acme Corp', status: 'pending' })
+```
+
+Options: `id` (required, `data-block-id`), `title` (required), `subtitle`, `status` (`data-status`), `attrs`. Renders `<div data-bn="pipeline-block" draggable="true" tabindex="0" data-block-id="job-7" data-status="pending"><span data-bn="pipeline-block-title">…</span><span data-bn="pipeline-block-subtitle">…</span></div>`. The block is focusable so it can be picked up from the keyboard; pass `attrs: 'aria-describedby="<calendar id>-help"'` to point it at the calendar's instructions.
+
+## Pipeline
+
+`renderPipeline(options)` → `string`. Kanban board: columns of draggable cards.
+
+```js
+renderPipeline({
+  columns: [{ id: 'new', title: 'New leads' }, { id: 'won', title: 'Won' }],
+  cards: [{
+    id: 'c1', columnId: 'new', title: 'Acme Corp', subtitle: '$12k', description: 'Boiler replacement',
+    status: 'qualified', badge: 'Qualified', badgeVariant: 'success',
+    actions: renderButton('Convert', { size: 'sm', attrs: 'data-action="convert" data-id="c1"' }),
+  }],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `columns` | `Array<{ id, title, count? }>` | `[]` | `count` overrides the number shown in the header (default: cards placed in the column) |
+| `cards` | `Array<{ id, columnId, title, subtitle?, description?, status?, badge?, badgeVariant?, actions?, footer? }>` | `[]` | Cards are placed by `columnId`. `badge` is escaped text rendered through `renderBadge` (`badgeVariant` default `'default'`); `actions` and `footer` are HTML slots: not escaped; pass trusted markup only |
+| `id` | `string` | `bn-pipeline-{n}` | Prefixes every column heading id |
+| `emptyMessage` | `string` | `'No items'` | Shown inside a column with no cards |
+| `attrs` | `string` | `''` | |
+
+Renders:
+
+```html
+<div data-bn="pipeline" id="bn-pipeline-x">
+  <section data-bn="pipeline-column" data-column-id="new" aria-labelledby="bn-pipeline-x-column-new">
+    <header data-bn="pipeline-column-header" id="bn-pipeline-x-column-new"><span data-bn="pipeline-column-title">New leads</span><span data-bn="pipeline-column-count">1</span></header>
+    <div data-bn="pipeline-column-cards">
+      <article data-bn="pipeline-card" data-card-id="c1" draggable="true" tabindex="0" aria-describedby="bn-pipeline-x-help" data-status="qualified" title="Acme Corp">
+        <div data-bn="pipeline-card-title">Acme Corp</div><span data-bn="badge" data-variant="success">Qualified</span>
+        <div data-bn="pipeline-card-subtitle">$12k</div><div data-bn="pipeline-card-description">…</div>
+        <div data-bn="pipeline-card-actions">…</div>
+        <footer data-bn="pipeline-card-footer">…</footer>
+      </article>
+    </div>
+  </section>
+  <p data-bn="pipeline-help" id="bn-pipeline-x-help">Press Enter or Space to pick up, Up and Down to reorder, Left and Right to change column, Enter to drop, Escape to cancel; or tap the card, then a column.</p>
+  <div data-bn="pipeline-status" aria-live="polite" aria-atomic="true"></div>
+</div>
+```
+
+Every card is focusable (`tabindex="0"`) and `aria-describedby` the wrapper's one visually hidden `[data-bn="pipeline-help"]` node (`<id>-help`); `[data-bn="pipeline-status"]` is the polite live region `initPipelineDragDrop` announces in.
+
+Accessibility: each column is a `<section>` labelled by its header (`aria-labelledby` → the header's id). `status` becomes `data-status` on the card (and on `renderPipelineBlock` blocks): `components.css` draws a start-edge accent from the same semantic `-600` tokens the badges use — info for `new`/`open`/`contacted`/`scheduled`/`sent`, success for `qualified`/`won`/`converted`/`completed`/`paid`/`accepted`/`active`, warning for `proposal_sent`/`negotiating`/`in_progress`/`invoiced`/`pending`/`paused`, error for `lost`/`rejected`/`declined`/`cancelled`/`canceled` — and any other status falls back to `--bn-pipeline-status-color`.
+
+## Drag and Drop
+
+`initCalendarDragDrop(container, { onDrop, dragSource?, snapMinutes? })` and `initPipelineDragDrop(container, { onCardMove })` make a rendered `[data-bn="calendar"]` or `[data-bn="pipeline"]` movable. Each hears three gestures and reports every one of them through the same callback with the same payload, so a consumer wires one function. Both return `{ destroy() }`, which unbinds all three.
+
+- **Drag and drop** — native HTML5 `dragstart` … `drop`. The fastest gesture with a mouse.
+- **Select, then place** — one tap or click on an event or card picks it up (it gets `data-picked`; a second tap on it cancels), one tap or click on the target slot or column drops it. This is the single-pointer alternative WCAG 2.5.7 asks for, and the only one touch has: a touch drag fires no drag events.
+- **Keyboard** — events and cards are focusable (`tabindex="0"`). Enter or Space picks the focused one up with the pending target at its own place, marked `data-drop-target`; the arrow keys move the target; Enter or Space drops; Escape cancels. On the calendar, ArrowUp / ArrowDown move by `snapMinutes` and ArrowLeft / ArrowRight by a day, within the rendered slots. On the pipeline, ArrowUp / ArrowDown move the position and ArrowLeft / ArrowRight the column.
+
+Each pick-up, move and drop is announced in the component's polite live region (`[data-bn="calendar-status"]` / `[data-bn="pipeline-status"]`), and every event and card is `aria-describedby` the component's one instruction node (`[data-bn="calendar-help"]` / `[data-bn="pipeline-help"]`), so the gesture is discoverable by a screen-reader user.
+
+```js
+import { initCalendarDragDrop, initPipelineDragDrop } from '@basenative/components';
+
+const cal = initCalendarDragDrop(document.querySelector('[data-bn="calendar"]'), {
+  onDrop: ({ eventId, date, hour, minute, datetime, sourceType }) => {
+    // sourceType: 'event' | 'pipeline'; datetime: 'YYYY-MM-DDTHH:MM' → new Date(datetime)
+  },
+  dragSource: document.querySelector('[data-bn-sidebar]'), // optional palette of renderPipelineBlock cards
+  snapMinutes: 15,
+});
+const board = initPipelineDragDrop(document.querySelector('[data-bn="pipeline"]'), {
+  onCardMove: ({ cardId, targetColumnId, position }) => state.moveCard(cardId, targetColumnId, position),
+});
+cal.destroy(); board.destroy();
+```
+
+While dragging, the dragged element gets `data-dragging` and the hovered slot/column gets `data-drop-target`; while picked, the element gets `data-picked` and the keyboard's pending slot/column gets `data-drop-target`. All are cleared on drop, cancel and `dragend`; a drag started while something is picked cancels the pick. `eventId` is the `data-event-id` of a calendar event or the `data-block-id` of a pipeline block.
+
+**Calendar drops.** `date` and `hour` identify the slot; `minute` is the pointer's offset within the slot (for a drop or a tap), snapped down to `snapMinutes` (default 15; `1` reports exact minutes; `0` when no geometry is available), or the minute chosen with the arrow keys; `datetime` is `${date}T${HH}:${MM}`, a local datetime string ready for `new Date()`. The keyboard path starts from the event's own `data-date` / `data-hour` / `data-minute`; a pipeline block, which has no slot of its own, starts from the first rendered slot.
+
+**Pipeline drops.** `position` is the index the card should occupy among the target column's cards after the move (itself excluded): the index of the card under the pointer, one more when the pointer is in that card's lower half, or the column's card count when dropped on empty space — a tap on a card or on empty space reports the same. From the keyboard it is the position the arrow keys chose. It is what `createPipelineState().moveCard(cardId, targetColumnId, position)` expects.
+
+**External drag sources.** `dragSource` is an element whose `dragstart`, `click` and `keydown` events also supply payloads — the documented sidebar of `renderPipelineBlock` cards, which lives outside the calendar and would otherwise never be heard. It defaults to the container, may be any element (including an ancestor of the container — its own events are not handled twice), and is unbound by `destroy()`.
+
+## Calendar State
+
+`createCalendarState(options?)` → `CalendarState`. Framework-free event store with collision detection; works on the server (no DOM, no signals — each getter returns a fresh copy).
+
+```js
+import { createCalendarState } from '@basenative/components';
+
+const cal = createCalendarState({ startDate: '2025-06-02', initialEvents: [] });
+cal.addEvent({ id: '1', title: 'Meeting', start: '2025-06-02T09:00', end: '2025-06-02T10:00' });
+cal.onEventMove = ({ eventId, date, hour }) => save(eventId, date, hour);
+cal.moveEvent('1', '2025-06-03', 14); // null on collision (also calls onError)
+```
+
+| Member | Description |
+|--------|-------------|
+| `events()` / `selectedDate()` / `dragState()` | Current snapshot; `selectedDate()` starts as `startDate` |
+| `getEvent(id)` | Event or `undefined` |
+| `addEvent(event)` | Stores the event (`status` defaults to `'scheduled'`) and returns the stored copy |
+| `removeEvent(id)` | `true` when removed |
+| `moveEvent(id, date, hour, durationMinutes?)` | Re-schedules keeping the duration; returns the updated event or `null` on collision / unknown id |
+| `updateEventProperties(id, overrides)` | Shallow merge; returns the updated event or `null` |
+| `setDragState(id \| null)` | Stores the dragged id and calls `onDragStateChange` |
+| `clearEvents()` | |
+| `getEventsInRange(start, end = start)` / `getEventsForDay(date)` | Events overlapping the inclusive date range |
+| `onEventChange`, `onEventMove`, `onError`, `onDragStateChange` | Assignable callbacks, initially `null` |
+
+`onEventChange` receives `{ type: 'add' \| 'remove' \| 'move' \| 'update', event }` or `{ type: 'clear' }`; `onError` receives `{ type: 'collision', eventId, targetDate, targetHour }`. The `hours` option listed in the source JSDoc is accepted but ignored.
+
+Helpers: `eventsCollide(a, b)` → `boolean` (half-open interval overlap of `start`/`end`), `updateEvent(event, overrides)` → merged copy, `getEventDuration(start, end)` → whole minutes.
+
+### Month paging
+
+The trinity `calendar` (`section[variant="month"]`) pages itself. With no `bodyHtml`/`prevHtml`/`nextHtml` slots it renders its own grid from its `year`/`month` state — a `<table>` with `scope="col"` weekday headers, one `<time datetime>` per day, out-of-month days in `<small>`, `aria-current="date"` on `today` and `aria-current="true"` on `selected` — and its own Previous/Next buttons. Each button's accessible name says where it goes ("Next month, November 2026"); the title is a polite live region, so the new month is announced. `onMonthChange({ year, month })` fires after each page. Passing the slots keeps the caller-rendered markup (the schedule variant is unchanged).
+
+| Prop | Default | |
+|------|---------|--|
+| `year` / `month` | current | `month` is 1–12; the year rolls over |
+| `today` / `selected` | — | ISO dates |
+| `prevLabel` / `nextLabel` | `'Previous'` / `'Next'` | Visible button text |
+| `onMonthChange` | — | `({ year, month }) => void` |
+
+## Pipeline State
+
+`createPipelineState(options?)` → `PipelineState`. Kanban store matching `renderPipeline`.
+
+```js
+import { createPipelineState } from '@basenative/components';
+
+const board = createPipelineState({
+  columns: [{ id: 'new', title: 'New' }, { id: 'won', title: 'Won' }],
+  initialCards: [{ id: 'c1', columnId: 'new', title: 'Acme' }],
+});
+board.onCardMove = ({ cardId, targetColumnId, position }) => save(cardId, targetColumnId, position);
+board.moveCard('c1', 'won', 0); // first in the column
+```
+
+| Member | Description |
+|--------|-------------|
+| `columns()` / `cards()` / `dragState()` | Current snapshot |
+| `getCard(id)` / `getColumn(id)` | |
+| `addCard(card)` | Requires `id`, `columnId`, `title` |
+| `removeCard(id)` | `true` when removed |
+| `moveCard(id, targetColumnId, position?)` | Moves the card, inserting it at `position` among the target column's cards (as reported by `initPipelineDragDrop`) or keeping its place in the overall order when omitted; returns the updated card, or `null` when the card or column is unknown |
+| `reorderCards(columnId, cardOrder)` | Sorts that column's cards by the given id order |
+| `updateCard(id, overrides)` | Shallow merge |
+| `getCardsInColumn(columnId)` | |
+| `setDragState(id \| null)` | |
+| `onCardChange`, `onCardMove`, `onDragStateChange` | Assignable callbacks, initially `null` |
+
+`onCardChange` receives `{ type: 'add' \| 'remove' \| 'move' \| 'update', card }` or `{ type: 'reorder', columnId, cardOrder }`.
+
+## Layout Grid
+
+`renderLayoutGrid(options?)` → `string` and `layoutGridStyles()` → `string`. A CSS-grid canvas for `@basenative/visual-builder`; cells become draggable when `editable` is set.
+
+```js
+renderLayoutGrid({
+  columns: 12,
+  cells: [{ id: 'hero', colSpan: 12, content: '<h1>Hero</h1>' }, { id: 'side', colSpan: 4 }, { id: 'main', colSpan: 8 }],
+  editable: true,
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `columns` | `number` | `12` | `grid-template-columns: repeat(n, 1fr)` |
+| `gap` | `string` | `'1rem'` | |
+| `minCellHeight` | `string` | `'4rem'` | |
+| `cells` | `Array<{ id?, label?, content?, colSpan?, rowSpan? }>` | `[]` | `content` falls back to `label`, then `Cell N`; `id` falls back to `cell-{index}` |
+| `id` | `string` | `'layout-grid'` | |
+| `editable` | `boolean` | `false` | Adds `draggable="true"` to every cell |
+
+Renders `<div data-bn="layout-grid" id="layout-grid" style="display:grid;grid-template-columns:repeat(12,1fr);gap:1rem">` containing `<div data-bn="layout-cell" data-cell-id="hero" style="grid-column: span 12; grid-row: span 1; min-height: 4rem" draggable="true">…</div>` per cell. This component uses inline `style` for its grid geometry and is not covered by `components.css`; inject `layoutGridStyles()` into a `<style>` tag. `attrs` is not supported.
+
+## Site Nav
+
+`renderSiteNav(options)` → `string`
+
+A standalone labelled nav list — the site header's menu contract without the header around it, for secondary navigation (sidebars, section navs).
+
+```js
+renderSiteNav({
+  label: 'Section',
+  items: [
+    { label: 'Overview', href: '/overview', current: true },
+    { label: 'Details', href: '/details' },
+  ],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `Array<{ label, href, current? }>` | `[]` | Labels are escaped text, hrefs escaped attributes; the `current` item's link gets `aria-current="page"` |
+| `label` | `string` | `'Primary'` | The nav's `aria-label`; escaped |
+| `id` | `string` | — | Emitted as the `<nav>`'s id when present |
+| `attrs` | `string` | `''` | Extra attributes on the `<nav>` |
+
+Renders `<nav data-bn="site-nav" aria-label="…"><ul data-bn="nav-menu">…</ul></nav>`.
+
+## Site Header
+
+`renderSiteHeader(options)` → `string`; `initSiteHeader(root, options?)` → `{ open, close, toggle, destroy }`
+
+The site header: brand link, nav toggle and the primary nav menu. On wide viewports the menu is a row; on narrow ones it collapses behind the toggle button and `initSiteHeader` wires the behaviour — click toggles (`data-open` on the header root, `aria-expanded` on the button), Escape closes and returns focus to the toggle, and a click outside the header closes it. `options.onToggle(open)` fires after each state change.
+
+```js
+renderSiteHeader({
+  brand: { name: 'Greenput' },
+  items: [{ label: 'Features', href: '/features' }, { label: 'Pricing', href: '/pricing', current: true }],
+  actions: '<a href="/start" data-bn="button" data-variant="primary">Get Started</a>',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `brand.name` | `string` | `''` | Escaped text beside the logo |
+| `brand.logo` | `string` | `''` | HTML slot (an SVG mark): not escaped |
+| `brand.href` | `string` | `'/'` | |
+| `brand.label` | `string` | `'<name> home'` | The logo link's `aria-label` |
+| `items` | `Array<{ label, href, current? }>` | `[]` | As Site Nav |
+| `actions` | `string` | `''` | HTML slot rendered as the menu's trailing `<li data-bn="nav-cta">` item |
+| `navLabel` | `string` | `'Primary'` | The nav's `aria-label`; escaped |
+| `id` | `string` | `nextId('site-header')` | The menu id derives from it (`{id}-menu`) |
+| `attrs` | `string` | `''` | Extra attributes on the `<header>` |
+
+Renders `<header data-bn="site-header">` wrapping `<nav data-bn="site-nav">` with `<a data-bn="nav-logo">`, `<button data-bn="nav-toggle" aria-expanded="false" aria-controls="{id}-menu">` and `<ul id="{id}-menu" data-bn="nav-menu">`. The toggle is a real button — keyboard-operable and announced — not a checkbox hack.
+
+## App Nav
+
+`renderAppNav(options)` → `string`; `initAppNav(root, options?)` → `{ open, close, toggle, destroy }`
+
+The primary nav for app-shaped surfaces — one nav whose layout follows the size class, in the pattern the iPhone Duo's app demos established. At phone class it is a fixed bottom bar: icon over label, brand and `actions` hidden. At the unfolded class — the viewport spanning a vertical fold (`spanning: single-fold-vertical`), or at least 939px wide (58.6875rem, the Duo inner display's short edge; the `duoInner` breakpoint) — the same element is a fixed side rail: brand at the top, icon-and-label rows, the `actions` slot at the foot, content scrolling beside it.
+
+The adaptation is CSS alone (the "App Nav" section of `components.css`), so there is no second markup variant to keep in sync: the DOM never changes when the class does, which is what a fold is. Focus, scroll position and `aria-current` survive unfolding untouched because nothing re-renders. The bar is fixed in both modes; a page that renders the nav as a direct child of `[data-bn="page"]` (or of `body`) gets its scroll clearance from the same CSS rules, sized by the `--bn-size-app-nav-bar` / `--bn-size-nav-rail` tokens the bar itself reads. The surface itself is a material — it reads the `--bn-material-bg` / `--bn-material-backdrop` / `--bn-material-shadow` tokens, opaque by default, so a token layer can glass the bar and rail without touching component CSS.
+
+A phone-class bar holds a handful of destinations, never a cram. Pass `overflow` and every item past `overflow.after` (default 4) is marked `data-bn-overflow` and leaves the bar; a More button (`<button data-bn="app-nav-more">`, an ellipsis glyph unless `overflow.icon` says otherwise) opens a sheet (`<div data-bn="app-nav-sheet">`) listing exactly those items. `initAppNav` wires the sheet — click toggles (`data-open` on the nav root, `aria-expanded` on the button, the sheet's `hidden` lifted), Escape closes and returns focus to the button, a click outside closes; `options.onToggle(open)` fires after each change. The rail is under no capacity pressure, so there the button and sheet are never displayed, open or not, and every item is back in the list. Without `overflow` — or with few enough items — the output is exactly the plain nav and there is nothing to wire.
+
+```js
+renderAppNav({
+  brand: { name: 'GreenPut' },
+  items: [
+    { label: 'Home', href: '/', icon: '<svg>…</svg>', current: true },
+    { label: 'Jobs', href: '/jobs', icon: '<svg>…</svg>' },
+  ],
+  actions: '<a href="/start" data-bn="button" data-variant="primary">Get Started</a>',
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `brand.name` | `string` | `''` | Escaped text beside the logo (rail mode only) |
+| `brand.logo` | `string` | `''` | HTML slot (an SVG mark): not escaped |
+| `brand.href` | `string` | `'/'` | |
+| `brand.label` | `string` | `'<name> home'` | The logo link's `aria-label` |
+| `items` | `Array<{ label, href, icon?, current? }>` | `[]` | Labels are escaped text, hrefs escaped attributes; `icon` is an HTML slot (an SVG glyph): not escaped; the `current` item's link gets `aria-current="page"` |
+| `actions` | `string` | `''` | HTML slot rendered after the items (the rail's foot; hidden at phone class) |
+| `overflow` | `{ after?, label?, icon? }` | — | The phone-class More overflow: `after` (default `4`) items stay in the bar, the rest move to the More sheet; `label` (default `'More'`) is escaped text; `icon` is an HTML slot (an SVG glyph): not escaped, defaults to an ellipsis, `''` for none |
+| `label` | `string` | `'Primary'` | The nav's `aria-label`; escaped |
+| `id` | `string` | — | Emitted as the `<nav>`'s id when present; the sheet's id derives from it (`{id}-sheet`) |
+| `attrs` | `string` | `''` | Extra attributes on the `<nav>` |
+
+Renders `<nav data-bn="app-nav">` with an optional `<a data-bn="app-nav-brand">`, a `<ul data-bn="app-nav-list">` (each link holds a `<span data-bn="app-nav-icon">` when the item has an icon, and a `<span data-bn="app-nav-label">`), an optional `<div data-bn="app-nav-actions">`, and — with `overflow` and more items than it keeps — a `<button data-bn="app-nav-more" aria-expanded="false" aria-haspopup="true" aria-controls="{sheet-id}">` plus a `<div data-bn="app-nav-sheet" id="{sheet-id}" hidden>` holding a `<ul data-bn="app-nav-sheet-list">` of the overflow items.
+
+## Site Footer
+
+`renderSiteFooter(options)` → `string`
+
+Site footer: brand block, grouped link columns and a legal bar. Each column renders as a `<nav aria-label>` with an `<h2>` heading, so the link groups are navigable landmarks.
+
+```js
+renderSiteFooter({
+  brand: { name: 'Greenput', tagline: 'The operating system for trade contractors.' },
+  columns: [{ heading: 'Product', links: [{ label: 'Features', href: '/features' }] }],
+  legal: { text: '© 2026 Greenput', links: [{ label: 'Privacy', href: '/privacy' }] },
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `brand` | `{ name?, logo?, tagline? }` | `{}` | Name and tagline are escaped text; `logo` is an HTML slot |
+| `columns` | `Array<{ heading, label?, links: Array<{ label, href, external? }> }>` | `[]` | `label` is the column nav's `aria-label` (defaults to the heading); `external` links get `rel="noopener noreferrer"` |
+| `legal.text` | `string` | `''` | The copyright line; escaped |
+| `legal.links` | `Array<{ label, href, external? }>` | `[]` | Rendered in the `<nav data-bn="footer-legal">` |
+| `attrs` | `string` | `''` | Extra attributes on the `<footer>` |
+
+Renders `<footer data-bn="site-footer">` with `<div data-bn="footer-inner">` (brand + columns) and, when `legal` is given, `<div data-bn="footer-bottom">` holding a `[data-bn="container"]` row.
+
+## App Shell
+
+`renderAppShell(options)` → `string`
+
+The minimal page shell: skip link, header slot, `<main>` and footer slot. The shell owns the skip link and the main landmark's id so the two can never drift apart.
+
+```js
+renderAppShell({
+  header: renderSiteHeader({ brand: { name: 'Greenput' } }),
+  main: '<p>Page body</p>',
+  footer: renderSiteFooter({ legal: { text: '© 2026 Greenput' } }),
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `header` | `string` | `''` | HTML slot: not escaped |
+| `main` | `string` | `''` | HTML slot: not escaped |
+| `footer` | `string` | `''` | HTML slot: not escaped |
+| `skipText` | `string` | `'Skip to main content'` | Escaped |
+| `mainId` | `string` | `'main-content'` | The `<main>` id the skip link targets |
+| `attrs` | `string` | `''` | Extra attributes on the `<main>` |
+
+## Hero
+
+`renderHero(options)` → `string`
+
+The opening section of a marketing page. Two shapes: the default hero (badge, heading, lead, actions, social proof, optional visual beside the copy) and the compact page hero (`variant: 'page'`, root contract `page-hero`) that opens interior pages with just a heading and a lead. The section is labelled by its own heading, whose id derives from the hero id.
+
+```js
+renderHero({
+  badge: 'Now in beta',
+  heading: 'The Operating System<br />for Trade Contractors',
+  leadText: 'Manage leads, schedule jobs and get paid — from one dashboard.',
+  actions: '<a href="/start" data-bn="button" data-variant="primary" data-size="lg">Get Started</a>',
+  proof: 'Built with working contractors.',
+})
+renderHero({ variant: 'page', headingText: 'Features', leadText: 'Everything you need to run the business.' })
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `badge` | `string` | `''` | Escaped text in the pill above the heading |
+| `heading` | `string` | `''` | HTML slot: not escaped |
+| `headingText` | `string` | — | Escaped text; wins over `heading` |
+| `lead` | `string` | `''` | HTML slot: not escaped |
+| `leadText` | `string` | — | Escaped text; wins over `lead` |
+| `actions` | `string` | `''` | HTML slot (button-styled anchors): not escaped |
+| `proof` | `string` | `''` | Escaped text (the social-proof line) |
+| `visual` | `string` | `''` | HTML slot beside the copy: not escaped |
+| `variant` | `'default' \| 'page'` | `'default'` | |
+| `id` | `string` | `nextId('hero')` | The heading id derives from it (`{id}-heading`) |
+| `attrs` | `string` | `''` | Extra attributes on the `<section>` |
+
+## Pricing Card
+
+`renderPricingCard(options)` → `string`; `renderPricingCards(options)` → `string`
+
+One plan: optional badge, name, price, tagline, a check-marked feature list and a call to action. A `featured` plan is stamped `data-featured` and its CTA defaults to the primary variant (ghost otherwise). All copy is escaped text; the CTA href is an escaped attribute. `renderPricingCards({ plans })` renders the list shape — a `<ul data-bn="pricing-cards">` with one `<li data-bn="pricing-card">` per plan — from the same per-plan options.
+
+```js
+renderPricingCard({
+  name: 'Lead Delivery',
+  badge: 'Core revenue model',
+  priceLabel: 'Per delivered lead',
+  tagline: 'You pay for booked jobs, not bought leads.',
+  features: ['Qualified and scheduled', 'Tracked to outcome'],
+  featured: true,
+  cta: { label: 'Get Started', href: '/start' },
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | `string` | `''` | Plan name (`<h3>`) |
+| `badge` | `string` | `''` | Pill above the name |
+| `priceLabel` | `string` | `''` | The price, in `<strong>` inside `[data-bn="plan-price"]` |
+| `priceNote` | `string` | `''` | Note after the price (e.g. a per-period note) |
+| `tagline` | `string` | `''` | |
+| `features` | `string[]` | `[]` | Rendered with a check glyph in `[data-bn="plan-features"]` |
+| `featured` | `boolean` | `false` | Stamps `data-featured=""` |
+| `cta` | `{ label, href, variant? }` | — | Anchor rendered as a full-width (`data-full`) button |
+| `attrs` | `string` | `''` | Extra attributes on the card |
+
+## Feature Card
+
+`renderFeatureCard(options)` → `string`
+
+Icon, optional tag, title and description for feature grids.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `icon` | `string` | `''` | HTML slot inside the `[data-bn="feature-icon"]` frame: not escaped |
+| `tag` | `string` | `''` | Escaped eyebrow text above the title |
+| `title` | `string` | `''` | Escaped text (`<h3>`) |
+| `text` | `string` | `''` | Escaped description |
+| `body` | `string` | `''` | HTML slot replacing the text paragraph: not escaped |
+| `attrs` | `string` | `''` | Extra attributes on the `<article>` |
+
+## Stat Card
+
+`renderStatCard(options)` → `string`
+
+A value, its label and an optional trend indicator.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `value` | `string` | `''` | Escaped text in `[data-bn="stat-value"]` |
+| `label` | `string` | `''` | Escaped text in `[data-bn="stat-label"]` |
+| `trendText` | `string` | `''` | Escaped text; renders the `[data-bn="stat-growth"]` span when present |
+| `trend` | `'up' \| 'down'` | `'up'` | Stamped as `data-trend` on the trend span |
+| `attrs` | `string` | `''` | Extra attributes on the wrapper |
+
+## FAQ
+
+`renderFaq(options)` → `string`; `renderFaqItem(options)` → `string`
+
+A definition-list FAQ: each entry is a question/answer pair in a `[data-bn="faq-item"]` wrapper. The question is escaped text; the answer is an HTML slot (answers carry links and emphasis), with `answerText` as the escaped alternative that wins when present.
+
+```js
+renderFaq({
+  items: [
+    { question: 'What does it cost?', answerText: 'One price per delivered lead.' },
+    { question: 'When am I charged?', answer: 'When a qualified job is placed into your schedule.' },
+  ],
+})
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `items` | `Array<{ question, answer?, answerText?, attrs? }>` | `[]` | For `renderFaq` |
+| `question` | `string` | `''` | Escaped text (`<dt>`) |
+| `answer` | `string` | `''` | HTML slot (`<dd>`): not escaped |
+| `answerText` | `string` | — | Escaped text; wins over `answer` |
+| `attrs` | `string` | `''` | Extra attributes on the `<dl>` (or the item wrapper for `renderFaqItem`) |
+
+## Design Tokens
+
+See `tokens.css` for the full list. Key tokens:
+
+- Colors: `--bn-color-primary-50` … `--bn-color-primary-900`, `--bn-color-surface(-raised|-muted|-subtle|-inset|-inverse)`, `--bn-color-text(-muted|-subtle|-link|-inverse)`, `--bn-color-border(-strong|-focus)`, status `--bn-color-{info,success,warning,error}(-bg|-border|-text)`
+- Brand foregrounds: `--bn-color-on-primary`, `--bn-color-on-accent`, `--bn-color-on-error`, `--bn-color-toggle-knob` — see [Theming](#theming)
+- Spacing: `--bn-space-0` through `--bn-space-16`
+- Typography: `--bn-font-size-{xs,sm,base,lg,xl}`, `--bn-font-weight-{normal,medium,semibold,bold}`, `--bn-font-family`, `--bn-font-mono`
+- Radius: `--bn-radius-sm`, `--bn-radius-md`, `--bn-radius-lg`, `--bn-radius-xl`, `--bn-radius-full`
+- Shadows: `--bn-shadow-sm`, `--bn-shadow-md`, `--bn-shadow-lg`
+- Focus and stacking: `--bn-focus-ring`, `--bn-z-dropdown`, `--bn-z-modal`, `--bn-z-toast`
+
+## Theming
+
+Dark mode activates via `prefers-color-scheme` or `data-theme="dark"` on any ancestor:
+
+```html
+<html data-theme="dark">
+```
+
+Density: `data-density="compact|default|spacious"` on any ancestor.
+
+### Brand foregrounds
+
+Pointing `--bn-color-primary-*` at a brand color is only half a theme: something has to
+be readable on top of the filled boxes it paints. Four tokens name that foreground, all
+defaulting to white so existing themes are unchanged:
+
+| Token | Default | Applies to |
+|-------|---------|------------|
+| `--bn-color-on-primary` | `--bn-color-white` | primary button label, `[aria-current="page"]` link in pagination, toggle knob when on |
+| `--bn-color-on-accent` | `--bn-color-on-primary` | checkbox tick, radio dot, data-grid checkbox tick (all sit on `--bn-color-accent-600`) |
+| `--bn-color-on-error` | `--bn-color-white` | destructive button label |
+| `--bn-color-toggle-knob` | `--bn-color-white` | toggle knob when off (it rides the neutral track, not the brand) |
+
+### Surfaces
+
+`--bn-color-surface` is both the page and the thing sitting on the page — which is
+only true on a light theme. Two tokens split them, both defaulting to
+`--bn-color-surface` so nothing moves until they are set:
+
+| Token | Applies to |
+|-------|------------|
+| `--bn-color-surface-control` | input, textarea, select, combobox input, checkbox, radio, secondary button |
+| `--bn-color-surface-card` | card |
+
+A dark theme that re-points `--bn-color-surface` at its page background needs these,
+or its filled controls and cards dissolve into the page with only a 1px border left.
+
+Set them whenever the brand hue is light enough that white text fails WCAG 1.4.3 on it:
+
+```css
+:root {
+  --bn-color-primary-600: #e8920a;   /* amber */
+  --bn-color-on-primary: #1a0a00;    /* 7.86:1 — white on this amber is 2.46:1 */
+}
+```
+
+Before these existed the foregrounds were hardcoded to `--bn-color-white`, and the only
+way out was to fork the component CSS or hand-roll the control.

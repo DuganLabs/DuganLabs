@@ -1,0 +1,55 @@
+{
+  "name": "@basenative/cli",
+  "version": "3.3.0",
+  "description": "bn CLI: create, deploy, doctor, and from-jsx (React drafts to BaseNative templates)",
+  "type": "module",
+  "bin": {
+    "bn": "./src/index.js",
+    "create-basenative": "./src/bin/create-basenative.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./manifest": "./manifest.json"
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": {
+    "@basenative/hmr": "workspace:^3.3.0"
+  },
+  "files": [
+    "src",
+    "types",
+    "templates",
+    "manifest.json",
+    "CHANGELOG.md",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": [
+    "./src/index.js"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "cli",
+    "scaffolding",
+    "create-app",
+    "generator",
+    "deploy"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

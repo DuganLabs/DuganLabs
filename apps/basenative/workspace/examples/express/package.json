@@ -1,0 +1,17 @@
+{
+  "name": "basenative-example-express",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@basenative/runtime": "workspace:*",
+    "@basenative/server": "workspace:*",
+    "@basenative/fonts": "workspace:*",
+    "@basenative/icons": "workspace:*",
+    "@basenative/builder": "workspace:*",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@basenative/hmr": "workspace:*"
+  }
+}

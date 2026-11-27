@@ -1,0 +1,44 @@
+section[variant="tabs"] {
+  display: var(--display-tabs);
+  gap: var(--spacing-tabs-gap);
+
+  & > ul {
+    display: var(--display-tabs-list);
+    flex-direction: var(--flex-direction-tabs-list);
+    flex-wrap: var(--flex-wrap-tabs-list);
+    gap: var(--spacing-tabs-list-gap);
+    list-style: var(--list-style-tabs-list);
+    margin: var(--spacing-tabs-list-margin);
+    padding: var(--spacing-tabs-list-padding);
+    border-block-end-width: var(--size-border-tabs-list-block-end);
+    border-block-end-style: var(--border-style-tabs-list-block-end);
+    border-block-end-color: var(--color-border-tabs-list-block-end);
+  }
+
+  & > ul > li > button {
+    background-color: var(--color-bkg-tabs-tab);
+    border-width: var(--size-border-tabs-tab);
+    border-block-end-width: var(--size-border-tabs-tab-block-end);
+    border-block-end-style: var(--border-style-tabs-tab-block-end);
+    border-block-end-color: var(--color-border-tabs-tab-block-end);
+    border-radius: var(--size-radius-tabs-tab);
+    color: var(--color-text-tabs-tab);
+    cursor: var(--cursor-tabs-tab);
+    /* A two-letter tab label is still a 44px-wide target. */
+    min-inline-size: var(--size-target-min);
+    padding-block: var(--spacing-tabs-tab-padding-block);
+    padding-inline: var(--spacing-tabs-tab-padding-inline);
+    font-family: var(--font-tabs-tab-family);
+    font-size: var(--font-tabs-tab-size);
+    font-weight: var(--font-tabs-tab-weight);
+    line-height: var(--font-tabs-tab-leading);
+    letter-spacing: var(--font-tabs-tab-tracking);
+  }
+
+  /* The selected tab declares itself through re-pointed tokens. */
+  & > ul > li > button[aria-selected="true"] {
+    --color-text-tabs-tab: var(--color-text-tabs-tab-selected);
+    --font-tabs-tab-weight: var(--font-tabs-tab-weight-selected);
+    --color-border-tabs-tab-block-end: var(--color-border-tabs-tab-block-end-selected);
+  }
+}

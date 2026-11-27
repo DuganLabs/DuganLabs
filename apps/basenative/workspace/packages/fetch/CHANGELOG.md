@@ -1,0 +1,183 @@
+# @basenative/fetch
+
+## 3.3.0
+
+### Patch Changes
+
+- @basenative/runtime@3.3.0
+
+## 3.2.0
+
+### Patch Changes
+
+- Updated dependencies [67013fd]
+- Updated dependencies [6d735e2]
+  - @basenative/runtime@3.2.0
+
+## 3.1.0
+
+### Patch Changes
+
+- Updated dependencies [f88c30b]
+  - @basenative/runtime@3.1.0
+
+## 3.0.0
+
+### Patch Changes
+
+- @basenative/runtime@3.0.0
+
+## 2.4.0
+
+### Patch Changes
+
+- Updated dependencies [4f3a5bb]
+  - @basenative/runtime@2.4.0
+
+## 2.3.2
+
+### Patch Changes
+
+- Updated dependencies [fca7129]
+  - @basenative/runtime@2.3.2
+
+## 2.3.1
+
+### Patch Changes
+
+- @basenative/runtime@2.3.1
+
+## 2.3.0
+
+### Patch Changes
+
+- @basenative/runtime@2.3.0
+
+## 2.2.0
+
+### Patch Changes
+
+- @basenative/runtime@2.2.0
+
+## 2.1.0
+
+### Patch Changes
+
+- @basenative/runtime@2.1.0
+
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @basenative/runtime@2.0.1
+
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @basenative/runtime@2.0.0
+
+## 0.4.2
+
+### Patch Changes
+
+- ae4701e: First release on npmjs.org. `@basenative/*` moves off GitHub Packages, so installing any package no longer needs a token.
+
+  Every package now declares a `types` condition for each JavaScript subpath, so TypeScript finds the declarations under `moduleResolution: "bundler"` and `"node16"`; ships without its test files; declares `sideEffects` for bundlers; and is published with an npm provenance attestation through trusted publishing.
+
+  The version moves even where the code did not: the same version number already exists on GitHub Packages with different contents, and reusing it on npm would fail a consumer's lockfile integrity check when it switches registry.
+
+- Updated dependencies [ae4701e]
+  - @basenative/runtime@0.6.4
+
+## 0.4.1
+
+### Patch Changes
+
+- 9741b75: Public-readiness metadata sweep, no behavior change:
+
+  - Add a per-package `LICENSE` file (Apache-2.0) — previously only the repo root
+    carried one, so it was never included in the published tarball.
+  - Fix `repository.url`/`homepage`/`bugs.url` to the correct `DuganLabs/BaseNative`
+    casing with a `git+` prefix on `repository.url`, matching npm's convention; add
+    the `bugs` field to `@basenative/eslint-config` and `@basenative/tsconfig`, which
+    were missing it.
+  - Normalize `publishConfig` to `{ "access": "public" }` across every publishable
+    package. The previous per-package `registry` override duplicated the scope
+    mapping `.npmrc` already sets for `@basenative:*` (and that the Release/publish
+    workflows reassert via `actions/setup-node`'s `registry-url`/`scope` inputs), so
+    it only added drift risk and would have blocked a future npmjs registry target.
+  - Fix README `## License` sections that said `MIT` while `package.json` and the
+    repo `LICENSE` say `Apache-2.0` (`auth`, `config`, `date`, `db`, `fetch`, `flags`,
+    `fonts`, `forms`, `i18n`, `icons`, `logger`, `marketplace`, `middleware`,
+    `notify`, `realtime`, `router`, `runtime`, `server`, `tenant`, `upload`,
+    `visual-builder`); add a missing `## License` section to `builder` and `evals`.
+  - Add the missing `README.md` for `@basenative/integrations` (Plaid Link +
+    accounts/transfers, and the pure float-yield-optimization math).
+
+  No `private`/version/`exports` changes. `@basenative/evals`, `fonts`, and `icons`
+  stay private and are not part of this changeset.
+
+- Updated dependencies [9741b75]
+  - @basenative/runtime@0.6.3
+
+## 0.4.0
+
+### Minor Changes
+
+- 6eda6f0: Add the typed API-client layer GreenPut had been carrying locally in `libs/basenative/fetch` (upstream dogfooding directive):
+
+  - **`createApiClient({ baseUrl, headers?, fetch?, credentials?, timeoutMs?, onRequest?, onResponse?, onUnauthorized?, onError? })`** returns `{ get, post, put, patch, delete, request, resolveUrl }`. Paths and query params resolve against `baseUrl` (a string or a function resolved per request), plain-object bodies are JSON-encoded, JSON responses are parsed, 204 resolves `undefined`, `raw: true` resolves the `Response`. A non-2xx status, an error envelope in a 2xx body, a timeout (`code: 'timeout'`) or a network failure (`code: 'network_error'`) rejects with `ApiError`; a caller's own `AbortSignal` abort is rethrown untouched so `createResource` keeps ignoring cancellations. `onUnauthorized` runs on 401 before `onError`.
+  - **`ApiError`** (`status`, `code`, `message`, `field?`, `url`, `body?`, `response?`, `cause?`) and **`isApiError(value)`**.
+  - **Envelope helpers** for the `{ data, meta? }` / `{ error: { code, message, field? } }` shape: `isApiResponse(value)`, `isApiErrorEnvelope(value)` and `unwrap(envelope)` (an envelope or a promise for one; throws `ApiError` for an error envelope).
+  - **`serializeQuery(params)`** (keys sorted, arrays repeated, `null`/`undefined` skipped) and **`joinUrl(base, path)`**.
+
+  Type declarations cover every new export and are guarded against drift by `types/exports.test.js`. `createResource`, `createMutation`, `createCache` and `fetchJson` are unchanged.
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [d21dbdd]
+  - @basenative/runtime@0.6.2
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [40a3472]
+  - @basenative/runtime@0.6.1
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [62d9857]
+  - @basenative/runtime@0.6.0
+
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [ce9ff49]
+- Updated dependencies [d3e979d]
+  - @basenative/runtime@0.5.0
+
+## 0.3.0
+
+### Minor Changes
+
+- fdfa251: v1.0 release readiness: comprehensive test coverage, complete documentation, deployment examples, and CI/CD hardening.
+  - 682 tests across all 21 packages (was ~250)
+  - Package-level READMEs for npm publishing
+  - Cloudflare Workers and Node.js deployment examples
+  - CLAUDE.md for AI assistant guidance
+  - Root README rewrite for open-source audience
+  - All package.json files have complete npm publishing metadata
+
+### Patch Changes
+
+- Updated dependencies [fdfa251]
+  - @basenative/runtime@0.4.0

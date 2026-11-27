@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Express Server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/express/server.js"],
+      "port": 3000
+    },
+    {
+      "name": "Builder Express",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/express/server.js"],
+      "port": 3019,
+      "autoPort": true
+    },
+    {
+      "name": "Static Dev Server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:static"],
+      "port": 3000
+    },
+    {
+      "name": "configurator",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", ".", "-l", "3456", "--no-clipboard"],
+      "port": 3456
+    }
+  ]
+}

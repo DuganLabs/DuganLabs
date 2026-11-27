@@ -1,0 +1,85 @@
+fieldset[variant="rating"] {
+  display: var(--display-rating);
+  flex-direction: var(--flex-direction-rating);
+  gap: var(--spacing-rating-gap);
+  margin-inline: var(--spacing-rating-margin);
+  padding: var(--spacing-rating-padding);
+  border-width: var(--size-border-rating);
+
+  & > legend {
+    position: var(--position-rating-legend);
+    inline-size: var(--size-rating-legend-inline);
+    block-size: var(--size-rating-legend-block);
+    overflow: var(--overflow-rating-legend);
+  }
+
+  & > label {
+    display: var(--display-rating-option);
+    padding: var(--spacing-rating-option-padding);
+    cursor: var(--cursor-rating-option);
+    border-radius: var(--size-radius-rating-option);
+    color: var(--color-text-rating-star);
+
+    & > input {
+      position: var(--position-rating-control);
+      opacity: var(--opacity-rating-control);
+      inline-size: var(--size-rating-control-inline);
+      block-size: var(--size-rating-control-block);
+    }
+
+    & > svg {
+      inline-size: var(--size-rating-star);
+      block-size: var(--size-rating-star);
+    }
+  }
+
+  & > label:has(> input:focus-visible) {
+    outline-width: var(--size-border-rating-option-outline-focus);
+    outline-style: var(--border-style-rating-option-outline-focus);
+    outline-color: var(--color-border-rating-option-outline-focus);
+    outline-offset: var(--spacing-rating-option-outline-offset-focus);
+  }
+}
+
+/* The lit range is relational — the checked step lights itself and
+   every step before it, and hover previews the same range. No script
+   paints a star. */
+fieldset[variant="rating"]:has(> label:nth-of-type(1) > input:checked) > label:nth-of-type(-n+1) {
+  color: var(--color-text-rating-star-lit);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(2) > input:checked) > label:nth-of-type(-n+2) {
+  color: var(--color-text-rating-star-lit);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(3) > input:checked) > label:nth-of-type(-n+3) {
+  color: var(--color-text-rating-star-lit);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(4) > input:checked) > label:nth-of-type(-n+4) {
+  color: var(--color-text-rating-star-lit);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(5) > input:checked) > label:nth-of-type(-n+5) {
+  color: var(--color-text-rating-star-lit);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(1):hover) > label:nth-of-type(-n+1) {
+  color: var(--color-text-rating-star-hover);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(2):hover) > label:nth-of-type(-n+2) {
+  color: var(--color-text-rating-star-hover);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(3):hover) > label:nth-of-type(-n+3) {
+  color: var(--color-text-rating-star-hover);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(4):hover) > label:nth-of-type(-n+4) {
+  color: var(--color-text-rating-star-hover);
+}
+
+fieldset[variant="rating"]:has(> label:nth-of-type(5):hover) > label:nth-of-type(-n+5) {
+  color: var(--color-text-rating-star-hover);
+}

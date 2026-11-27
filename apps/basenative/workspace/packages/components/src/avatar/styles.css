@@ -1,0 +1,64 @@
+figure[variant="default"], figure[variant="tone-0"], figure[variant="tone-1"], figure[variant="tone-2"], figure[variant="tone-3"], figure[variant="tone-4"], figure[variant="tone-5"], figure[variant="tone-6"], figure[variant="tone-7"] {
+  display: var(--display-avatar);
+  align-items: var(--align-avatar);
+  justify-content: var(--justify-avatar);
+  inline-size: var(--size-avatar-inline);
+  block-size: var(--size-avatar-block);
+  background-color: var(--color-bkg-avatar);
+  color: var(--color-text-avatar);
+  border-radius: var(--size-radius-avatar);
+  overflow: var(--overflow-avatar);
+  font-family: var(--font-avatar-family);
+  font-size: var(--font-avatar-size);
+  font-weight: var(--font-avatar-weight);
+  line-height: var(--font-avatar-leading);
+  letter-spacing: var(--font-avatar-tracking);
+  margin: var(--spacing-0);
+
+  & > img {
+    inline-size: var(--size-avatar-image-inline);
+    block-size: var(--size-avatar-image-block);
+    object-fit: var(--object-fit-avatar-image);
+    display: var(--display-avatar-image);
+  }
+}
+
+figure[variant="tone-0"] {
+  --color-bkg-avatar: var(--palette-system-blue);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-1"] {
+  --color-bkg-avatar: var(--palette-system-green);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-2"] {
+  --color-bkg-avatar: var(--palette-system-orange);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-3"] {
+  --color-bkg-avatar: var(--palette-system-purple);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-4"] {
+  --color-bkg-avatar: var(--palette-system-teal);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-5"] {
+  --color-bkg-avatar: var(--palette-system-pink);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-6"] {
+  --color-bkg-avatar: var(--palette-system-indigo);
+  --color-text-avatar: var(--color-text-on-tint);
+}
+
+figure[variant="tone-7"] {
+  --color-bkg-avatar: var(--palette-system-red);
+  --color-text-avatar: var(--color-text-on-tint);
+}

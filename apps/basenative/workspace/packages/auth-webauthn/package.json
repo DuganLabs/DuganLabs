@@ -1,0 +1,76 @@
+{
+  "name": "@basenative/auth-webauthn",
+  "version": "3.3.0",
+  "description": "WebAuthn (passkey) adapter for @basenative/auth \u2014 server, client, and Cloudflare Workers/Pages handlers",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/server.js"
+    },
+    "./server": {
+      "types": "./types/server.d.ts",
+      "default": "./src/server.js"
+    },
+    "./client": {
+      "types": "./types/client.d.ts",
+      "default": "./src/client.js"
+    },
+    "./handlers": {
+      "types": "./types/handlers.d.ts",
+      "default": "./src/handlers.js"
+    },
+    "./d1-stores": {
+      "types": "./types/d1-stores.d.ts",
+      "default": "./src/d1-stores.js"
+    },
+    "./seed-role": {
+      "types": "./types/seed-role.d.ts",
+      "default": "./src/seed-role.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "migrations",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/BaseNative.git",
+    "directory": "packages/auth-webauthn"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/auth-webauthn#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "webauthn",
+    "passkey",
+    "authentication",
+    "fido2",
+    "cloudflare",
+    "d1",
+    "workers"
+  ],
+  "peerDependencies": {
+    "@simplewebauthn/server": "^11.0.0 || ^12.0.0 || ^13.0.0 || ^14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@simplewebauthn/server": {
+      "optional": false
+    }
+  },
+  "optionalDependencies": {
+    "@simplewebauthn/browser": "^14.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,10 @@
+<template>
+  <dialog :variant="variant()" :id="idAttr()" :aria-label="title()" @click="onClick($event)" @keydown="onKeydown($event)">
+    <header>
+      <h2>{{ title() }}</h2>
+      {{ raw(closeHtml()) }}
+    </header>
+    <p>{{ body() }}</p>
+    <footer>{{ raw(footerHtml()) }}</footer>
+  </dialog>
+</template>

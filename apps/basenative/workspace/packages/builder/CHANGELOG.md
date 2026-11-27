@@ -1,0 +1,192 @@
+# @basenative/builder
+
+## 3.3.0
+
+### Patch Changes
+
+- @basenative/runtime@3.3.0
+
+## 3.2.0
+
+### Minor Changes
+
+- 73caf95: `<bn-builder-inspector>` gains an `enumControl` hook that mounts a custom control into each enum prop field (the platform `<select>` stays the default). site: the Builder inspector mounts the custom select, the default everywhere.
+
+### Patch Changes
+
+- a302ee4: builder: a stacked window (phone, or a column beside a rail) grows with its sections and the page scrolls, instead of splitting a fixed height into clipped 128px scrollers; the component and layer lists keep bounded scrollers. The body takes the workbench height, the toolbar sits flush on the body, and a wrapped toolbar nav centres.
+- 3d16c15: The field root is now `<section variant="field">` instead of `<p>`. A `<p>` cannot hold a block control, so the HTML parser closed it at the first select or combobox and the label, control and hint fell out of the field. `variant: 'default'` still works and maps to `field`. The catalog native select carries `variant="native"` so it keeps its own chevron inside the box, and the builder palette emits the new field markup.
+- e4eef9f: Palette category headings are capitalised, and disabled toolbar buttons (Export) use the disabled fill and label-2 text instead of opacity, so they stay legible in both themes.
+- a065beb: Every control is a 44px tap target. Pagination, breadcrumb, footer, tab, dropdown-menu, list-group link, tree and app-bar items reserve `--size-target-min`; app-bar items keep the minimum at every width. A narrow pagination keeps one row by dropping far pages in a container query (`--display-pagination-item-compact`). Tree leaf text now lines up with toggle labels. Builder palette and toolbar buttons are 44px at every width.
+- 1069e93: Tighten the design system for contrast and calm. Text that used the brand
+  tint now uses `--color-tint-strong` (breadcrumb, pagination, alert title,
+  toolbar more, search-field clear, app-bar current, site links), which clears
+  WCAG AA in light and dark; the tint fill is softer; the hero is a plain page
+  head with no frame; sidebar rows reach a 44px target; list groups sit on the
+  raised grouped surface. The builder window fills its host column instead of
+  breaking out under an app-shell rail, and its pane headings are sentence case.
+- Updated dependencies [67013fd]
+- Updated dependencies [6d735e2]
+  - @basenative/runtime@3.2.0
+
+## 3.1.0
+
+### Patch Changes
+
+- Updated dependencies [f88c30b]
+  - @basenative/runtime@3.1.0
+
+## 3.0.0
+
+### Patch Changes
+
+- @basenative/runtime@3.0.0
+
+## 2.4.0
+
+### Minor Changes
+
+- Brand amber, shared elevation, and Liquid Glass land together. The Builder is a macOS window with an organism palette, canvas, layers, and inspector. Site routes are composed from those organisms, including the scrollbar and refraction materials.
+
+### Patch Changes
+
+- Updated dependencies [4f3a5bb]
+  - @basenative/runtime@2.4.0
+
+## 2.3.2
+
+### Patch Changes
+
+- Updated dependencies [fca7129]
+  - @basenative/runtime@2.3.2
+
+## 2.3.1
+
+### Patch Changes
+
+- @basenative/runtime@2.3.1
+
+## 2.3.0
+
+### Patch Changes
+
+- @basenative/runtime@2.3.0
+
+## 2.2.0
+
+### Patch Changes
+
+- @basenative/runtime@2.2.0
+
+## 2.1.0
+
+### Patch Changes
+
+- @basenative/runtime@2.1.0
+
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @basenative/runtime@2.0.1
+
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @basenative/runtime@2.0.0
+
+## 0.2.1
+
+### Patch Changes
+
+- ae4701e: First release on npmjs.org. `@basenative/*` moves off GitHub Packages, so installing any package no longer needs a token.
+
+  Every package now declares a `types` condition for each JavaScript subpath, so TypeScript finds the declarations under `moduleResolution: "bundler"` and `"node16"`; ships without its test files; declares `sideEffects` for bundlers; and is published with an npm provenance attestation through trusted publishing.
+
+  The version moves even where the code did not: the same version number already exists on GitHub Packages with different contents, and reusing it on npm would fail a consumer's lockfile integrity check when it switches registry.
+
+- Updated dependencies [ae4701e]
+  - @basenative/runtime@0.6.4
+
+## 0.2.0
+
+### Minor Changes
+
+- 494a83b: Exported and canvas markup now carries the `@basenative/components` attribute
+  contract, so what the Builder produces is styled by the library.
+
+  A palette entry can declare `bn` — the `data-bn` token the matching render
+  function emits — and `dataProps`, the props that component serialises as
+  `data-<name>`. Both `generateBaseNative()` and the canvas renderer add
+  `data-bn="<bn>"` and write those props as `data-*`. Before this, a Button set
+  to Primary exported `<button variant="primary">`, which no rule in
+  `components.css` matches, so it rendered as the browser's default button in
+  the user's app and on the canvas alike; it now exports
+  `<button data-bn="button" data-variant="primary" data-size="default"
+type="button">`, the same attribute set as `renderButton()`. The default
+  palette declares the token for `button`, `input`, `textarea` and `checkbox`,
+  and the button gains a `size` prop (`sm` / `default` / `lg`).
+
+## 0.1.5
+
+### Patch Changes
+
+- 29b958a: `<bn-builder>` registered two `bn-palette-add` listeners, so every palette click, Enter/Space activation, or drag-drop added the component twice. Only the container-aware listener (`_wirePaletteAdd`) remains. Also fixed the canvas pane rendering a nested `<main>` landmark inside the host page's `<main>`; it is now a `<section aria-label="Canvas">`.
+- 9741b75: Public-readiness metadata sweep, no behavior change:
+
+  - Add a per-package `LICENSE` file (Apache-2.0) — previously only the repo root
+    carried one, so it was never included in the published tarball.
+  - Fix `repository.url`/`homepage`/`bugs.url` to the correct `DuganLabs/BaseNative`
+    casing with a `git+` prefix on `repository.url`, matching npm's convention; add
+    the `bugs` field to `@basenative/eslint-config` and `@basenative/tsconfig`, which
+    were missing it.
+  - Normalize `publishConfig` to `{ "access": "public" }` across every publishable
+    package. The previous per-package `registry` override duplicated the scope
+    mapping `.npmrc` already sets for `@basenative:*` (and that the Release/publish
+    workflows reassert via `actions/setup-node`'s `registry-url`/`scope` inputs), so
+    it only added drift risk and would have blocked a future npmjs registry target.
+  - Fix README `## License` sections that said `MIT` while `package.json` and the
+    repo `LICENSE` say `Apache-2.0` (`auth`, `config`, `date`, `db`, `fetch`, `flags`,
+    `fonts`, `forms`, `i18n`, `icons`, `logger`, `marketplace`, `middleware`,
+    `notify`, `realtime`, `router`, `runtime`, `server`, `tenant`, `upload`,
+    `visual-builder`); add a missing `## License` section to `builder` and `evals`.
+  - Add the missing `README.md` for `@basenative/integrations` (Plaid Link +
+    accounts/transfers, and the pure float-yield-optimization math).
+
+  No `private`/version/`exports` changes. `@basenative/evals`, `fonts`, and `icons`
+  stay private and are not part of this changeset.
+
+- Updated dependencies [9741b75]
+  - @basenative/runtime@0.6.3
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [d21dbdd]
+  - @basenative/runtime@0.6.2
+
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [40a3472]
+  - @basenative/runtime@0.6.1
+
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [62d9857]
+  - @basenative/runtime@0.6.0
+
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [ce9ff49]
+- Updated dependencies [d3e979d]
+  - @basenative/runtime@0.5.0

@@ -1,0 +1,139 @@
+section[variant="multiselect"] {
+  --color-bkg-input: var(--color-fill-3);
+  position: var(--position-multiselect);
+  display: var(--display-multiselect);
+  flex-direction: var(--flex-direction-multiselect);
+  gap: var(--spacing-multiselect-gap);
+
+  & > ul:not([role="listbox"]) {
+    display: var(--display-multiselect-selected);
+    flex-direction: var(--flex-direction-multiselect-selected);
+    flex-wrap: var(--flex-wrap-multiselect-selected);
+    gap: var(--spacing-multiselect-selected-gap);
+    list-style: var(--list-style-multiselect-selected);
+    margin: var(--spacing-multiselect-selected-margin);
+    padding: var(--spacing-multiselect-selected-padding);
+
+    & > li {
+      display: var(--display-multiselect-chip);
+      align-items: var(--align-multiselect-chip);
+      gap: var(--spacing-multiselect-chip-gap);
+      padding-block: var(--spacing-multiselect-chip-padding-block);
+      padding-inline-start: var(--spacing-multiselect-chip-padding-inline-start);
+      padding-inline-end: var(--spacing-multiselect-chip-padding-inline-end);
+      background-color: var(--color-bkg-multiselect-chip);
+      color: var(--color-text-multiselect-chip);
+      border-radius: var(--size-radius-multiselect-chip);
+      font-family: var(--font-multiselect-chip-family);
+      font-size: var(--font-multiselect-chip-size);
+      line-height: var(--font-multiselect-chip-leading);
+      letter-spacing: var(--font-multiselect-chip-tracking);
+    }
+
+    /* The chip sits on a fill, where the tint reads under 4.5 to 1; its
+       remove action takes the chip label color instead. The action is a
+       44px square drawn as a two-bar cross. Its words stay, at zero
+       size, as its accessible name, and negative margins fold the
+       square into the pill so the chip stays compact while the target
+       keeps the platform size (the list gap clears the overhang). */
+    & > li > button[variant="ghost"] {
+      --color-text-button: var(--color-text-multiselect-chip-remove);
+      position: var(--position-multiselect-chip-remove);
+      inline-size: var(--size-multiselect-chip-remove);
+      block-size: var(--size-multiselect-chip-remove);
+      min-inline-size: var(--size-multiselect-chip-remove);
+      min-block-size: var(--size-multiselect-chip-remove);
+      padding: var(--spacing-multiselect-chip-remove-padding);
+      margin-block: var(--spacing-multiselect-chip-remove-margin-block);
+      margin-inline-start: var(--spacing-multiselect-chip-remove-margin-inline-start);
+      margin-inline-end: var(--spacing-multiselect-chip-remove-margin-inline-end);
+      font-size: var(--font-multiselect-chip-remove-size);
+
+      &::before,
+      &::after {
+        content: var(--content-multiselect-chip-remove-bar);
+        position: var(--position-multiselect-chip-remove-bar);
+        inset: var(--inset-multiselect-chip-remove-bar);
+        margin: var(--spacing-multiselect-chip-remove-bar-margin);
+        inline-size: var(--size-multiselect-chip-remove-bar-inline);
+        block-size: var(--size-multiselect-chip-remove-bar-block);
+        border-radius: var(--size-radius-multiselect-chip-remove-bar);
+        background-color: var(--color-bkg-multiselect-chip-remove-bar);
+      }
+
+      &::before {
+        transform: var(--transform-multiselect-chip-remove-bar-start);
+      }
+
+      &::after {
+        transform: var(--transform-multiselect-chip-remove-bar-end);
+      }
+    }
+  }
+
+  /* The chips are the clear affordance; the platform's own search
+     cancel button would be a second, unlabelled one. */
+  & > input::-webkit-search-cancel-button {
+    display: var(--display-multiselect-search-cancel);
+  }
+
+  & > ul[role="listbox"] {
+    position: var(--position-multiselect-listbox);
+    inset-block-start: var(--spacing-multiselect-listbox-inset-block-start);
+    inset-inline: var(--spacing-multiselect-listbox-inset-inline);
+    z-index: var(--layer-multiselect-listbox);
+    list-style: var(--list-style-multiselect-listbox);
+    margin: var(--spacing-multiselect-listbox-margin);
+    margin-block-start: var(--spacing-multiselect-listbox-margin-block-start);
+    padding: var(--spacing-multiselect-listbox-padding);
+    background-color: var(--color-bkg-multiselect-listbox);
+    border-width: var(--size-border-multiselect-listbox);
+    border-style: var(--border-style-multiselect-listbox);
+    border-color: var(--color-border-multiselect-listbox);
+    border-radius: var(--size-radius-multiselect-listbox);
+    box-shadow: var(--shadow-multiselect-listbox);
+    max-block-size: var(--size-multiselect-listbox-max-block);
+    overflow: var(--overflow-multiselect-listbox);
+  }
+
+  /* As in the select, a trailing check marks each chosen option, and
+     the fill marks only the active row the keyboard or pointer is on. */
+  & > ul[role="listbox"] > li {
+    display: var(--display-multiselect-option);
+    align-items: var(--align-multiselect-option);
+    justify-content: var(--justify-multiselect-option);
+    gap: var(--spacing-multiselect-option-gap);
+    padding-block: var(--spacing-multiselect-option-padding-block);
+    padding-inline: var(--spacing-multiselect-option-padding-inline);
+    border-radius: var(--size-radius-multiselect-option);
+    color: var(--color-text-multiselect-option);
+    font-family: var(--font-multiselect-option-family);
+    font-size: var(--font-multiselect-option-size);
+    line-height: var(--font-multiselect-option-leading);
+    letter-spacing: var(--font-multiselect-option-tracking);
+    cursor: var(--cursor-multiselect-option);
+  }
+
+  & > ul[role="listbox"] > li > svg {
+    flex: var(--flex-multiselect-option-check);
+    inline-size: var(--size-multiselect-option-check);
+    block-size: var(--size-multiselect-option-check);
+    color: var(--color-text-multiselect-option-check);
+    visibility: var(--visibility-multiselect-option-check);
+  }
+
+  & > ul[role="listbox"] > li[aria-selected="true"] > svg {
+    visibility: var(--visibility-multiselect-option-check-selected);
+  }
+
+  & > ul[role="listbox"] > li[variant="active"] {
+    background-color: var(--color-bkg-multiselect-option-active);
+  }
+
+  /* A touch-first pointer gets the 44px platform target per row. */
+  @media (pointer: coarse) {
+    & > ul[role="listbox"] > li {
+      min-block-size: var(--size-multiselect-option-min-block-coarse);
+    }
+  }
+}

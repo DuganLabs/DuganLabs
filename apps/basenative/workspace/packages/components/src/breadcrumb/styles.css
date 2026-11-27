@@ -1,0 +1,48 @@
+nav[variant='breadcrumb'] {
+  display: var(--display-breadcrumb);
+
+  & > ol {
+    display: var(--display-breadcrumb-list);
+    flex-direction: var(--flex-direction-breadcrumb-list);
+    flex-wrap: var(--flex-wrap-breadcrumb-list);
+    align-items: var(--align-breadcrumb-list);
+    gap: var(--spacing-breadcrumb-list-gap);
+    list-style: var(--list-style-breadcrumb-list);
+    margin: var(--spacing-breadcrumb-list-margin);
+    padding: var(--spacing-breadcrumb-list-padding);
+  }
+
+  & > ol > li {
+    display: var(--display-breadcrumb-item);
+    align-items: var(--align-breadcrumb-item);
+    gap: var(--spacing-breadcrumb-item-gap);
+  }
+
+  & > ol > li + li::before {
+    content: var(--content-breadcrumb-separator);
+    color: var(--color-text-breadcrumb-separator);
+  }
+
+  & > ol > li > a {
+    display: var(--display-inline-flex);
+    align-items: var(--align-center);
+    min-block-size: var(--size-target-min);
+    min-inline-size: var(--size-target-min);
+    color: var(--color-text-breadcrumb-link);
+    text-decoration: var(--text-decoration-breadcrumb-link);
+    font-family: var(--font-breadcrumb-link-family);
+    font-size: var(--font-breadcrumb-link-size);
+    line-height: var(--font-breadcrumb-link-leading);
+    letter-spacing: var(--font-breadcrumb-link-tracking);
+
+    &:hover {
+      color: var(--color-text-breadcrumb-link-hover);
+      text-decoration: var(--text-decoration-breadcrumb-link-hover);
+    }
+  }
+
+  & > ol > li > a[aria-current] {
+    color: var(--color-text-breadcrumb-current);
+    font-weight: var(--font-breadcrumb-current-weight);
+  }
+}

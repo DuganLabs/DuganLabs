@@ -1,0 +1,68 @@
+article[variant="default"], article[variant="floating"] {
+  display: var(--display-card);
+  gap: var(--spacing-card-gap);
+  background-color: var(--color-bkg-card);
+  border-width: var(--size-border-card);
+  border-style: var(--border-style-card);
+  border-color: var(--color-border-card);
+  border-radius: var(--size-radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-card-padding);
+  padding-inline-start: var(--spacing-card-padding-inline-start);
+
+  & > header > h3 {
+    color: var(--color-text-card-title);
+    font-family: var(--font-card-title-family);
+    font-size: var(--font-card-title-size);
+    font-weight: var(--font-card-title-weight);
+    line-height: var(--font-card-title-leading);
+    margin: var(--spacing-card-title-margin);
+  }
+
+  & > p {
+    color: var(--color-text-card-body);
+    font-family: var(--font-card-body-family);
+    font-size: var(--font-card-body-size);
+    line-height: var(--font-card-body-leading);
+    margin: var(--spacing-card-body-margin);
+  }
+
+  & > footer {
+    display: var(--display-card-footer);
+    justify-content: var(--justify-card-footer);
+    gap: var(--spacing-card-footer-gap);
+  }
+}
+
+/* Choice-substrate contract: a card inside a choice label shows selection
+   by re-pointing its own tokens — the group supplies the checked input,
+   the substrate owns how selection looks. It also reserves the notch:
+   the group's control sits inside the card's top-inline corner, so a
+   choice card widens its inline-start padding by the notch geometry —
+   the control's own size token plus a space-3 gap — and the title
+   clears it. The reservation names the control token itself rather
+   than the spacing step it currently equals, so it follows the
+   token if the control is ever resized. */
+label:has(> input) > article[variant="default"], label:has(> input) > article[variant="floating"] {
+  --spacing-card-padding-inline-start: calc(var(--spacing-card-padding) + var(--size-choice-group-control) + var(--spacing-3));
+}
+
+label:hover > article[variant="default"], label:hover > article[variant="floating"] {
+  --color-border-card: var(--color-text-label-3);
+}
+
+label:has(> input:checked) > article[variant="default"], label:has(> input:checked) > article[variant="floating"] {
+  --color-border-card: var(--color-tint);
+  --color-bkg-card: var(--color-tint-fill);
+  --shadow-card: var(--shadow-focus-ring);
+}
+
+label:has(> input:focus-visible) > article[variant="default"], label:has(> input:focus-visible) > article[variant="floating"] {
+  --shadow-card: var(--shadow-focus-ring);
+}
+
+article[variant="floating"] {
+  --color-bkg-card: var(--color-background-3);
+  --color-border-card: var(--palette-transparent);
+  --shadow-card: var(--shadow-float);
+}

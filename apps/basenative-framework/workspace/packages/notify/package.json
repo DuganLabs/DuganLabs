@@ -1,0 +1,46 @@
+{
+  "name": "@basenative/notify",
+  "version": "3.3.0",
+  "description": "Email notifications via SMTP and SendGrid with template rendering",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": {
+    "@basenative/runtime": "workspace:^3.3.0"
+  },
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/notify"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/notify#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "notifications",
+    "email",
+    "smtp",
+    "sendgrid",
+    "resend"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "@basenative/icons",
+  "version": "3.3.0",
+  "description": "SVG icon set and FOUC-preventing reset stylesheet for BaseNative applications",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./reset.css": "./reset.css",
+    "./src/*": "./src/*"
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "reset.css",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/icons"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/icons#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "icons",
+    "svg",
+    "css-reset"
+  ],
+  "scripts": {
+    "test": "node --test test.js types/exports.test.js"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

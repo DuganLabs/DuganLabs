@@ -1,0 +1,48 @@
+{
+  "name": "@basenative/router",
+  "version": "3.3.0",
+  "description": "SSR-aware path routing with named params, wildcards, and history API integration",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./guards": {
+      "types": "./types/guards.d.ts",
+      "default": "./src/guards.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "dependencies": {
+    "@basenative/runtime": "workspace:*"
+  },
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/router"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/router#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "signals",
+    "router",
+    "ssr",
+    "history-api"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

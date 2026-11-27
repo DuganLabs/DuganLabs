@@ -1,22 +1,22 @@
-# BaseNative (apps/basenative/workspace): checks on every push/PR that touches it,
+# BaseNative (apps/basenative-framework/workspace): checks on every push/PR that touches it,
 # ported from DuganLabs/BaseNative's ci.yml + deploy.yml.
 #
 # CUT-OVER GATE: the deploy and audit jobs only run when the repository variable
-# BASENATIVE_DEPLOY_ENABLED is 'true'. Until then basenative.com keeps deploying from
-# DuganLabs/BaseNative. Flip the variable (and stop the old repo's deploy) to cut over.
-name: BaseNative (apps/basenative)
+# BASENATIVE_DEPLOY_ENABLED is 'true'. Until then the Pages project keeps deploying from
+# DuganLabs/BaseNative. (basenative.com itself is the coming-soon Worker in apps/basenative.) Flip the variable (and stop the old repo's deploy) to cut over.
+name: BaseNative (apps/basenative-framework)
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'apps/basenative/workspace/**'
+      - 'apps/basenative-framework/workspace/**'
       - '.github/workflows/basenative.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'apps/basenative/workspace/**'
+      - 'apps/basenative-framework/workspace/**'
       - '.github/workflows/basenative.yml'
 
 permissions:
@@ -32,7 +32,7 @@ env:
 
 defaults:
   run:
-    working-directory: apps/basenative/workspace
+    working-directory: apps/basenative-framework/workspace
 
 jobs:
   test:
@@ -47,12 +47,12 @@ jobs:
         with:
           version: 10
           # The workspace pins no packageManager; read it instead of the monorepo root's.
-          package_json_file: apps/basenative/workspace/package.json
+          package_json_file: apps/basenative-framework/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
-          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+          cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm exec nx run-many --target=lint
@@ -84,12 +84,12 @@ jobs:
         with:
           version: 10
           # The workspace pins no packageManager; read it instead of the monorepo root's.
-          package_json_file: apps/basenative/workspace/package.json
+          package_json_file: apps/basenative-framework/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+          cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
@@ -99,13 +99,13 @@ jobs:
         run: pnpm exec playwright test tests/e2e/
 
   deploy:
-    name: Deploy basenative.com (Pages project basenative)
+    name: Deploy Pages project basenative
     needs: [test, e2e]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.BASENATIVE_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://basenative.com
+      url: https://basenative-docs.pages.dev
     permissions:
       contents: read
       deployments: write
@@ -115,12 +115,12 @@ jobs:
         with:
           version: 10
           # The workspace pins no packageManager; read it instead of the monorepo root's.
-          package_json_file: apps/basenative/workspace/package.json
+          package_json_file: apps/basenative-framework/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+          cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build:pages:no-cloud
@@ -140,12 +140,12 @@ jobs:
         with:
           version: 10
           # The workspace pins no packageManager; read it instead of the monorepo root's.
-          package_json_file: apps/basenative/workspace/package.json
+          package_json_file: apps/basenative-framework/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+          cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install chromium --with-deps
       - run: pnpm build:pages:no-cloud
@@ -156,14 +156,14 @@ jobs:
       - name: Security audit (Mozilla Observatory)
         run: pnpm audit:observatory
         env:
-          DEPLOY_URL: https://basenative.com
+          DEPLOY_URL: https://basenative-docs.pages.dev
       - name: Lighthouse audit (Agentic browsing)
         run: pnpm audit:lighthouse
         env:
-          LIGHTHOUSE_URLS: https://basenative.com/,https://basenative.com/docs/
+          LIGHTHOUSE_URLS: https://basenative-docs.pages.dev/,https://basenative-docs.pages.dev/docs/
       - name: Upload audit reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: basenative-audit-reports
-          path: apps/basenative/workspace/reports/
+          path: apps/basenative-framework/workspace/reports/

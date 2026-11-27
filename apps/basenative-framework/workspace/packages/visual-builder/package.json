@@ -1,0 +1,44 @@
+{
+  "name": "@basenative/visual-builder",
+  "version": "3.3.0",
+  "description": "No-code template builder for BaseNative components",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": [
+    "./src/index.js",
+    "./src/bn-canvas.js"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/visual-builder"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/visual-builder#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "visual-builder",
+    "no-code",
+    "templates"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

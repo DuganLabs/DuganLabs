@@ -1,0 +1,42 @@
+{
+  "name": "@basenative/tsconfig",
+  "version": "3.3.0",
+  "description": "Shared base tsconfigs for DuganLabs projects \u2014 strict, modern, runtime-targeted",
+  "type": "module",
+  "exports": {
+    ".": "./base.json",
+    "./base": "./base.json",
+    "./browser": "./browser.json",
+    "./node": "./node.json",
+    "./worker": "./worker.json",
+    "./react": "./react.json"
+  },
+  "files": [
+    "base.json",
+    "browser.json",
+    "node.json",
+    "worker.json",
+    "react.json"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/tsconfig"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/tsconfig#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "tsconfig",
+    "typescript",
+    "shared"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

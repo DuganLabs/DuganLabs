@@ -1,0 +1,67 @@
+{
+  "name": "@basenative/hmr",
+  "version": "3.3.0",
+  "description": "Dev-only hot module replacement \u2014 state-preserving DOM patching, focus and caret retention, SSE live reload",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./patch": {
+      "types": "./types/patch.d.ts",
+      "default": "./src/patch.js"
+    },
+    "./preserve": {
+      "types": "./types/preserve.d.ts",
+      "default": "./src/preserve.js"
+    },
+    "./protocol": {
+      "types": "./types/protocol.d.ts",
+      "default": "./src/protocol.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": [
+    "./src/client.js"
+  ],
+  "scripts": {
+    "test": "node --test src/guard.test.js src/watcher.test.js src/inject.test.js src/protocol.test.js src/patch.test.js src/preserve.test.js src/middleware.test.js src/server.test.js src/proxy.test.js src/csp.test.js"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/hmr"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/hmr#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "hmr",
+    "hot-reload",
+    "live-reload",
+    "dev-server",
+    "zero-dependency"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@types/node": "*"
+  },
+  "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    }
+  }
+}

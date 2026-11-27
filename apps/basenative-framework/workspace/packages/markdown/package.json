@@ -1,0 +1,50 @@
+{
+  "name": "@basenative/markdown",
+  "version": "3.3.0",
+  "description": "Zero-dependency ES module markdown parser and SSR-safe HTML renderer",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./renderer": {
+      "types": "./types/renderer.d.ts",
+      "default": "./src/renderer.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/markdown"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/markdown#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "markdown",
+    "parser",
+    "ast",
+    "html",
+    "ssr",
+    "zero-dependency"
+  ],
+  "scripts": {
+    "test": "node --test src/*.test.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

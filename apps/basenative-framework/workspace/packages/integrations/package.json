@@ -1,0 +1,45 @@
+{
+  "name": "@basenative/integrations",
+  "version": "3.3.0",
+  "description": "Headless third-party integration wrappers for BaseNative apps",
+  "type": "module",
+  "exports": {
+    "./plaid": {
+      "types": "./types/plaid.d.ts",
+      "default": "./src/plaid.js"
+    },
+    "./yield": {
+      "types": "./types/yield.d.ts",
+      "default": "./src/yield.js"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/integrations"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/integrations#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "integrations",
+    "plaid",
+    "fintech",
+    "yield-optimization"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

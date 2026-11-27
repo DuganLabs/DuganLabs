@@ -2,4 +2,4 @@
 # their wrapper project.json (apps/<product>/project.json).
 apps/greenput-platform/workspace/
 apps/pendingbusiness-app/workspace/
-apps/basenative/workspace/
+apps/basenative-framework/workspace/

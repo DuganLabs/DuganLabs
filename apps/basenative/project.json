@@ -1,40 +1,60 @@
 {
   "name": "basenative",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "library",
-  "sourceRoot": "apps/basenative/workspace",
-  "tags": ["scope:product", "type:nested-workspace"],
+  "projectType": "application",
+  "sourceRoot": "apps/basenative/src",
+  "tags": [
+    "scope:site",
+    "type:coming-soon"
+  ],
+  "implicitDependencies": [
+    "coming-soon"
+  ],
   "targets": {
-    "install": {
+    "check": {
       "executor": "nx:run-commands",
-      "cache": false,
-      "options": { "cwd": "apps/basenative/workspace", "command": "pnpm install --frozen-lockfile" }
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/content.json",
+        "{workspaceRoot}/libs/coming-soon/src/content.js"
+      ],
+      "options": {
+        "command": "node tools/scripts/check-content.mjs apps/basenative/content.json"
+      }
     },
-    "product-lint": {
+    "build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["install"],
-      "options": { "cwd": "apps/basenative/workspace", "command": "NX_NO_CLOUD=true pnpm exec nx run-many -t lint" }
-    },
-    "product-test": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["install"],
-      "options": { "cwd": "apps/basenative/workspace", "command": "NX_NO_CLOUD=true pnpm exec nx run-many -t test" }
-    },
-    "product-build": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["install"],
-      "options": { "cwd": "apps/basenative/workspace", "command": "pnpm run build:pages:no-cloud" }
-    },
-    "publish-check": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["install"],
-      "options": { "cwd": "apps/basenative/workspace", "command": "node scripts/publish-check.mjs" }
+      "cache": true,
+      "dependsOn": [
+        "check"
+      ],
+      "inputs": [
+        "default",
+        "^default"
+      ],
+      "outputs": [
+        "{workspaceRoot}/dist/apps/basenative"
+      ],
+      "options": {
+        "command": "node tools/deploy/build-worker.mjs basenative"
+      }
     },
     "serve": {
       "executor": "nx:run-commands",
       "continuous": true,
-      "dependsOn": ["install"],
-      "options": { "cwd": "apps/basenative/workspace", "command": "pnpm start" }
+      "options": {
+        "command": "pnpm exec wrangler dev -c apps/basenative/wrangler.toml -c apps/leads/wrangler.toml --persist-to .wrangler/state"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "bash tools/deploy/deploy.sh basenative {args.stage}",
+        "args": "--stage=staging"
+      }
     }
   }
 }

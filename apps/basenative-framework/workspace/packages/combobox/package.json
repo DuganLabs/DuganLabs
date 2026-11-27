@@ -1,0 +1,51 @@
+{
+  "name": "@basenative/combobox",
+  "version": "3.3.0",
+  "description": "Accessible combobox primitive \u2014 typeahead input that filters an existing list and lets the user create a new entry. WAI-ARIA combobox listbox pattern.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./css": "./src/styles.css",
+    "./styles.css": "./src/styles.css"
+  },
+  "types": "./types/index.d.ts",
+  "peerDependencies": {
+    "@basenative/runtime": "workspace:*"
+  },
+  "files": [
+    "src",
+    "types",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/combobox"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/combobox#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "combobox",
+    "typeahead",
+    "autocomplete",
+    "a11y",
+    "wcag",
+    "aria",
+    "signals"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

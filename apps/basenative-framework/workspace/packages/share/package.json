@@ -1,0 +1,65 @@
+{
+  "name": "@basenative/share",
+  "version": "3.3.0",
+  "description": "Native Web Share + clipboard fallback, share-card mint client+server, and OG-redirect landing page generator for BaseNative apps",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/client.js"
+    },
+    "./client": {
+      "types": "./types/client.d.ts",
+      "default": "./src/client.js"
+    },
+    "./server": {
+      "types": "./types/server.d.ts",
+      "default": "./src/server.js"
+    },
+    "./og-redirect": {
+      "types": "./types/og-redirect.d.ts",
+      "default": "./src/og-redirect.js"
+    },
+    "./migrations/0001": "./migrations/0001_share_cards.sql"
+  },
+  "types": "./types/index.d.ts",
+  "files": [
+    "src",
+    "types",
+    "migrations",
+    "!**/*.test.js",
+    "!**/*.test.mjs"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative-framework/workspace/packages/share"
+  },
+  "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/share#readme",
+  "bugs": {
+    "url": "https://github.com/DuganLabs/BaseNative/issues"
+  },
+  "keywords": [
+    "basenative",
+    "share",
+    "web-share",
+    "clipboard",
+    "open-graph",
+    "social-share",
+    "cloudflare-pages"
+  ],
+  "peerDependencies": {
+    "@basenative/og-image": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@basenative/og-image": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

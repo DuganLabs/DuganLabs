@@ -1,0 +1,40 @@
+{
+  "name": "basenative-framework",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "apps/basenative-framework/workspace",
+  "tags": ["scope:product", "type:nested-workspace"],
+  "targets": {
+    "install": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "pnpm install --frozen-lockfile" }
+    },
+    "product-lint": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "NX_NO_CLOUD=true pnpm exec nx run-many -t lint" }
+    },
+    "product-test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "NX_NO_CLOUD=true pnpm exec nx run-many -t test" }
+    },
+    "product-build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "pnpm run build:pages:no-cloud" }
+    },
+    "publish-check": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "node scripts/publish-check.mjs" }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "dependsOn": ["install"],
+      "options": { "cwd": "apps/basenative-framework/workspace", "command": "pnpm start" }
+    }
+  }
+}

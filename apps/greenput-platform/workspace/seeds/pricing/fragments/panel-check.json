@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "fragment",
+  "id": "panel_check",
+  "name": "Reading the panel",
+  "purpose": "The panel photo plus the two things a homeowner can answer without one (main breaker size, what big electric appliances they run). Produces `panel_capacity` (from the photo, possibly unresolved) and `load_risk` (a deliberately crude proxy for a load calculation we are NOT doing here). Included by every machine that needs a new breaker.",
+  "requires": [],
+  "provides": ["panel_photo", "photo_status", "panel_capacity", "panel_brand", "panel_main_amps", "panel_spaces_free", "aluminium_branch_visible", "service_size_stated", "major_loads", "load_risk"],
+  "entry": "panel_location",
+
+  "states": [
+    {
+      "id": "panel_location",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "panel_location",
+        "unknown_option": "cannot_find",
+        "options": [
+          { "value": "garage",        "label": "In the garage" },
+          { "value": "interior",      "label": "Inside the house — basement, utility room, hallway or closet" },
+          { "value": "exterior_wall", "label": "Outside, on an outside wall" },
+          { "value": "crawl_or_attic","label": "In a crawlspace or attic" },
+          { "value": "cannot_find",   "label": "I can't find it" }
+        ]
+      },
+      "ask": {
+        "question": "Where is your electrical panel?",
+        "help": "It's the grey or beige metal door with all the switches behind it — usually in a garage, basement, utility room or on an outside wall.",
+        "why": "Where it is decides how far the wire has to travel, and whether we're working indoors or in the weather."
+      },
+      "next": [
+        { "when": { "var": "panel_location", "eq": "cannot_find" }, "go": "panel_find_help" },
+        { "always": true, "go": "panel_photo" }
+      ]
+    },
+
+    {
+      "id": "panel_find_help",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "panel_find_retry",
+        "exhaustive": true,
+        "options": [
+          { "value": "found_it",   "label": "Found it" },
+          { "value": "still_cant", "label": "Still can't find it" }
+        ]
+      },
+      "ask": {
+        "question": "Let's find it together.",
+        "help": "Check, in this order: the garage wall nearest the meter; a basement or utility room; a hallway or bedroom closet; the outside wall right behind or beside your electric meter. In an apartment or condo it's often by the front door. It's a metal door, hinged, usually about the size of a cereal box or bigger, and there's a paper list of rooms inside.",
+        "why": "We can still give you a price without finding it, but it'll be a much wider one — the panel is where half the job happens."
+      },
+      "next": [
+        { "when": { "var": "panel_find_retry", "eq": "found_it" }, "go": "panel_location", "allow_cycle": true, "cycle_note": "Deliberate: they went and found it, so we ask again. The only loop in the design." },
+        { "always": true, "go": "panel_photo" }
+      ]
+    },
+
+    {
+      "id": "panel_photo",
+      "kind": "question",
+      "answer": {
+        "type": "photo",
+        "key": "panel_photo",
+        "shots": [
+          { "id": "breakers", "label": "The panel with the door open", "guidance": "Open the metal door so we can see the row of switches and the paper list. Stand close enough that we could read the little numbers on the switches. Don't touch anything inside." },
+          { "id": "wide",     "label": "A step back", "guidance": "One more from a few feet away so we can see the wall around it and how much room there is." }
+        ],
+        "safety_note": "Open the outer door only — the one with the handle. Never unscrew the metal cover behind it.",
+        "skippable": true,
+        "skip_label": "I'll send this later",
+        "interpretation": {
+          "fields": {
+            "panel_capacity": {
+              "type": "enum",
+              "values": ["spare_capable", "spare_needs_tandem", "full_needs_subpanel", "service_upgrade_needed", "hazard_panel", "unreadable", "unknown"],
+              "default_when_missing": "unknown"
+            },
+            "panel_brand": {
+              "type": "enum",
+              "values": ["square_d", "siemens", "eaton", "ge", "murray", "federal_pacific", "zinsco", "challenger", "pushmatic", "other", "unknown"],
+              "default_when_missing": "unknown"
+            },
+            "panel_main_amps":          { "type": "number", "default_when_missing": null },
+            "panel_spaces_free":        { "type": "number", "default_when_missing": null },
+            "aluminium_branch_visible": { "type": "boolean", "default_when_missing": null }
+          },
+          "status_key": "photo_status",
+          "status_values": ["missing", "unreviewed", "reviewed", "unreadable"],
+          "resolvers": ["contractor_review", "greenput_ops_review"],
+          "resolution_policy": "Never block the first number on this. Quote immediately from `photo_status = unreviewed`, land on a spanning terminal, and re-evaluate when a human resolves it. See honesty rules H2 and H6."
+        }
+      },
+      "ask": {
+        "question": "Last thing — a photo of your panel.",
+        "help": "Open the outer door and take two pictures. This is the one thing that turns a guess into a real price: it tells us whether there's room for a new switch, what brand of parts we need to bring, and whether anything in there needs dealing with first.",
+        "why": "Without it we can still quote, but we have to show you a much wider range — because we'd be pricing for the possibility that the panel is full."
+      },
+      "next": [
+        { "when": { "var": "panel_capacity", "eq": "hazard_panel" }, "go": "T_hazard_panel" },
+        { "when": { "var": "aluminium_branch_visible", "eq": true }, "go": "T_site_visit_required" },
+        { "always": true, "go": "service_size_stated" }
+      ]
+    },
+
+    {
+      "id": "service_size_stated",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "service_size_stated",
+        "unknown_option": "unknown",
+        "options": [
+          { "value": "60",   "label": "60" },
+          { "value": "100",  "label": "100" },
+          { "value": "125",  "label": "125" },
+          { "value": "150",  "label": "150" },
+          { "value": "200",  "label": "200" },
+          { "value": "400",  "label": "400 or more" },
+          { "value": "unknown", "label": "I can't see a number" }
+        ]
+      },
+      "ask": {
+        "question": "What number is printed on the big switch at the top of the panel?",
+        "help": "There's usually one switch bigger than the rest, on its own at the top or bottom, with a number stamped on it. That's the size of your whole electrical service.",
+        "why": "It tells us how much electricity the house can draw in total — which decides whether there's room for what you're adding."
+      },
+      "next": [
+        { "always": true, "go": "major_loads" }
+      ]
+    },
+
+    {
+      "id": "major_loads",
+      "kind": "question",
+      "answer": {
+        "type": "multi_choice",
+        "key": "major_loads",
+        "exhaustive": true,
+        "allow_none": true,
+        "none_label": "None of these",
+        "options": [
+          { "value": "electric_range",       "label": "Electric oven or range" },
+          { "value": "electric_dryer",       "label": "Electric clothes dryer" },
+          { "value": "electric_water_heater","label": "Electric water heater" },
+          { "value": "central_ac",           "label": "Central air conditioning" },
+          { "value": "heat_pump",            "label": "Heat pump or electric heating" },
+          { "value": "pool_or_spa",          "label": "Pool or hot tub" },
+          { "value": "other_ev",             "label": "Another EV charger" },
+          { "value": "workshop",             "label": "A workshop or shop with big tools" }
+        ]
+      },
+      "ask": {
+        "question": "Which of these does your home run on electricity?",
+        "help": "Tick everything that's electric rather than gas. If your oven or dryer runs on gas, leave it unticked.",
+        "why": "Everything here draws from the same total. This is how we tell whether adding one more thing is comfortable or tight."
+      },
+      "next": [
+        { "always": true, "go": "derive_load_risk" }
+      ]
+    },
+
+    {
+      "id": "derive_load_risk",
+      "kind": "derive",
+      "sets": "load_risk",
+      "explain": "A crude proxy, not a load calculation. A real NEC 220.83 calculation needs square footage and nameplate ratings and is an electrician's job, not a form's. This only decides whether the machine is allowed to quote the cheap path, or has to raise the possibility of a service upgrade or load management. When it says `high`, the machine offers both and says plainly that a calculation has to be done.",
+      "rules": [
+        { "when": { "var": "service_size_stated", "in": ["200", "400"] }, "value": "low" },
+        { "when": { "var": "service_size_stated", "eq": "60" }, "value": "critical" },
+        { "when": { "all": [ { "var": "service_size_stated", "eq": "100" }, { "var": "major_loads", "count_gte": 3 } ] }, "value": "high" },
+        { "when": { "all": [ { "var": "service_size_stated", "eq": "100" }, { "var": "major_loads", "count_gte": 1 } ] }, "value": "medium" },
+        { "when": { "all": [ { "var": "service_size_stated", "in": ["125", "150"] }, { "var": "major_loads", "count_gte": 4 } ] }, "value": "high" },
+        { "when": { "all": [ { "var": "service_size_stated", "in": ["125", "150"] }, { "var": "major_loads", "count_gte": 2 } ] }, "value": "medium" },
+        { "when": { "var": "service_size_stated", "eq": "unknown" }, "value": "unknown" },
+        { "always": true, "value": "low" }
+      ],
+      "next": [
+        { "when": { "var": "load_risk", "eq": "critical" }, "go": "T_site_visit_required" },
+        { "always": true, "go": "__return__" }
+      ]
+    }
+  ]
+}

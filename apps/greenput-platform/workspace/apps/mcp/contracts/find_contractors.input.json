@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "string",
+      "enum": [
+        "ev-charger-install",
+        "panel-upgrade",
+        "circuit-outlet",
+        "troubleshooting",
+        "surge-protection"
+      ],
+      "description": "The service the customer needs. One of the pricing-engine services."
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "description": "City name (e.g. \"Irvine\") or 5-digit ZIP code."
+    },
+    "certification": {
+      "description": "Optional certification filter, e.g. \"tesla-certified\". Only shops holding the certification are returned.",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["service", "location"],
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+  "name": "shared-consent",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/consent/src",
+  "tags": ["scope:shared", "type:consent"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/consent/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config libs/shared/consent/vitest.config.ts"
+      }
+    }
+  }
+}

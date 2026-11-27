@@ -1,0 +1,36 @@
+{
+  "machine": "ev-charger-install",
+  "title": "No photo, distance guessed — the honest wide range",
+  "note": "Everything a homeowner in a hurry actually gives you. The machine still quotes, and the width is doing real work rather than hiding.",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "charger_location": "carport_or_driveway",
+    "charge_speed": "not_sure",
+    "charger_supply": "buying_it",
+    "charger_connection": "dont_know",
+    "panel_location": "exterior_wall",
+    "panel_photo": {
+      "status": "missing",
+      "fields": {}
+    },
+    "service_size_stated": "unknown",
+    "major_loads": [
+      "electric_dryer"
+    ],
+    "run_distance_ft": {
+      "value": 35,
+      "estimated": true
+    },
+    "route_crosses": "one_wall",
+    "wall_finish": "unknown",
+    "outdoor_exposure": "exposed_wall"
+  }
+}

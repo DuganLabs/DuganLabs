@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "data_mode": { "type": "string", "enum": ["mock", "live"] },
+    "notice": { "type": "string" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "business_name": { "type": "string", "minLength": 1 },
+          "services": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ev-charger-install",
+                "panel-upgrade",
+                "circuit-outlet",
+                "troubleshooting",
+                "surge-protection"
+              ]
+            }
+          },
+          "service_area": { "type": "string", "minLength": 1 },
+          "certifications": { "type": "array", "items": { "type": "string" } },
+          "profile_url": { "type": "string", "format": "uri" }
+        },
+        "required": [
+          "business_name",
+          "services",
+          "service_area",
+          "certifications",
+          "profile_url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "coverage_note": {
+      "type": "string",
+      "description": "States the covered area. On an empty result, names the nearest covered area plainly instead of implying coverage that is not there."
+    }
+  },
+  "required": ["data_mode", "notice", "results", "coverage_note"],
+  "additionalProperties": false
+}

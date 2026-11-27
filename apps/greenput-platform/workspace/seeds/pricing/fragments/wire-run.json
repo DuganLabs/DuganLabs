@@ -1,0 +1,416 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "fragment",
+  "id": "wire_run",
+  "name": "How the wire gets there",
+  "purpose": "The run-costing questions. Authored once, included by every machine that has to get a conductor from a panel to somewhere else. Requires the including machine to have set `destination_outdoors` (boolean) and `run_purpose_label` (text, used only in copy) before entry.",
+  "requires": [
+    "destination_outdoors"
+  ],
+  "provides": [
+    "run_distance_ft",
+    "route_crosses",
+    "wall_finish",
+    "finish_preference",
+    "outdoor_exposure",
+    "trench_surface",
+    "trench_distance_ft",
+    "route_difficulty"
+  ],
+  "screen_budget_note": "Six screens at absolute worst, three on the common path. The trench questions share one screen because nobody who is not digging ever sees them.",
+  "entry": "run_distance_ft",
+  "states": [
+    {
+      "id": "run_distance_ft",
+      "kind": "question",
+      "answer": {
+        "type": "measurement",
+        "key": "run_distance_ft",
+        "unit": "ft",
+        "min": 1,
+        "max": 400,
+        "step": 1,
+        "estimate_options": [
+          {
+            "value": 15,
+            "label": "Same wall, or just around the corner",
+            "estimated": true
+          },
+          {
+            "value": 35,
+            "label": "Across the garage, or the next room over",
+            "estimated": true
+          },
+          {
+            "value": 70,
+            "label": "Other side of the house, or a different floor",
+            "estimated": true
+          },
+          {
+            "value": 110,
+            "label": "A separate building",
+            "estimated": true
+          }
+        ]
+      },
+      "ask": {
+        "question": "Roughly how far is the panel from where the work is going?",
+        "help": "Pace it out — a normal step is about a foot. Go around corners the way a wire would have to, not straight through. Close is fine; we don't need it exact.",
+        "why": "Wire is sold by the foot and pulling it is most of the labour, so this moves the price more than almost anything else."
+      },
+      "next": [
+        {
+          "when": {
+            "var": "run_distance_ft",
+            "gt": 150,
+            "says": "Over 150 feet"
+          },
+          "go": "T_site_visit_required"
+        },
+        {
+          "always": true,
+          "go": "route_crosses"
+        }
+      ]
+    },
+    {
+      "id": "route_crosses",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "route_crosses",
+        "exhaustive": true,
+        "options": [
+          {
+            "value": "same_room",
+            "label": "No — it stays in the same room"
+          },
+          {
+            "value": "one_wall",
+            "label": "Yes — through one wall into the next room"
+          },
+          {
+            "value": "across_house",
+            "label": "Yes — to a different floor, or the other side of the house"
+          },
+          {
+            "value": "other_building",
+            "label": "Yes — to a separate building"
+          }
+        ]
+      },
+      "ask": {
+        "question": "Between the panel and there, does the wire have to leave the room?",
+        "help": "Every wall, floor or ceiling we go through is a hole to drill, seal and make safe.",
+        "why": "Crossing rooms is the difference between stapling a wire along one wall and threading it through a building."
+      },
+      "next": [
+        {
+          "always": true,
+          "go": "wall_finish"
+        }
+      ]
+    },
+    {
+      "id": "wall_finish",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "wall_finish",
+        "unknown_option": "unknown",
+        "options": [
+          {
+            "value": "open_framing",
+            "label": "Open — bare studs, exposed block or an unfinished ceiling",
+            "hint": "You can see the wood or the brick."
+          },
+          {
+            "value": "finished_access",
+            "label": "Finished walls, but there's an attic or crawlspace we can get into"
+          },
+          {
+            "value": "finished_no_access",
+            "label": "Finished walls, and there's no attic or crawlspace above or below"
+          },
+          {
+            "value": "unknown",
+            "label": "I'm not sure"
+          }
+        ]
+      },
+      "ask": {
+        "question": "What are the walls and ceiling like along the way?",
+        "help": "Look at the route between the panel and where the work is going. An unfinished garage wall where you can see the studs is the easy case.",
+        "why": "This is the biggest single thing that changes how long the job takes. Stapling a wire to open studs is minutes. Threading it through a finished wall with nowhere to get above it can take hours."
+      },
+      "next": [
+        {
+          "when": {
+            "var": "wall_finish",
+            "eq": "finished_no_access"
+          },
+          "go": "finish_preference"
+        },
+        {
+          "when": {
+            "var": "destination_outdoors",
+            "eq": true
+          },
+          "go": "outdoor_exposure"
+        },
+        {
+          "always": true,
+          "go": "run_defaults"
+        }
+      ]
+    },
+    {
+      "id": "finish_preference",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "finish_preference",
+        "exhaustive": true,
+        "options": [
+          {
+            "value": "surface_conduit",
+            "label": "Run it on the surface in a neat metal or plastic channel",
+            "hint": "Cheapest and quickest. You'll see it on the wall."
+          },
+          {
+            "value": "fish_and_patch",
+            "label": "Hide it inside the wall",
+            "hint": "We cut small openings to get the wire through. Patching and painting is not included."
+          },
+          {
+            "value": "whichever",
+            "label": "Whichever you'd recommend",
+            "hint": "We'll price the surface run and tell you what hiding it would add."
+          }
+        ]
+      },
+      "ask": {
+        "question": "With nowhere to get above or below, we have two ways to do this. Which sounds better?",
+        "help": "There's no hidden option that costs nothing — either the wire shows, or we open the wall.",
+        "why": "These are genuinely different jobs with genuinely different prices, and we'd rather you pick than find out on the day."
+      },
+      "next": [
+        {
+          "when": {
+            "var": "destination_outdoors",
+            "eq": true
+          },
+          "go": "outdoor_exposure"
+        },
+        {
+          "always": true,
+          "go": "run_defaults"
+        }
+      ]
+    },
+    {
+      "id": "outdoor_exposure",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "outdoor_exposure",
+        "unknown_option": "unknown",
+        "options": [
+          {
+            "value": "none",
+            "label": "No — it's all indoors or under cover"
+          },
+          {
+            "value": "exposed_wall",
+            "label": "Yes — along an outside wall or under an eave"
+          },
+          {
+            "value": "underground",
+            "label": "Yes — it has to go under the ground to get there"
+          },
+          {
+            "value": "unknown",
+            "label": "I'm not sure"
+          }
+        ]
+      },
+      "ask": {
+        "question": "Does any of the wire have to run outside?",
+        "help": "Anything outside has to be rated for weather and sunlight, and anything buried has to be at a legal depth.",
+        "why": "Outdoor-rated parts cost more, and digging is its own job."
+      },
+      "next": [
+        {
+          "when": {
+            "var": "outdoor_exposure",
+            "eq": "underground"
+          },
+          "go": "trench_details"
+        },
+        {
+          "always": true,
+          "go": "run_defaults"
+        }
+      ]
+    },
+    {
+      "id": "trench_details",
+      "kind": "question",
+      "answer": {
+        "type": "group",
+        "fields": [
+          {
+            "key": "trench_surface",
+            "type": "choice",
+            "unknown_option": "unknown",
+            "label": "What's between here and there, at ground level?",
+            "options": [
+              {
+                "value": "lawn",
+                "label": "Lawn or soft dirt"
+              },
+              {
+                "value": "gravel",
+                "label": "Gravel, hard-packed dirt, or lots of tree roots"
+              },
+              {
+                "value": "concrete",
+                "label": "Concrete or asphalt we'd have to cut through"
+              },
+              {
+                "value": "unknown",
+                "label": "I'm not sure what's under there"
+              }
+            ]
+          },
+          {
+            "key": "trench_distance_ft",
+            "type": "measurement",
+            "unit": "ft",
+            "min": 1,
+            "max": 300,
+            "step": 1,
+            "label": "How much of that distance is actually underground?",
+            "estimate_options": [
+              {
+                "value": 20,
+                "label": "About 20 feet",
+                "estimated": true
+              },
+              {
+                "value": 40,
+                "label": "About 40 feet",
+                "estimated": true
+              },
+              {
+                "value": 75,
+                "label": "About 75 feet",
+                "estimated": true
+              }
+            ]
+          }
+        ]
+      },
+      "ask": {
+        "question": "About the digging.",
+        "help": "Just the buried part — from where it leaves the building to where it comes back up. If a driveway or patio is in the way, say so: going around it is often cheaper than going through it, and we'd rather know now.",
+        "why": "Digging a lawn is straightforward and priced by the foot. Cutting a driveway is a different trade and a different number."
+      },
+      "next": [
+        {
+          "when": {
+            "var": "trench_surface",
+            "eq": "concrete"
+          },
+          "go": "T_site_visit_required"
+        },
+        {
+          "always": true,
+          "go": "run_defaults"
+        }
+      ]
+    },
+    {
+      "id": "run_defaults",
+      "kind": "defaults",
+      "explain": "Everything the flow skipped because it didn't need to ask. Making the assumptions explicit here is what lets the checker prove that no price ever refers to an answer that was never collected — and it gives the contractor one screen where they can see what the form quietly assumes.",
+      "sets": {
+        "finish_preference": "not_applicable",
+        "outdoor_exposure": "none",
+        "trench_surface": "none",
+        "trench_distance_ft": 0
+      },
+      "next": [
+        {
+          "always": true,
+          "go": "derive_route_difficulty"
+        }
+      ]
+    },
+    {
+      "id": "derive_route_difficulty",
+      "kind": "derive",
+      "sets": "route_difficulty",
+      "explain": "One value that stands for 'how hard is it to get the wire from A to B', so every machine's labour maths can refer to a single thing instead of re-deriving it.",
+      "rules": [
+        {
+          "when": {
+            "var": "wall_finish",
+            "eq": "open_framing"
+          },
+          "value": "open_framing"
+        },
+        {
+          "when": {
+            "var": "wall_finish",
+            "eq": "finished_access"
+          },
+          "value": "attic_or_crawl"
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "var": "wall_finish",
+                "eq": "finished_no_access"
+              },
+              {
+                "var": "finish_preference",
+                "in": [
+                  "surface_conduit",
+                  "whichever"
+                ]
+              }
+            ]
+          },
+          "value": "surface_conduit"
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "var": "wall_finish",
+                "eq": "finished_no_access"
+              },
+              {
+                "var": "finish_preference",
+                "eq": "fish_and_patch"
+              }
+            ]
+          },
+          "value": "fish_and_patch"
+        },
+        {
+          "always": true,
+          "value": "unknown"
+        }
+      ],
+      "next": [
+        {
+          "always": true,
+          "go": "__return__"
+        }
+      ]
+    }
+  ]
+}

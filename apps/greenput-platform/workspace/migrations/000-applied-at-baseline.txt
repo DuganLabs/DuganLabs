@@ -1,0 +1,28 @@
+# Migrations already applied to BOTH long-lived databases (`greenput` and
+# `greenput-staging`) when the baseline snapshot was taken on 2026-09-11.
+# Each entry was verified against the live databases, not assumed:
+#
+#   001  workspaces.slug present in both                          → applied
+#   002  activity_log CHECK includes 'workspace' in both          → applied
+#   003  chat_rooms table present in both                         → applied
+#   004  billing_status / trial_* present in both                 → applied
+#   005  CREATE INDEX IF NOT EXISTS — idempotent either way       → applied
+#
+# NOT listed, and this matters:
+#   006  leads.qualified_at / accepted_at / withdrawn_at are absent from both.
+#        The step that would have applied it lives in the deploy-worker job,
+#        which needs deploy-staging — and staging has failed since PR #103, so
+#        it never ran. Lead accept/withdraw has been writing to columns that do
+#        not exist.
+#   007  lead_meter_events has no UNIQUE(lead_id) in either database, so the
+#        double-billing backstop is not actually in place yet.
+#
+# Both run on the next deploy.
+#
+# FROZEN. A migration added after 2026-09-11 must NOT be listed here — that
+# would mark it applied on databases that never ran it.
+001-workspaces-slug.sql
+002-activity-log.sql
+003-chat-rooms.sql
+004-billing-columns.sql
+005-billing-status-index.sql

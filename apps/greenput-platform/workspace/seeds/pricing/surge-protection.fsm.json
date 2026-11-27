@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "machine",
+  "slug": "whole-home-surge-protection",
+  "vertical": "surge_protection",
+  "job_class": "surge_protection",
+  "name": "Whole-home surge protection",
+  "trade": "electrical",
+  "locale": "en-US",
+  "entry": "motivation",
+  "includes_fragments": ["panel_check", "property_and_contact", "shared_terminals"],
+
+  "meta": {
+    "homeowner_title": "Protect the whole house from surges",
+    "homeowner_intro": "Five questions, two minutes. This is one of the few electrical jobs we can price almost exactly.",
+    "typical_question_count": 6,
+    "longest_path_question_count": 9,
+    "progress_style": "counted"
+  },
+
+  "design_note": "The counterweight to the troubleshooting machine. Small, repeatable, almost deterministic — a device, a breaker, ninety minutes. It exists to prove the same engine that honestly refuses to quote a fault can give a near-exact number when the job genuinely is near-exact. If every machine produces a wide range, homeowners stop believing any of them.",
+
+  "overlays": [
+    { "when": { "var": "authorisation_required", "eq": true }, "apply": "T_needs_owner_authorisation" }
+  ],
+
+  "states": [
+    {
+      "id": "motivation",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "motivation",
+        "exhaustive": true,
+        "options": [
+          { "value": "lost_something", "label": "A surge already killed something of mine" },
+          { "value": "new_electronics","label": "I've got expensive electronics, appliances or a home office" },
+          { "value": "solar_or_ev",    "label": "I've had solar, a battery or an EV charger fitted" },
+          { "value": "storms",         "label": "We get a lot of storms or flickering here" },
+          { "value": "insurance",      "label": "My insurer or an inspector suggested it" },
+          { "value": "just_sensible",  "label": "It just seems sensible" }
+        ]
+      },
+      "ask": {
+        "question": "What's prompted this?",
+        "help": null,
+        "why": "If you've already lost something, it's worth checking whether the cause is still there before we fit anything."
+      },
+      "next": [
+        { "when": { "var": "motivation", "eq": "lost_something" }, "go": "loss_pattern" },
+        { "always": true, "go": "panel_check__include" }
+      ]
+    },
+
+    {
+      "id": "loss_pattern",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "loss_pattern",
+        "exhaustive": true,
+        "options": [
+          { "value": "one_storm",        "label": "One storm took out one or two things" },
+          { "value": "repeated_losses",  "label": "Things keep dying, and there hasn't always been a storm" },
+          { "value": "dim_and_bright",   "label": "It happened when the lights went dim in some rooms and bright in others" }
+        ]
+      },
+      "ask": {
+        "question": "What did that look like?",
+        "help": null,
+        "why": "Surge protection stops spikes coming in from outside. It does not fix a fault inside your own house, and we're not going to sell it to you as though it does."
+      },
+      "next": [
+        { "when": { "var": "loss_pattern", "in": ["repeated_losses", "dim_and_bright"] }, "go": "T_find_the_cause_first" },
+        { "always": true, "go": "panel_check__include" }
+      ]
+    },
+
+    {
+      "id": "panel_check__include",
+      "kind": "fragment",
+      "fragment": "panel_check",
+      "next": [ { "always": true, "go": "tier" } ]
+    },
+
+    {
+      "id": "tier",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "tier",
+        "exhaustive": true,
+        "options": [
+          { "value": "standard", "label": "Standard", "hint": "Handles ordinary surges — most of what actually reaches a house. Manufacturer's connected-equipment warranty." },
+          { "value": "better",   "label": "Higher rated", "hint": "More headroom, longer warranty, indicator that tells you when it has worn out. Worth it in storm country." },
+          { "value": "plus_poe", "label": "Higher rated, plus protection at the socket", "hint": "Whole-house device plus point-of-use protection for a TV, a computer or a home office. Layered protection is how it is actually meant to work." }
+        ]
+      },
+      "ask": {
+        "question": "Which level?",
+        "help": "All of these are fitted the same way and take the same time. The difference is the device, and the difference in price is mostly the device.",
+        "why": "Surge devices wear out absorbing surges. A higher-rated one lasts through more of them."
+      },
+      "next": [ { "always": true, "go": "add_on_visit" } ]
+    },
+
+    {
+      "id": "add_on_visit",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "add_on_visit",
+        "exhaustive": true,
+        "options": [
+          { "value": "yes_booked",  "label": "Yes — you're already booked to do something else" },
+          { "value": "maybe_later", "label": "Not yet, but I'm thinking about other work" },
+          { "value": "no",          "label": "No — just this" }
+        ]
+      },
+      "ask": {
+        "question": "Are we already coming out for something else?",
+        "help": null,
+        "why": "If we're already there with the panel open, this takes half the time and we charge you accordingly. It is genuinely cheaper as an add-on and we'd rather you knew."
+      },
+      "next": [ { "always": true, "go": "property_and_contact__include" } ]
+    },
+
+    {
+      "id": "property_and_contact__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "next": [ { "always": true, "go": "outcome" } ]
+    },
+
+    {
+      "id": "outcome",
+      "kind": "checkpoint",
+      "next": [
+        { "when": { "var": "panel_capacity", "eq": "hazard_panel" }, "go": "T_hazard_panel" },
+        { "when": { "var": "add_on_visit", "eq": "yes_booked" }, "go": "T_spd_addon" },
+        { "when": { "var": "panel_capacity", "in": ["full_needs_subpanel", "spare_needs_tandem"] }, "go": "T_spd_external_mount" },
+        { "when": { "var": "photo_status", "in": ["missing", "unreviewed"] }, "go": "T_needs_panel_review" },
+        { "always": true, "go": "T_spd_breaker_mount" }
+      ]
+    }
+  ],
+
+  "terminals": [
+    {
+      "id": "T_spd_breaker_mount",
+      "kind": "quote",
+      "title": "A surge protector in your panel",
+      "summary": "A device that clamps down spikes coming in from the street before they reach anything you own. It fits in your panel in the space of two breakers and takes about an hour and a half.",
+      "job_class": "surge_protection",
+      "includes": [
+        "The surge device, fitted in your panel",
+        "Checking your earthing — a surge protector only works as well as the ground it dumps into",
+        "Showing you the indicator so you know when it has done its job and needs replacing",
+        "Registering the manufacturer's connected-equipment warranty in your name"
+      ],
+      "excludes_extra": [
+        "Repairs to earthing if we find yours isn't up to standard — we'll price that separately and show you why",
+        "Replacing anything a previous surge already damaged"
+      ],
+      "line_items": [
+        { "id": "trip", "kind": "fee", "label": "Call-out", "rate": "fees.trip_charge",
+          "when": { "rate_card": "fees.trip_charge_policy", "eq": "always" }, "qty": { "base": 1 } },
+        { "id": "spd_standard", "kind": "material", "label": "Surge protective device", "catalog": "spd.type2_50ka",
+          "when": { "var": "tier", "eq": "standard" }, "qty": { "base": 1 } },
+        { "id": "spd_better", "kind": "material", "label": "Surge protective device, higher rated", "catalog": "spd.type2_80ka",
+          "when": { "var": "tier", "in": ["better", "plus_poe"] }, "qty": { "base": 1 } },
+        { "id": "poe", "kind": "material", "label": "Point-of-use protection", "catalog": "spd.point_of_use",
+          "when": { "var": "tier", "eq": "plus_poe" }, "qty": { "base": 2 } },
+        { "id": "breaker", "kind": "material", "label": "Breaker for the device", "catalog": "breaker.2p_30a", "qty": { "base": 1 } },
+        { "id": "consumables", "kind": "material", "label": "Fixings and labels", "catalog": "misc.consumables_small", "qty": { "base": 1 } },
+        { "id": "labour", "kind": "labour", "label": "Fitting and testing",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 1.5,
+            "modifiers": [
+              { "when": { "var": "panel_location", "eq": "exterior_wall" }, "op": "add", "value": 0.25, "because": "Working at an outdoor panel" },
+              { "when": { "var": "panel_location", "eq": "crawl_or_attic" }, "op": "add", "value": 0.5, "because": "Working somewhere you can't stand up" },
+              { "when": { "var": "tier", "eq": "plus_poe" }, "op": "add", "value": 0.25, "because": "Fitting and explaining the socket-level units" }
+            ], "round_to": 0.25 } },
+        { "id": "permit_fee", "kind": "fee", "label": "Permit", "rate": "permits.flat_fee",
+          "when": { "all": [ { "rate_card": "permits.policy", "eq": "we_pull_flat_fee" }, { "rate_card": "permits.required_by_job_class.surge_protection", "eq": true } ] },
+          "qty": { "base": 1 } }
+      ],
+      "uncertainty": {
+        "base_spread_pct": 6,
+        "base_spread_pct_note": "Overridden downward from the rate card default. This job genuinely has very few unknowns once the panel photo is read, and padding it to 12% would be dishonest in the other direction.",
+        "widen": [
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "add_pct": 6, "because": "We haven't confirmed there are two spaces free" },
+          { "when": { "var": "photo_status", "eq": "missing" }, "add_pct": 10, "because": "We haven't seen your panel" },
+          { "when": { "var": "panel_brand", "eq": "unknown" }, "add_pct": 5, "because": "Some panel brands need a device made for them" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "Worth being straight about what this does: it stops spikes coming in from outside — lightning nearby, the utility switching, a big motor down the street. It will not save something that fails because of a fault inside your house, and it is not a replacement for insurance." },
+          { "when": { "var": "motivation", "eq": "solar_or_ev" }, "say": "Good timing. Whoever fitted your solar or charger may already have put protection in — send us a photo of that equipment too and we'll tell you if you're covered. If you are, we'll say so and you can keep your money." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_spd_external_mount",
+      "kind": "quote",
+      "title": "A surge protector alongside your panel",
+      "summary": "Your panel has no pair of spaces free, so instead of taking two breakers out we fit the device in an enclosure right next to the panel and feed it from there. Same protection, slightly more work.",
+      "job_class": "surge_protection",
+      "extends": "T_spd_breaker_mount",
+      "includes_extra": [
+        "A small enclosure mounted next to your panel",
+        "A short conduit between the two, done neatly"
+      ],
+      "line_items_extra": [
+        { "id": "enclosure", "kind": "material", "label": "Enclosure and fittings", "catalog": "box.surface_2g", "qty": { "base": 1 } },
+        { "id": "nipple", "kind": "material", "label": "Conduit between panel and device", "catalog": "conduit.emt_075", "qty": { "base": 4 } },
+        { "id": "extra_labour", "kind": "labour", "label": "Mounting the enclosure",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 0.75, "round_to": 0.25 } }
+      ],
+      "uncertainty": { "base_spread_pct": 8, "inherit_widen_from": "T_spd_breaker_mount" },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "If your panel is this full, it's worth a conversation about what happens the next time you want to add anything. We can price a subpanel at the same time if you'd like to see it." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_spd_addon",
+      "kind": "quote",
+      "title": "Added to the job you've already booked",
+      "summary": "Since we're already coming out and already inside the panel, this is the device, the breaker and about forty-five minutes.",
+      "job_class": "surge_protection",
+      "extends": "T_spd_breaker_mount",
+      "drop_items": ["trip", "permit_fee"],
+      "drop_items_because": "One visit, one permit. Charging a second call-out for work done on the same trip is the kind of thing homeowners notice and remember.",
+      "line_items_override": [
+        { "id": "labour", "kind": "labour", "label": "Fitting and testing",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 0.75, "round_to": 0.25 } }
+      ],
+      "uncertainty": { "base_spread_pct": 5, "inherit_widen_from": "T_spd_breaker_mount" },
+      "presentation": {
+        "cta": "Add it to my booking",
+        "conditions": [
+          { "always": true, "say": "This price only holds while the other job is still booked. On its own it costs more, because of the trip." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_find_the_cause_first",
+      "kind": "no_quote",
+      "title": "Don't buy this yet",
+      "summary": "Things dying repeatedly, or dying when the lights went dim in one room and bright in another, is not a surge-from-outside problem. It's a fault — most often a failed neutral, either in your panel or on the utility's service.",
+      "body": "A surge protector will not stop that, and fitting one would take your money for something that cannot help. Get the fault found first. If it turns out to be on the utility's side, their visit is free.\n\nOnce it's fixed, come back — protection is a good idea, and by then it'll be protecting something that works.",
+      "next_step": {
+        "cta": "Book someone to find the fault",
+        "alt_cta": "It's already been fixed — price the protection",
+        "cost_promise": "The visit to find it is priced on the next screen. Nothing for this advice.",
+        "handoff_machine": "troubleshooting-callout"
+      },
+      "indicative": {
+        "show": true,
+        "label": "A visit to find a fault like that is",
+        "disclaimer": "That's finding it, not fixing it.",
+        "source": "handoff_machine_terminal",
+        "machine": "troubleshooting-callout",
+        "terminal": "T_diagnostic_visit"
+      },
+      "lead_flags": ["cross_sell_troubleshooting", "honest_refusal"],
+      "tone_note": "Turning down a sale on the grounds that the product doesn't do what the customer needs is the most persuasive thing a contractor can do. Say it plainly and do not soften it into an upsell."
+    },
+
+    {
+      "id": "T_needs_panel_review",
+      "kind": "span",
+      "title": "Here's the range — we'll confirm today",
+      "summary": "It depends on whether there's a free pair of spaces in your panel. Either way it's a small job; this covers both versions.",
+      "spans": ["T_spd_breaker_mount", "T_spd_external_mount"],
+      "resolution": {
+        "promise": "Within one business day.",
+        "on_resolve": "re_evaluate",
+        "narrowing_rule": "Re-evaluation may only move the range inside what was shown.",
+        "notify": ["sms", "email"]
+      },
+      "presentation": { "cta": "Book it in — we'll confirm the price first" }
+    }
+  ],
+
+  "honesty": {
+    "max_spread_pct": null,
+    "on_exceed_max_spread": "T_site_visit_required",
+    "refuse_to_quote_when": [
+      { "when": { "var": "loss_pattern", "in": ["repeated_losses", "dim_and_bright"] }, "because": "Surge protection does not fix an internal fault and selling it here would be taking money for nothing." }
+    ]
+  }
+}

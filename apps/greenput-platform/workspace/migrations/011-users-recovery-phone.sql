@@ -1,0 +1,21 @@
+-- @apply: per-statement
+-- 011 — users.recovery_phone: the personal number an account is recovered
+-- through.
+--
+-- Account recovery needs a number the OWNER controls, not a number the
+-- BUSINESS publishes. `workspaces.phone` is the company line — it is rendered
+-- on the contractor's micro-site and returned by /api/public/workspace/:slug,
+-- so an SMS code sent there is readable by anyone who can load the site. This
+-- column is the personal one, and /api/auth/otp/* matches on it and nothing
+-- else.
+--
+-- Nullable by design: "no SMS fallback" is a valid choice for an account with
+-- passkeys, and it is the state every existing row starts in. Nothing is
+-- backfilled here — a recovery number can only ever be set by its owner, after
+-- an OTP to that number proves possession (POST /api/auth/otp/recovery/start
+-- then /confirm). The one exception is the locked-out owner on production,
+-- whose row is repaired by hand; see the PR body for that statement.
+--
+-- The unique index is partial so the (initially all) NULL rows do not collide.
+ALTER TABLE users ADD COLUMN recovery_phone TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_recovery_phone ON users(recovery_phone) WHERE recovery_phone IS NOT NULL;

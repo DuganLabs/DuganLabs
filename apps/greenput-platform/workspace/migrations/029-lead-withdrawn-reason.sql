@@ -1,0 +1,16 @@
+-- @apply: per-statement
+-- 029 — why a homeowner cancelled (GP-105).
+--
+-- A homeowner can now cancel or move a booked job from the tenant site with
+-- the same session capability that booked it, and the contractor's fee is
+-- waived unconditionally. The reason they give is recorded here, never
+-- adjudicated: it exists so the owner can see which contractors lose booked
+-- work and why.
+--
+-- The closed set is schedule_no_longer_works | chose_another_provider |
+-- no_longer_needed | other. schema.sql declares it as a CHECK for fresh
+-- databases; SQLite's ALTER TABLE ADD COLUMN cannot attach one, so on the
+-- long-lived databases the set is enforced in code (LEAD_WITHDRAWN_REASONS
+-- in libs/shared/models, the validator on POST /api/leads/:id/withdraw, and
+-- the tenant site's cancel form).
+ALTER TABLE leads ADD COLUMN withdrawn_reason TEXT;

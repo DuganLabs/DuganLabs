@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src/**/*.ts"],
+  // src/contract/reads-the-real-api.spec.ts drives the real Worker routers over
+  // node:sqlite, and reaching them pulls @cloudflare/workers-types into this
+  // program through the `/// <reference>` in libs/shared/testing. That
+  // redefines `Response`, `Body.append` and friends, which turns ~245 lines of
+  // ordinary DOM code in this app into type errors that have nothing to do with
+  // the spec. The spec's value is what it asserts at runtime (it runs under
+  // `platform:test`); type-checking the Worker's own sources is apps/api's job.
+  "exclude": ["src/contract/**"]
+}

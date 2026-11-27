@@ -1,0 +1,1276 @@
+# Runs automatically on every push to main, on pull requests targeting
+# main (check jobs only — the deploy jobs stay gated to refs/heads/main
+# below, so a pull request can never deploy), and on workflow_dispatch
+# for manual runs. (Changed 2026-10-15: the owner reversed the 2026-09-14
+# manual-only rule.) Everything it does also runs on a developer machine
+# via scripts/pipeline.sh (checks) and the deploy scripts, from the same
+# Doppler config.
+name: GreenPut (apps/greenput-platform)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/greenput-platform/workspace/**'
+      - '.github/workflows/greenput.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/greenput-platform/workspace/**'
+      - '.github/workflows/greenput.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+  # Nx Cloud is off for the imported GreenPut workspace (no token in this public repo).
+  NX_NO_CLOUD: 'true'
+  # GitHub Packages auth for @basenative/*. pnpm >= 10 ignores ${VAR} credentials in a
+  # project .npmrc, so the token is supplied through a user-level config instead.
+  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/apps/greenput-platform/workspace/.github/npmrc-ci
+
+defaults:
+  run:
+    working-directory: apps/greenput-platform/workspace
+
+jobs:
+  # ── LINT & FORMAT ───────────────────────────────────────────
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: `nx affected` on a pull request diffs against the
+      # base branch, which a shallow checkout cannot see.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting (Prettier)
+        run: pnpm exec prettier --check "apps/**/*.{ts,tsx,css,html,json}" "libs/**/*.{ts,tsx,css,html,json}"
+
+      # On a pull request, lint only the projects the PR affects. Push and
+      # manual runs keep the per-project sweep below.
+      - name: Lint affected projects (pull request)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec nx affected --target=lint --base=origin/${{ github.base_ref }}
+
+      - name: Lint platform
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx lint platform
+
+      - name: Lint API
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx lint api
+
+      - name: Lint tenant-site
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx lint tenant-site
+
+      - name: Lint brand-assets
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx lint brand-assets
+
+      - name: Lint marketing
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx lint marketing
+
+      # The pricing machines in seeds/pricing/ are data, so nothing else here would
+      # catch an unreachable question, a branch with no price, or an outcome that
+      # prices off an answer some route never collects. `check` catches all three;
+      # `verify` re-runs every worked example against its frozen expected range, so a
+      # change that moves a price has to say so in the diff.
+      - name: Validate pricing machines
+        run: |
+          node scripts/seed/pricing-fsms.mjs check
+          node scripts/seed/pricing-fsms.mjs verify
+
+  # ── UNIT TESTS ──────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: `nx affected` on a pull request diffs against the
+      # base branch, which a shallow checkout cannot see.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `greenput` (the root package.json project) is excluded because its inferred
+      # "test" target just shells out to `nx run platform:test` again, which Nx's
+      # recursive-task-invocation guard flags as a cycle.
+      - name: Run unit tests (all Nx projects with a test target)
+        if: github.event_name != 'pull_request'
+        run: pnpm exec nx run-many --target=test --exclude=greenput
+
+      # On a pull request, test only the projects the PR affects.
+      - name: Run unit tests (affected projects, pull request)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec nx affected --target=test --exclude=greenput --base=origin/${{ github.base_ref }}
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ── CONTRACT TESTS ──────────────────────────────────────────
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run contract tests
+        run: pnpm exec vitest run --config contracts/vitest.config.ts
+
+  # ── RESPONSIVE CONTRACT ─────────────────────────────────────
+  # The one browser-driven job that gates THIS PR's own commit.
+  #
+  # The accessibility, Laws of UX and Lighthouse jobs all point at the
+  # always-on staging deployment, for the reasons spelled out above the
+  # `accessibility` job: there is no per-PR preview to target any more. That
+  # makes them standing canaries against whatever last merged, not gates on the
+  # change under review — which is exactly how the page gutter got fixed twice
+  # and regressed twice.
+  #
+  # These tests need no deployment and no database. e2e/responsive/ imports the
+  # marketing and tenant Workers' own `fetch` handlers, serves each on an
+  # ephemeral localhost port, and measures the rendered pages in Chromium at
+  # ~32 widths from 320px up: the page body must not scroll sideways, and every
+  # wrapper on the page spine must start on the same x as the brand. So it runs
+  # on pull_request and on main, against the commit in hand.
+  #
+  # Not folded into the `unit-tests` job because that one runs
+  # `nx run-many --target=test` and does not install a browser; the Nx target
+  # here is deliberately named `responsive` so that sweep never picks it up.
+  responsive:
+    name: Responsive Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Measure the responsive contract
+        run: pnpm exec nx run e2e:responsive
+
+      - name: Upload responsive report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: responsive-report
+          path: apps/greenput-platform/workspace/dist/.playwright/responsive/
+          retention-days: 7
+
+  # ── BUILD ───────────────────────────────────────────────────
+  build:
+    name: Build & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build platform app
+        run: pnpm exec nx run platform:build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Upload platform build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: platform-dist
+          path: apps/greenput-platform/workspace/dist/apps/platform
+          retention-days: 1
+
+  # ── WORKER PLAN ─────────────────────────────────────────────
+  worker-plan:
+    name: Worker Plan (dry run)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate API wrangler config (dry run)
+        run: pnpm exec wrangler deploy --dry-run --outdir dist-worker
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # apps/tenant-site and apps/marketing have no package.json, so `pnpm exec`
+      # climbs to the repo root and wrangler cannot find their wrangler.toml.
+      # `npx --no-install` resolves the same root-installed wrangler but keeps cwd.
+      - name: Validate tenant-site wrangler config (dry run)
+        run: npx --no-install wrangler deploy --dry-run --outdir dist-worker
+        working-directory: apps/greenput-platform/workspace/apps/tenant-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Validate marketing wrangler config (dry run)
+        run: npx --no-install wrangler deploy --dry-run --outdir dist-worker
+        working-directory: apps/greenput-platform/workspace/apps/marketing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Validate brand-assets wrangler config (dry run)
+        run: npx --no-install wrangler deploy --dry-run --outdir dist-worker
+        working-directory: apps/greenput-platform/workspace/apps/brand-assets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # The rasterizer (2.4 MB of WASM) lives in apps/brand-assets and nowhere
+      # else — GP-108. scripts/ci/bundle-guard.sh fails the build if apps/api
+      # or apps/tenant-site ever pulls it into their bundle.
+      - name: Bundle guard (rasterizer stays in brand-assets)
+        run: scripts/ci/bundle-guard.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Validate D1 schema syntax
+        run: |
+          STATEMENTS=$(grep -c ';' schema.sql || true)
+          echo "✓ Schema has ~$STATEMENTS statements"
+
+      - name: Upload API worker bundle plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: worker-bundle
+          path: apps/greenput-platform/workspace/apps/api/dist-worker
+          retention-days: 1
+
+      - name: Upload tenant-site worker bundle plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: tenant-worker-bundle
+          path: apps/greenput-platform/workspace/apps/tenant-site/dist-worker
+          retention-days: 1
+
+      - name: Upload marketing worker bundle plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: marketing-worker-bundle
+          path: apps/greenput-platform/workspace/apps/marketing/dist-worker
+          retention-days: 1
+
+  # ── E2E TESTS (against production build) ───────────────────
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: platform-dist
+          path: apps/greenput-platform/workspace/dist/apps/platform
+
+      - name: Verify build artifact
+        run: |
+          echo "=== Build artifact contents ==="
+          ls -la dist/apps/platform/ | head -20
+          echo "=== index.html (first 20 lines) ==="
+          head -20 dist/apps/platform/index.html
+
+      - name: Run E2E tests
+        id: e2e
+        run: |
+          set +e
+          pnpm exec playwright test --config e2e/playwright.config.ts --reporter=list 2>&1 | tee e2e-output.log
+          E2E_EXIT=${PIPESTATUS[0]}
+          set -e
+          SUMMARY=$(head -40 e2e-output.log)
+          echo "::warning title=E2E Summary::$(echo "$SUMMARY" | tr '\n' '|')"
+          FAILURES=$(tail -40 e2e-output.log)
+          echo "::warning title=E2E Failures::$(echo "$FAILURES" | tr '\n' '|')"
+          exit $E2E_EXIT
+        env:
+          SERVE_STATIC: 'true'
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            dist/.playwright/e2e/
+            e2e-output.log
+          retention-days: 7
+
+  # ── ACCESSIBILITY (against staging) ─────────────────────────
+  # Previously ran against this PR's own per-PR preview Worker/Pages
+  # deploy. That preview no longer exists on every PR (see
+  # preview-env.yml — it's now a manually-claimed shared environment), and
+  # there is no zero-cost way to stand up a fresh per-PR target without
+  # reintroducing the per-PR Cloudflare resources this change removes.
+  # Pointing AUDIT_BASE_URL at the always-on staging deployment instead
+  # keeps this job on every PR with the exact script/route/assertion
+  # behavior it already had for a live target (scripts/audit/axe.mjs's
+  # AUDIT_BASE_URL branch, unchanged) and needs no new infrastructure.
+  #
+  # Trade-off, called out here deliberately: staging reflects whatever
+  # last merged to main, not this PR's own commit, so this no longer gates
+  # THIS PR's accessibility changes the way the per-PR preview did — it's
+  # now a standing canary against staging's current state. The correct
+  # fix — auditing this PR's own local build via axe.mjs's local-serve
+  # fallback — is blocked by that fallback pointing at
+  # dist/apps/platform/browser/, which no longer exists (apps/platform's
+  # Vite build outputs directly to dist/apps/platform/ — see
+  # apps/platform/vite.config.ts's outDir — a leftover from the
+  # pre-BaseNative-migration Angular build layout). scripts/audit/ is out
+  # of scope for this change; see the PR description.
+  accessibility:
+    name: Accessibility Audit (axe-core)
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for staging to be reachable
+        run: |
+          URL="${PREVIEW_URL}"
+          echo "Waiting for ${URL} to be reachable..."
+          for i in 1 2 3 4 5 6; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
+            echo "  Attempt ${i}: HTTP ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
+              echo "Staging is live!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::Staging may not be reachable right now, proceeding anyway"
+        env:
+          PREVIEW_URL: https://greenput-app-staging.pages.dev
+
+      - name: Run axe accessibility audit
+        run: node scripts/audit/axe.mjs
+        env:
+          AUDIT_BASE_URL: https://greenput-app-staging.pages.dev
+
+      - name: Upload axe report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: axe-report
+          path: reports/axe-*.json
+
+  # ── LAWS OF UX (against staging) ────────────────────────────
+  # See the accessibility job above for why this targets staging instead
+  # of a per-PR preview, and the trade-off that comes with it.
+  laws-of-ux:
+    name: Laws of UX Audit
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for staging to be reachable
+        run: |
+          URL="${PREVIEW_URL}"
+          echo "Waiting for ${URL} to be reachable..."
+          for i in 1 2 3 4 5 6; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
+            echo "  Attempt ${i}: HTTP ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
+              echo "Staging is live!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::Staging may not be reachable right now, proceeding anyway"
+        env:
+          PREVIEW_URL: https://greenput-app-staging.pages.dev
+
+      - name: Run Laws of UX audit
+        run: node scripts/audit/laws-of-ux.mjs
+        env:
+          AUDIT_BASE_URL: https://greenput-app-staging.pages.dev
+
+      - name: Upload Laws of UX report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: laws-of-ux-report
+          path: reports/laws-of-ux-*.json
+
+  # ── SCHEMA DRIFT GUARD ──────────────────────────────────────
+  schema-drift:
+    name: Schema/migration drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # No Cloudflare credentials and no network: the check synthesises the
+      # baseline in node:sqlite, replays migrations/ over it and executes
+      # schema.sql's indexes. A column added to schema.sql without a migration
+      # fails here in milliseconds instead of breaking the production deploy.
+      - name: Check every schema.sql column has a migration
+        run: node --no-warnings scripts/db/check-migration-coverage.mjs
+
+      # Runs migrate.sh against a database built from the frozen baseline, with
+      # wrangler stubbed out by node:sqlite. Proves the migrations apply, are
+      # idempotent, and lose no rows — before they touch a real database.
+      - name: Test the migration runner
+        run: ./scripts/db/test-migrate.sh
+
+  # ── LIGHTHOUSE (demo tenant reference site, against staging) ─
+  # The measurement harness behind apps/marketing's /technology showcase
+  # page — every score/CWV number that page shows was produced by this
+  # exact script (scripts/audit/lighthouse.mjs). See the accessibility job
+  # above for why this targets the always-on staging deployment (fixed
+  # `greenput-tenant-staging` Worker) rather than a per-PR preview, and the
+  # same trade-off applies here: staging reflects whatever last merged to
+  # main, so this is a standing canary rather than a gate on this PR's own
+  # commit. scripts/staging/setup.sh seeds the `demo` workspace into
+  # staging on every staging deploy (see scripts/preview/seed.sql), so this
+  # target always has real content to measure.
+  # Runs on main AFTER staging deploys, not on pull requests.
+  #
+  # It measures the always-on staging deployment, which reflects whatever last
+  # merged — never the PR's own commit. As a required PR check it was worse
+  # than useless: this very PR introduces the staging seed for the `demo`
+  # workspace, so on the PR the tenant does not exist yet and the audit gets a
+  # 404. A check that cannot pass until after the thing it gates has merged is
+  # not a gate, it is a blocked queue.
+  #
+  # As a post-deploy canary it does the job it was written for: a real
+  # regression in the demo tenant fails the main run and is attributable to the
+  # commit that caused it.
+  lighthouse-demo-tenant:
+    name: Lighthouse Audit (demo tenant)
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The workers.dev hostname is <worker>.<account subdomain>.workers.dev.
+      # The account *subdomain* is not the account ID — using the ID produced a
+      # hostname that never resolved, and because the wait loop below only
+      # warned, Lighthouse then scored a dead URL and reported
+      # "regression — performance: 0 < 90", which reads as a real regression in
+      # this PR rather than a broken target. Resolve the subdomain from the API
+      # instead of hardcoding it, so no new secret is needed and it cannot go
+      # stale.
+      - name: Resolve the staging tenant URL
+        id: target
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          SUBDOMAIN=$(curl -sf \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['result']['subdomain'])")
+          if [ -z "${SUBDOMAIN}" ]; then
+            echo "::error::Could not resolve the account's workers.dev subdomain."
+            exit 1
+          fi
+          echo "url=https://greenput-tenant-staging.${SUBDOMAIN}.workers.dev" >> "$GITHUB_OUTPUT"
+          echo "marketing_url=https://greenput-marketing-staging.${SUBDOMAIN}.workers.dev/" >> "$GITHUB_OUTPUT"
+          echo "Target: https://greenput-tenant-staging.${SUBDOMAIN}.workers.dev"
+
+      # Fails the job rather than warning. An unreachable target is a real
+      # problem worth surfacing as itself; letting Lighthouse run against it
+      # anyway turns a deploy or DNS fault into a fake performance regression
+      # and sends whoever reads the log looking in the wrong place.
+      - name: Wait for staging to be reachable
+        run: |
+          URL="${PREVIEW_URL}/?slug=demo"
+          echo "Waiting for ${URL} to be reachable..."
+          for i in 1 2 3 4 5 6; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
+            echo "  Attempt ${i}: HTTP ${STATUS}"
+            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
+              echo "Staging is live!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::${URL} never became reachable (last status ${STATUS}). Not running Lighthouse against a dead target — a 0 score here would look like a regression in this PR."
+          exit 1
+        env:
+          PREVIEW_URL: ${{ steps.target.outputs.url }}
+
+      - name: Run Lighthouse audit against the demo tenant
+        run: node scripts/audit/lighthouse.mjs
+        env:
+          AUDIT_BASE_URL: ${{ steps.target.outputs.url }}
+          AUDIT_LABEL: staging-demo-tenant
+          # The demo tenant is deliberately noindexed (see render.ts) — skip
+          # only the one audit that's a false positive because of that
+          # choice, not because of a markup defect.
+          AUDIT_SKIP_CRAWLABLE: 'true'
+
+      # The staging marketing home (deployed by deploy-staging above), audited
+      # for the report, chiefly its Agentic browsing section. Report-only: the
+      # demo-tenant thresholds were set against the demo tenant's own baseline,
+      # so they are not applied here. It runs even when the demo-tenant gate
+      # fails, so both reports are always uploaded together.
+      - name: Run Lighthouse audit against the staging marketing home
+        if: always() && steps.target.outcome == 'success'
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${AUDIT_URL}" || true)
+          if [ "${STATUS}" -lt 200 ] || [ "${STATUS}" -ge 400 ]; then
+            echo "::error::${AUDIT_URL} is not reachable (HTTP ${STATUS}). Not running Lighthouse against a dead target."
+            exit 1
+          fi
+          node scripts/audit/lighthouse.mjs
+        env:
+          AUDIT_URL: ${{ steps.target.outputs.marketing_url }}
+          AUDIT_LABEL: staging-marketing-home
+          AUDIT_SKIP_GATE: 'true'
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-demo-tenant-report
+          path: |
+            reports/lighthouse-*.json
+            reports/lighthouse-*.html
+
+  # ── DEPLOY STAGING (main only, before production) ───────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests, contract-tests, build, worker-plan, schema-drift]
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provision staging infrastructure
+        run: bash scripts/staging/setup.sh
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Staging had no secret-push step at all, which is why staging's
+      # ADMIN_SETUP_TOKEN has to be pushed explicitly here. Only this one
+      # secret: pushing the Twilio credentials to staging would point a
+      # non-production Worker at a real SMS sender.
+      # Runs after "Provision staging infrastructure", which copies
+      # wrangler.staging.toml over wrangler.toml — so this targets
+      # greenput-api-staging, not greenput-api.
+      - name: Push Cloudflare Worker secrets (staging)
+        run: |
+          put() {
+            if [ -n "$2" ]; then
+              printf '%s' "$2" | pnpm exec wrangler secret put "$1" 2>/dev/null || true
+            else
+              echo "skipping $1 — no value configured"
+            fi
+          }
+          put ADMIN_SETUP_TOKEN "${{ secrets.GREENPUT_ADMIN_SETUP_TOKEN }}"
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy API Worker (staging)
+        run: pnpm exec wrangler deploy
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy tenant-site Worker (staging)
+        run: npx --no-install wrangler deploy
+        working-directory: apps/greenput-platform/workspace/apps/tenant-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Build platform app
+        run: pnpm exec nx run platform:build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Ensure staging Pages projects exist
+        run: |
+          pnpm exec wrangler pages project create greenput-app-staging --production-branch=main 2>/dev/null || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Generate _headers for Pages security (staging)
+        run: |
+          HEADERS='/*
+            Content-Security-Policy: default-src '"'"'self'"'"'; script-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://static.cloudflareinsights.com; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://fonts.googleapis.com; font-src '"'"'self'"'"' https://fonts.gstatic.com; img-src '"'"'self'"'"' data:; connect-src '"'"'self'"'"' https://api.greenput.com https://api.greenput.site https://greenput-api.greenput.workers.dev wss://api.greenput.com wss://api.greenput.site wss://greenput-api.greenput.workers.dev; frame-ancestors '"'"'none'"'"'; base-uri '"'"'self'"'"'; form-action '"'"'self'"'"'; upgrade-insecure-requests
+            Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+            X-Frame-Options: DENY
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+            Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()
+            Cross-Origin-Opener-Policy: same-origin'
+          echo "$HEADERS" > dist/apps/platform/_headers
+
+      - name: Deploy marketing Worker (staging)
+        run: |
+          cp apps/marketing/wrangler.staging.toml apps/marketing/wrangler.toml
+          cd apps/marketing && npx --no-install wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Generate _redirects for platform SPA fallback (staging)
+        run: echo "/* /index.html 200" > dist/apps/platform/_redirects
+
+      - name: Deploy platform app (staging)
+        run: pnpm exec wrangler pages deploy dist/apps/platform --project-name=greenput-app-staging --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ── DEPLOY WORKER (production, main only) ───────────────────
+  deploy-worker:
+    name: Deploy Workers (production)
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Secrets live in Doppler and get dropped into the pipeline where
+      # needed (DuganLabs/.github DOPPLER.md). This job is where they are
+      # needed: the "Push Cloudflare Worker secrets" step below runs under
+      # `doppler run --`, so a value added to greenput/repository reaches the
+      # Worker on the next deploy with no GitHub secret to mirror it into.
+      # DOPPLER_TOKEN is a read-only service token scoped to that one config.
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Run additive D1 migrations
+        run: ../../scripts/db/migrate.sh greenput --remote
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Run D1 schema
+        run: pnpm exec wrangler d1 execute greenput --file=../../schema.sql --remote
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Seeds Greenput's own reference/showcase tenant (slug: "demo") — see
+      # scripts/preview/seed.sql. Every statement in that file is
+      # `INSERT OR IGNORE`, so this only ever adds the fictional demo
+      # workspace + its supporting rows and never touches real customer
+      # data; it's what makes demo.greenput.com resolve to a real reference
+      # site instead of a 404. That hostname is bound by the [[routes]] block
+      # in apps/tenant-site/wrangler.toml — NOT by a wildcard record in
+      # infra/dns.tf, which this comment used to claim and which was deleted
+      # with the rest of Terraform. There is no wildcard: `demo` is the only
+      # tenant hostname that resolves, so this seeded row is the only workspace
+      # whose micro-site is reachable by subdomain.
+      - name: Seed the demo tenant (reference/showcase site)
+        run: pnpm exec wrangler d1 execute greenput --file=../../scripts/preview/seed.sql --remote
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Greenput's five global pricing machines and the default rate card
+      # (seeds/pricing/*.json). Every row has workspace_id NULL — they are
+      # templates every tenant site quotes from until a contractor authors
+      # their own, so without this every /quote page correctly but uselessly
+      # reports that the contractor prices nothing instantly. Generated from
+      # the JSON at deploy time rather than committed as SQL.
+      #
+      # PUBLISHED VERSIONS ARE NEVER REWRITTEN by this step. Version ids are a
+      # hash of the graph and the version inserts are ON CONFLICT DO NOTHING
+      # (the flow and rate-card rows above them are ON CONFLICT DO UPDATE, so
+      # their metadata does move), which means a re-run is a no-op and an
+      # edited seed publishes a NEW version beside the old one. That is what makes `pricing_quote_sessions.fsm_version_id` a
+      # real pin: the graph a homeowner was priced against still reads back
+      # unchanged years later. (It used to be INSERT OR REPLACE, which SQLite
+      # performs as DELETE + INSERT — every deploy silently rewrote the graph
+      # under every quote already given.)
+      - name: Seed the global pricing machines
+        run: ../../scripts/seed/apply-pricing-fsms.sh greenput --remote
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Each is pushed only when it has a value: `wrangler secret put` with an
+      # empty stdin writes an empty secret, and an empty TWILIO_ACCOUNT_SID is
+      # not the same as an absent one — the Worker checks all three for
+      # truthiness to decide whether it can text anyone at all.
+      #
+      # The Twilio trio is what /recover, onboarding's fallback and the
+      # un-brick instructions all depend on. Until these exist the product says
+      # so rather than promising a text (see smsConfigured in
+      # apps/api/src/routes/otp.ts); the moment they are set here, the next
+      # deploy makes SMS recovery real with no code change.
+      # The values come from Doppler (greenput/repository) via `doppler run`,
+      # which injects every secret in that config into the script's
+      # environment. Each `put` prefers the Doppler value and falls back to a
+      # GitHub secret of the same name, so nothing that worked before this
+      # change stops working and nothing has to be entered twice — a secret
+      # that exists only in Doppler (the Twilio trio) is picked up, one that
+      # exists only in GitHub (ADMIN_SETUP_TOKEN, per-environment) still is.
+      #
+      # scripts/deploy/local.sh runs this identical step on a developer
+      # machine, from the same Doppler config, which is what makes "the same
+      # pipeline locally" true rather than approximate.
+      - name: Push Cloudflare Worker secrets
+        run: |
+          # The GitHub fallbacks arrive as GH_* env vars (below) rather than
+          # being interpolated into this script, so no secret is ever part of
+          # a command line or an exported function body. `doppler run` then
+          # layers the Doppler config over that environment; a Doppler value
+          # wins wherever both exist.
+          cat > /tmp/put-secrets.sh <<'EOS'
+          put() {
+            if [ -n "$2" ]; then
+              printf '%s' "$2" | pnpm exec wrangler secret put "$1" 2>/dev/null || true
+            else
+              echo "skipping $1 — no value configured"
+            fi
+          }
+          put CALLS_APP_ID        "${CALLS_APP_ID:-${GH_CALLS_APP_ID:-}}"
+          put CALLS_APP_SECRET    "${CALLS_APP_SECRET:-${GH_CALLS_APP_SECRET:-}}"
+          put TWILIO_ACCOUNT_SID  "${TWILIO_ACCOUNT_SID:-}"
+          put TWILIO_AUTH_TOKEN   "${TWILIO_AUTH_TOKEN:-}"
+          put TWILIO_FROM_NUMBER  "${TWILIO_FROM_NUMBER:-}"
+          # Stripe: the API key billing.ts/payments.ts call with, and the signing
+          # secret POST /api/payments/webhook verifies against. Both from Doppler
+          # (greenput/repository); the Worker answers 503 on the billing routes
+          # and the webhook until they are set, never a half-configured charge.
+          put STRIPE_SECRET_KEY       "${STRIPE_SECRET_KEY:-}"
+          put STRIPE_WEBHOOK_SECRET   "${STRIPE_WEBHOOK_SECRET:-}"
+          # Publishable key (pk_…). lib/deposits.ts and
+          # POST /api/public/deposits/:token/session hand it to the
+          # homeowner's browser. Not a secret, but the Worker only sees
+          # it if it is pushed — absent, the deposit page reports status
+          # and cannot collect a card (the session endpoint answers 503).
+          # STRIPE_CONNECT_CLIENT_ID is intentionally not pushed: Express
+          # onboarding uses account links, not OAuth, and nothing reads it.
+          put STRIPE_PUBLISHABLE_KEY  "${STRIPE_PUBLISHABLE_KEY:-}"
+          # Proof of operator identity for POST /api/admin/auth/setup. Guarded
+          # like every other secret here: not configured => skipped => the
+          # Worker has no bootstrap route at all (see
+          # apps/api/src/middleware/admin-setup.ts). Each GitHub environment
+          # holds its own value; production and staging MUST NOT share one.
+          put ADMIN_SETUP_TOKEN   "${ADMIN_SETUP_TOKEN:-${GH_ADMIN_SETUP_TOKEN:-}}"
+          EOS
+          if [ -n "${DOPPLER_TOKEN:-}" ]; then
+            doppler run -- bash /tmp/put-secrets.sh
+          else
+            echo "::warning::DOPPLER_TOKEN is not set — Worker secrets come from GitHub only; anything that lives only in Doppler (Twilio) is skipped."
+            bash /tmp/put-secrets.sh
+          fi
+          rm -f /tmp/put-secrets.sh
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          DOPPLER_TOKEN: ${{ secrets.GREENPUT_DOPPLER_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_CALLS_APP_ID: ${{ secrets.GREENPUT_CALLS_APP_ID }}
+          GH_CALLS_APP_SECRET: ${{ secrets.GREENPUT_CALLS_APP_SECRET }}
+          GH_ADMIN_SETUP_TOKEN: ${{ secrets.GREENPUT_ADMIN_SETUP_TOKEN }}
+
+      - name: Deploy API Worker
+        run: pnpm exec wrangler deploy
+        working-directory: apps/greenput-platform/workspace/apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # A Worker route only fires for a hostname DNS can answer for. Without
+      # this record `*.greenput.com/*` in apps/tenant-site/wrangler.toml
+      # matches nothing that is not already named — which is the state the
+      # product shipped in: every contractor got a slug at signup and a
+      # micro-site address that did not resolve.
+      #
+      # A proxied A record to 192.0.2.1 (RFC 5737 TEST-NET-1, which routes
+      # nowhere) is Cloudflare's documented shape for a hostname whose only
+      # origin is a Worker: the orange cloud is what makes the request enter
+      # the edge and hit the route, and the address behind it is never dialled.
+      #
+      # More specific records win over a wildcard, so app/api/www keep their
+      # own. Idempotent — the record is created once and matched thereafter.
+      - name: Ensure wildcard tenant DNS (*.greenput.com)
+        run: |
+          AUTH="Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          ZONE_ID=$(curl -s -H "${AUTH}" \
+            "https://api.cloudflare.com/client/v4/zones?name=greenput.com" \
+            | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); process.stdout.write((d.result?.[0]||{}).id||'')")
+
+          if [ -z "${ZONE_ID}" ]; then
+            echo "::error::Could not resolve the greenput.com zone. Every tenant micro-site depends on this record; failing rather than deploying a wildcard route with nothing behind it."
+            exit 1
+          fi
+
+          ZONE_API="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+          EXISTING=$(curl -s -H "${AUTH}" "${ZONE_API}?name=*.greenput.com" \
+            | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); process.stdout.write(String((d.result||[]).length))")
+
+          if [ "${EXISTING}" != "0" ]; then
+            echo "  ✓ *.greenput.com already exists"
+            exit 0
+          fi
+
+          echo "  Creating *.greenput.com..."
+          RESP=$(curl -s -X POST "${ZONE_API}" -H "${AUTH}" -H "Content-Type: application/json" \
+            -d '{"type":"A","name":"*.greenput.com","content":"192.0.2.1","proxied":true,"comment":"Wildcard for tenant micro-sites; served by the greenput-tenant Worker route."}')
+          echo "${RESP}" | node -e "
+            const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            if (d.success) { console.log('    ✓ Created'); process.exit(0); }
+            console.log('::error::Wildcard DNS record was refused: ' + JSON.stringify(d.errors));
+            process.exit(1);
+          "
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy tenant-site Worker
+        run: npx --no-install wrangler deploy
+        working-directory: apps/greenput-platform/workspace/apps/tenant-site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # The share-card rasterizer, on its own hostname (GP-108). Bound as a
+      # Custom Domain AND an exact brand.greenput.com/* route, because the
+      # tenant wildcard above outranks a bare Custom Domain (#159).
+      - name: Deploy brand-assets Worker
+        run: npx --no-install wrangler deploy
+        working-directory: apps/greenput-platform/workspace/apps/brand-assets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # The wildcard route matches app/api/www as well as every tenant. Each
+      # of those is bound more specifically elsewhere and should therefore
+      # outrank it — "should" being the reason this step exists. It asks the
+      # live edge, straight after the deploy that could have changed the
+      # answer, and fails the job loudly rather than leaving a silently broken
+      # sign-in for someone to discover.
+      - name: Verify hostname routing
+        run: |
+          fail=0
+
+          # Poll each hostname for up to ~3 minutes before believing a
+          # failure. The deploys above re-assert this zone's Worker routes
+          # and Custom Domains; while those settle, a hostname can answer
+          # with Cloudflare's propagation placeholder or be captured by the
+          # tenant wildcard (local.sh's og:image check already retries
+          # around the same window). A single attempt made seconds after
+          # the deploys cannot tell that window from a real capture — so
+          # keep asking. And when a hostname still fails, log what it
+          # actually served: a check that discards the response can never
+          # be diagnosed from its own log.
+          check() { # check <url> <grep-pattern> <what>
+            local attempt code
+            for attempt in $(seq 1 18); do
+              code=$(curl -sS --max-time 20 -H 'User-Agent: greenput-ci' -o /tmp/verify-body -w '%{http_code}' "$1" 2>/tmp/verify-curl-err || true)
+              if grep -qF "$2" /tmp/verify-body; then
+                echo "  ✓ $3 (attempt $attempt)"
+                return 0
+              fi
+              sleep 10
+            done
+            echo "::error::$3 — $1 did not serve what it should after 3 minutes (last HTTP status: ${code:-curl failed}). The wildcard tenant route may have captured it."
+            echo "  Last body received (first 300 chars): $(head -c 300 /tmp/verify-body)"
+            if [ -s /tmp/verify-curl-err ]; then echo "  curl said: $(cat /tmp/verify-curl-err)"; fi
+            fail=1
+          }
+
+          # www is not a second copy of the marketing site. The marketing
+          # Worker (apps/marketing/src/worker/index.ts, #245) 301s it to the
+          # apex before any other routing, so the body is empty and a grep
+          # for "Greenput" can never succeed. Accept only a 301 or 308 whose
+          # Location is exactly the apex. Do not follow it: a tenant page
+          # served here, or a redirect to any other URL, is the wildcard
+          # capture this step exists to catch. The apex is requested on its
+          # own and must serve the marketing page.
+          check_www() {
+            local attempt code location
+            for attempt in $(seq 1 18); do
+              : > /tmp/verify-headers
+              code=$(curl -sS --max-time 20 -H 'User-Agent: greenput-ci' -D /tmp/verify-headers -o /tmp/verify-body -w '%{http_code}' "https://www.greenput.com/" 2>/tmp/verify-curl-err || true)
+              location=$(awk 'tolower(substr($0, 1, 9)) == "location:" { sub(/\r/, ""); sub(/^[^:]+:[ \t]*/, ""); sub(/[ \t]+$/, ""); print; exit }' /tmp/verify-headers 2>/dev/null || true)
+              if { [ "$code" = "301" ] || [ "$code" = "308" ]; } && [ "$location" = "https://greenput.com/" ]; then
+                echo "  ✓ www.greenput.com redirects to the apex (attempt $attempt)"
+                return 0
+              fi
+              sleep 10
+            done
+            echo "::error::www.greenput.com redirects to the apex — https://www.greenput.com/ did not 301/308 to https://greenput.com/ after 3 minutes (last HTTP status: ${code:-curl failed}, Location: '${location:-none}'). The wildcard tenant route may have captured it."
+            echo "  Last body received (first 300 chars): $(head -c 300 /tmp/verify-body)"
+            if [ -s /tmp/verify-curl-err ]; then echo "  curl said: $(cat /tmp/verify-curl-err)"; fi
+            fail=1
+          }
+
+          # The sign-in host must serve the platform shell, not a tenant page
+          # and not a 404.
+          check "https://app.greenput.com/" 'data-bn-app' "app.greenput.com serves the platform"
+          # The API must still answer as itself.
+          check "https://api.greenput.com/api/health" '"ok"' "api.greenput.com serves the API"
+          # Since Nov 26 2026 greenput.com and www serve the DuganLabs coming-soon page
+          # (Worker dl-greenput, apps/greenput); marketing lives at private.greenput.com (Access).
+          check "https://www.greenput.com/" 'Greenput' "www.greenput.com serves the coming-soon page"
+          check "https://greenput.com/" 'Greenput' "greenput.com serves the coming-soon page"
+          check "https://admin.greenput.com/" 'Greenput Admin' "admin.greenput.com serves the admin app"
+          # And the thing this change is for: a tenant hostname resolves and
+          # renders that tenant.
+          check "https://demo.greenput.com/" 'Rivertown Electric' "demo.greenput.com serves its tenant"
+          # The brand Worker answers on its hostname, not the tenant wildcard.
+          check "https://brand.greenput.com/health" 'greenput-brand' "brand.greenput.com serves the brand Worker"
+
+          exit $fail
+
+  # ── DEPLOY PAGES (production, main only) ────────────────────
+  deploy-pages:
+    name: Deploy to Cloudflare Pages (production)
+    runs-on: ubuntu-latest
+    needs: [deploy-worker]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/greenput-platform/workspace/package.json
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: apps/greenput-platform/workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build platform app
+        run: pnpm exec nx run platform:build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Ensure Pages projects exist
+        run: |
+          pnpm exec wrangler pages project create greenput-app --production-branch=main 2>/dev/null || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Generate _headers for Pages security (production)
+        run: |
+          HEADERS='/*
+            Content-Security-Policy: default-src '"'"'self'"'"'; script-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://static.cloudflareinsights.com; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://fonts.googleapis.com; font-src '"'"'self'"'"' https://fonts.gstatic.com; img-src '"'"'self'"'"' data:; connect-src '"'"'self'"'"' https://api.greenput.com https://api.greenput.site https://greenput-api.greenput.workers.dev wss://api.greenput.com wss://api.greenput.site wss://greenput-api.greenput.workers.dev; frame-ancestors '"'"'none'"'"'; base-uri '"'"'self'"'"'; form-action '"'"'self'"'"'; upgrade-insecure-requests
+            Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+            X-Frame-Options: DENY
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+            Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()
+            Cross-Origin-Opener-Policy: same-origin'
+          echo "$HEADERS" > dist/apps/platform/_headers
+
+      - name: Deploy marketing Worker (greenput.com)
+        run: cd apps/marketing && npx --no-install wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Generate _redirects for platform SPA fallback (production)
+        run: echo "/* /index.html 200" > dist/apps/platform/_redirects
+
+      - name: Deploy platform app (app.greenput.com)
+        run: pnpm exec wrangler pages deploy dist/apps/platform --project-name=greenput-app --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Configure Pages custom domains and DNS
+        run: |
+          ACCT_API="https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          AUTH="Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}"
+
+          # Step 1: Register custom domains on each Pages project (idempotent)
+          for PAIR in "greenput-app:app.greenput.com"; do
+            PROJECT="${PAIR%%:*}"
+            DOMAIN="${PAIR##*:}"
+            echo "  Registering custom domain ${DOMAIN} → ${PROJECT}..."
+            RESP=$(curl -s -w "\n%{http_code}" -X POST "${ACCT_API}/pages/projects/${PROJECT}/domains" \
+              -H "${AUTH}" -H "Content-Type: application/json" \
+              -d "{\"name\": \"${DOMAIN}\"}")
+            HTTP_CODE=$(echo "${RESP}" | tail -1)
+            echo "    → HTTP ${HTTP_CODE}"
+          done
+
+          # Step 2: Look up the greenput.com zone ID
+          echo "  Looking up zone ID for greenput.com..."
+          ZONE_ID=$(curl -s -H "${AUTH}" \
+            "https://api.cloudflare.com/client/v4/zones?name=greenput.com" \
+            | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); process.stdout.write((d.result[0]||{}).id||'')")
+          echo "    Zone ID: ${ZONE_ID}"
+
+          if [ -z "${ZONE_ID}" ]; then
+            echo "    ⚠ Could not find zone — skipping DNS record creation"
+            exit 0
+          fi
+
+          ZONE_API="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+
+          # Step 3: Ensure CNAME records exist for each subdomain → *.pages.dev
+          #
+          # Tenant micro-site hostnames are NOT here: they are Worker custom
+          # domains (apps/tenant-site/wrangler.toml `[[routes]] custom_domain`),
+          # and wrangler creates the DNS record itself when it attaches one. A
+          # CNAME written here would collide with it.
+          for PAIR in "app.greenput.com:greenput-app.pages.dev"; do
+            NAME="${PAIR%%:*}"
+            TARGET="${PAIR##*:}"
+            echo "  Ensuring CNAME ${NAME} → ${TARGET}..."
+
+            # Check if record already exists
+            EXISTING=$(curl -s -H "${AUTH}" \
+              "${ZONE_API}?type=CNAME&name=${NAME}" \
+              | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); process.stdout.write(String((d.result||[]).length))")
+
+            if [ "${EXISTING}" != "0" ]; then
+              echo "    ✓ CNAME already exists"
+            else
+              echo "    Creating CNAME record..."
+              curl -s -X POST "${ZONE_API}" \
+                -H "${AUTH}" -H "Content-Type: application/json" \
+                -d "{\"type\":\"CNAME\",\"name\":\"${NAME}\",\"content\":\"${TARGET}\",\"proxied\":true}" \
+                | node -e "const d=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); console.log(d.success ? '    ✓ Created' : '    ⚠ ' + JSON.stringify(d.errors))"
+            fi
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ── OBSERVATORY (production only) ───────────────────────────
+  observatory:
+    name: Mozilla Observatory Security Scan
+    runs-on: ubuntu-latest
+    needs: [deploy-pages]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run Mozilla Observatory scan
+        run: node scripts/audit/observatory.mjs
+        env:
+          DEPLOY_URL: https://app.greenput.com
+          OBSERVATORY_MIN_GRADE: 'B'
+

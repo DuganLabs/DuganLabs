@@ -1,0 +1,21 @@
+{
+  "name": "shared-scheduling",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/scheduling/src",
+  "tags": ["scope:shared", "type:scheduling"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/scheduling/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config libs/shared/scheduling/vitest.config.ts"
+      }
+    }
+  }
+}

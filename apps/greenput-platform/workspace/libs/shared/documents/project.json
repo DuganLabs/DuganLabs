@@ -1,0 +1,21 @@
+{
+  "name": "shared-documents",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/documents/src",
+  "tags": ["scope:shared", "type:documents"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/documents/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config libs/shared/documents/vitest.config.ts"
+      }
+    }
+  }
+}

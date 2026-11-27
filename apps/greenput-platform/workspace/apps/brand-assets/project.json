@@ -1,0 +1,43 @@
+{
+  "name": "brand-assets",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "gp",
+  "sourceRoot": "apps/brand-assets/src",
+  "tags": ["scope:brand-assets", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy --dry-run --outdir ../../dist/apps/brand-assets",
+        "cwd": "apps/brand-assets"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/brand-assets/src"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config apps/brand-assets/vitest.config.ts"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler dev",
+        "cwd": "apps/brand-assets"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy",
+        "cwd": "apps/brand-assets"
+      }
+    }
+  }
+}

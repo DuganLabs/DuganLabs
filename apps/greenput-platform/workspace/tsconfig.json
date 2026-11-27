@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": false,
+    "target": "es2022",
+    "module": "preserve",
+    "lib": ["es2020", "dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@greenput/shared/design": ["libs/shared/design/src/index.ts"],
+      "@greenput/shared/models": ["libs/shared/models/src/index.ts"],
+      "@greenput/shared/validators": ["libs/shared/validators/src/index.ts"],
+      "@greenput/shared/utils": ["libs/shared/utils/src/index.ts"],
+      "@greenput/shared/testing": ["libs/shared/testing/src/index.ts"],
+      "@greenput/shared/notifications": [
+        "libs/shared/notifications/src/index.ts"
+      ],
+      "@greenput/shared/pricing": ["libs/shared/pricing/src/index.ts"],
+      "@greenput/shared/scheduling": ["libs/shared/scheduling/src/index.ts"],
+      "@greenput/shared/consent": ["libs/shared/consent/src/index.ts"],
+      "@greenput/shared/documents": ["libs/shared/documents/src/index.ts"],
+      "@greenput/mocks/*": ["mocks/*"],
+      "@basenative/fetch": ["libs/basenative/fetch/src/index.ts"],
+      "@basenative/auth-webauthn": [
+        "libs/basenative/auth-webauthn/src/index.ts"
+      ]
+    },
+    "isolatedModules": true
+  },
+  "files": [],
+  "include": [],
+  "references": [],
+  "compileOnSave": false,
+  "exclude": ["node_modules", "tmp"]
+}

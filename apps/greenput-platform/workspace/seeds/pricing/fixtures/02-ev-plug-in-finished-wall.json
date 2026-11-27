@@ -1,0 +1,33 @@
+{
+  "machine": "ev-charger-install",
+  "title": "Plug-in charger, finished wall, photo not looked at yet",
+  "note": "Shows three things at once: the GFCI breaker a 14-50 outlet drags in, fishing a finished wall, and the spanning range while the photo is unread.",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "charger_location": "attached_garage_inside",
+    "charge_speed": "32a",
+    "charger_supply": "have_it",
+    "charger_connection": "plug_in",
+    "panel_location": "interior",
+    "panel_photo": {
+      "status": "unreviewed",
+      "fields": {}
+    },
+    "service_size_stated": "150",
+    "major_loads": [
+      "electric_dryer"
+    ],
+    "run_distance_ft": 45,
+    "route_crosses": "one_wall",
+    "wall_finish": "finished_no_access",
+    "finish_preference": "fish_and_patch"
+  }
+}

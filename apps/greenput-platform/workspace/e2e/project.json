@@ -1,0 +1,17 @@
+{
+  "name": "e2e",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "e2e/src",
+  "implicitDependencies": ["greenput"],
+  "// targets": "to see all targets run: nx show project e2e --web",
+  "// responsive": "The responsive contract (e2e/responsive/). Not named `test`: it drives a real browser, so it needs `playwright install chromium`, which the unit-test job does not do. Run by the `Responsive Contract` job in .github/workflows/ci.yml on every pull request.",
+  "targets": {
+    "responsive": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec playwright test --config e2e/responsive.config.ts"
+      }
+    }
+  }
+}

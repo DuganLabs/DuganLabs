@@ -1,0 +1,39 @@
+{
+  "machine": "circuit-outlet-addition",
+  "title": "A hot tub circuit with 25ft of trench",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "what_for": "hot_tub",
+    "spa_amps": "50",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "spare_capable",
+        "panel_brand": "square_d",
+        "panel_spaces_free": 4,
+        "panel_main_amps": 200,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "200",
+    "major_loads": [
+      "electric_range",
+      "central_ac"
+    ],
+    "run_distance_ft": 55,
+    "route_crosses": "one_wall",
+    "wall_finish": "open_framing",
+    "outdoor_exposure": "underground",
+    "trench_surface": "lawn",
+    "trench_distance_ft": 25
+  }
+}

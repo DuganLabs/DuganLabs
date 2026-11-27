@@ -1,0 +1,37 @@
+{
+  "machine": "panel-service-upgrade",
+  "title": "Out of spaces, service is fine — we talk them out of the big job",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "reason": "no_room",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "full_needs_subpanel",
+        "panel_brand": "square_d",
+        "panel_spaces_free": 0,
+        "panel_main_amps": 200,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "200",
+    "major_loads": [
+      "electric_dryer"
+    ],
+    "circuits_in_use": 26,
+    "meter_position": "directly_behind",
+    "service_entry": "overhead",
+    "panel_position_issue": [],
+    "upgrade_target": "recommend",
+    "outage_tolerance": "weekday_fine"
+  }
+}

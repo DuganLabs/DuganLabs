@@ -1,0 +1,34 @@
+{
+  "machine": "circuit-outlet-addition",
+  "title": "A 240V dryer circuit, 30ft through an attic",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "what_for": "dryer",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "spare_capable",
+        "panel_brand": "square_d",
+        "panel_spaces_free": 4,
+        "panel_main_amps": 200,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "200",
+    "major_loads": [
+      "electric_range"
+    ],
+    "run_distance_ft": 30,
+    "route_crosses": "across_house",
+    "wall_finish": "finished_access"
+  }
+}

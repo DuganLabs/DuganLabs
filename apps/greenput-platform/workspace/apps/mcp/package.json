@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.7"
+  },
+  "description": "GreenPut discovery MCP server — contract-first prototype on mock data. NOT deployed, NOT submitted to any directory.",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "prettier": "3.9.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "name": "@greenput/mcp",
+  "private": true,
+  "scripts": {
+    "generate:contracts": "tsx scripts/generate-contracts.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

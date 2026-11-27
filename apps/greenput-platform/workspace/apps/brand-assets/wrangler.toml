@@ -1,0 +1,33 @@
+name = "greenput-brand"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+# The one Worker that carries the rasterizer (@basenative/og-image →
+# @resvg/resvg-wasm, 2.4 MB of WASM). It reads workspace rows and draws PNGs;
+# nothing authenticated runs here, so a slow cold start costs a crawler an
+# image fetch and never a contractor a sign-in (GP-108).
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput"
+database_id = "ec38a8c4-b992-4a92-b809-27554ae806af"
+
+# Both bindings, on purpose. A Worker Custom Domain alone was NOT enough for
+# api.greenput.com: the tenant Worker's `*.greenput.com/*` route outranked it
+# and served the API's hostname as a 404 tenant page (#159). The explicit
+# route wins on specificity; the custom domain keeps the DNS record and the
+# certificate managed.
+[[routes]]
+pattern = "brand.greenput.com"
+custom_domain = true
+
+[[routes]]
+pattern = "brand.greenput.com/*"
+zone_name = "greenput.com"
+
+[vars]
+ENVIRONMENT = "production"
+
+[dev]
+port = 8790
+local_protocol = "http"

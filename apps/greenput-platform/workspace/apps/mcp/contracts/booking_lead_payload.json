@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "source": { "type": "string", "pattern": "^llm-app\\/" },
+    "shop_id": { "type": "string", "minLength": 1 },
+    "service": {
+      "type": "string",
+      "enum": [
+        "ev-charger-install",
+        "panel-upgrade",
+        "circuit-outlet",
+        "troubleshooting",
+        "surge-protection"
+      ]
+    },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "phone": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "minLength": 1 },
+        "service_address": { "type": "string", "minLength": 1 },
+        "job_details": { "type": "string", "minLength": 1 },
+        "photos": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "grant": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "name",
+              "phone",
+              "email",
+              "service_address",
+              "job_details",
+              "photos"
+            ]
+          },
+          "description": "Exactly the customer fields this grant allows GreenPut to share with the one shop named by shop_id. Nothing outside this list moves."
+        },
+        "purpose": {
+          "type": "string",
+          "const": "quote-and-schedule",
+          "description": "The only purpose a v1 grant can be issued for."
+        },
+        "allow_network_reroute": {
+          "type": "boolean",
+          "description": "May GreenPut re-share this lead with a different shop in the network pool if the named shop cannot take it? A reroute is a re-sharing event and is forbidden unless this is true."
+        },
+        "granted_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+          "description": "When the customer granted this."
+        }
+      },
+      "required": ["fields", "purpose", "allow_network_reroute", "granted_at"],
+      "additionalProperties": false
+    },
+    "reroute_allowed": { "type": "boolean" },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    }
+  },
+  "required": [
+    "source",
+    "shop_id",
+    "service",
+    "customer",
+    "grant",
+    "reroute_allowed",
+    "received_at"
+  ],
+  "additionalProperties": false
+}

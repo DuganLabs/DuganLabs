@@ -1,0 +1,24 @@
+-- @apply: per-statement
+-- 018 — clear recovery numbers no input can reproduce any more.
+--
+-- The previous toE164 prefixed '+' to any 11-15 digit run, so the
+-- international dialling prefix 00 survived into storage: '0019495550777'
+-- became '+0019495550777'. The new function rejects a run beginning 0 instead
+-- of translating it, which is correct — but it means a row written in the old
+-- shape is now unreachable. users.recovery_phone is matched exactly
+-- (findByRecoveryPhone), so its owner types the number in any spelling, is
+-- told no account has it, and cannot clear it without already being signed in.
+--
+-- Zero rows today: recovery_phone is NULL on every user in both live databases
+-- (checked read-only). This exists for the window, not the backlog —
+-- recovery-number binding is live on main right now and the deploy that
+-- carries the new function is blocked on GitHub Actions billing, so the gap
+-- between "someone can bind a 00-spelling" and "that spelling stops being
+-- reproducible" is open and of unknown length.
+--
+-- Deliberately narrow: only the '+0…' class, which is provably unreachable
+-- under the new function. Other values it can no longer emit are reachable
+-- enough to be worth leaving alone — clearing a working recovery number costs
+-- its owner their way back in, which is the failure this whole feature exists
+-- to prevent.
+UPDATE users SET recovery_phone = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE recovery_phone LIKE '+0%';

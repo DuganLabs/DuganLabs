@@ -1,0 +1,67 @@
+# FROZEN SNAPSHOT — DO NOT EDIT BY HAND, DO NOT REGENERATE.
+#
+# The column inventory of the long-lived GreenPut databases (`greenput` and
+# `greenput-staging`) as observed on 2026-09-11. Both databases had identical
+# column sets at that moment, so this file is the conservative floor: every
+# column listed here is guaranteed to already exist on a database that predates
+# the migrations/ directory.
+#
+# Its ONLY purpose is to anchor scripts/db/check-migration-coverage.mjs, which
+# asserts that every column schema.sql declares is either in this snapshot or
+# added by an `ALTER TABLE ... ADD COLUMN` in migrations/. Regenerating it from
+# a newer database would make that check vacuous — the drift it exists to catch
+# would be absorbed into the baseline. If a column is missing from a live
+# database, the fix is a new migration, never an edit here.
+#
+# NOT LISTED HERE, deliberately: nine tables that exist in the live databases
+# but are declared in no commit and referenced by no application code —
+# intake_flows, flow_states, flow_transitions, flow_instances,
+# flow_instance_events, availability_windows, availability_blackouts,
+# schedule_buffers and schedule_settings. They were applied directly to the
+# databases outside CI, so they are not part of the schema contract this file
+# anchors. See docs/UNTRACKED-PRODUCTION-TABLES.md.
+#
+# Format: <table>\t<comma-separated columns>
+activity_log	id,workspace_id,user_id,entity_type,entity_id,action,meta,created_at
+admin_users	id,email,display_name,created_at
+admin_webauthn_credentials	id,admin_user_id,credential_id,public_key,counter,device_type,backed_up,transports,created_at
+api_keys	id,workspace_id,name,key_prefix,key_hash,scopes,last_used_at,expires_at,created_at,created_by
+asset_assignments	id,workspace_id,asset_id,user_id,job_id,action,notes,created_at
+assets	id,workspace_id,name,category,serial_number,qr_code,status,assigned_to,vehicle_id,purchase_date,purchase_cost,condition,location,notes,created_at,updated_at
+branding	id,workspace_id,logo_url,favicon_url,primary_color,secondary_color,accent_color,font_family,custom_domain,email_footer,updated_at
+campaigns	id,workspace_id,name,status,channel,target_area,budget,spent,leads_generated,start_date,end_date,notes,created_at,updated_at,created_by
+chat_messages	id,chat_room_id,user_id,user_name,content,created_at
+chat_read_receipts	user_id,chat_room_id,last_read_at
+chat_rooms	id,workspace_id,name,entity_type,entity_id,created_by,created_at
+custom_roles	id,workspace_id,name,permissions,created_at,updated_at
+customers	id,workspace_id,first_name,last_name,company,email,phone,preferred_contact,street,city,state,zip,notes,consent_given_at,consent_method,total_job_value,job_count,created_at,updated_at,created_by
+deletion_requests	id,workspace_id,requested_by,status,scheduled_deletion_at,completed_at,created_at
+error_logs	id,severity,category,code,message,stack,request_id,user_id,workspace_id,path,method,status_code,metadata,created_at
+estimates	id,workspace_id,opportunity_id,customer_id,estimate_number,title,status,line_items,subtotal,tax_rate,tax_amount,total,notes,valid_until,sent_at,accepted_at,rejected_at,created_at,updated_at,created_by
+files	id,workspace_id,entity_type,entity_id,filename,content_type,size,r2_key,uploaded_by,created_at
+form_submissions	id,workspace_id,lead_id,form_data,source_url,ip_address,processed,created_at
+inventory_items	id,workspace_id,name,sku,description,category,quantity,min_quantity,unit_cost,unit_price,supplier,location,created_at,updated_at
+inventory_transactions	id,workspace_id,item_id,job_id,type,quantity,notes,created_at,created_by
+job_line_items	id,job_id,description,quantity,unit_price,total
+jobs	id,workspace_id,opportunity_id,customer_id,job_number,title,status,street,city,state,zip,scheduled_start,scheduled_end,actual_start,actual_end,total,notes,invoiced_at,paid_at,created_at,updated_at,created_by
+lead_meter_events	id,workspace_id,lead_id,vertical,service_type,price_usd,status,stripe_usage_record_id,invoiced_at,notes,created_at
+leads	id,workspace_id,first_name,last_name,email,phone,preferred_contact,street,city,state,zip,status,source,campaign_id,service_type,estimated_value,notes,converted_to_opportunity_id,created_at,updated_at,created_by
+maintenance_logs	id,workspace_id,asset_id,type,description,cost,performed_by,performed_at,next_due,created_at
+notification_log	id,workspace_id,user_id,channel,event_type,recipient,status,error_msg,sent_at
+notification_preferences	id,user_id,event_type,channel,enabled
+opportunities	id,workspace_id,lead_id,customer_id,title,status,value,service_type,notes,proposal_sent_at,closed_at,converted_to_job_id,created_at,updated_at,created_by
+payments	id,workspace_id,job_id,customer_id,stripe_payment_intent_id,amount,currency,status,description,payment_method_type,receipt_url,created_at,updated_at
+plugin_installations	id,workspace_id,plugin_id,config,enabled,installed_at,installed_by
+plugins	id,name,slug,description,version,author,icon_url,category,events,config_schema,active,created_at
+portal_tokens	id,customer_id,workspace_id,token,expires_at,used_at,created_at
+review_requests	id,workspace_id,customer_id,job_id,channel,status,sent_at,completed_at,created_at
+reviews	id,workspace_id,customer_id,job_id,platform,rating,content,author_name,review_url,responded,response_text,fetched_at,created_at
+sso_configurations	id,workspace_id,provider,issuer_url,client_id,client_secret,certificate,metadata_url,enabled,created_at,updated_at
+subscriptions	id,workspace_id,stripe_subscription_id,stripe_customer_id,plan,status,current_period_start,current_period_end,cancel_at_period_end,created_at,updated_at
+user_workspaces	id,user_id,workspace_id,role,joined_at
+users	id,workspace_id,first_name,last_name,email,role,password_hash,created_at,updated_at,last_seen_at
+vehicles	id,workspace_id,name,make,model,year,license_plate,vin,assigned_to,status,mileage,notes,created_at,updated_at
+webauthn_credentials	id,user_id,credential_id,public_key,counter,device_type,backed_up,transports,created_at
+webhook_deliveries	id,webhook_id,event_type,payload,status_code,response_body,attempts,delivered_at,created_at
+webhooks	id,workspace_id,url,events,secret,active,created_at,updated_at,created_by
+workspaces	id,name,trade,phone,email,street,city,state,zip,license_num,logo_url,created_at,slug,billing_status,trial_started_at,trial_ends_at

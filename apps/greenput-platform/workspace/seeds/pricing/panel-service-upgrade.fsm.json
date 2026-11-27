@@ -1,0 +1,533 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "machine",
+  "slug": "panel-service-upgrade",
+  "vertical": "panel_service",
+  "job_class": "service_upgrade",
+  "name": "Panel replacement and service upgrade",
+  "trade": "electrical",
+  "locale": "en-US",
+  "entry": "reason",
+  "includes_fragments": ["panel_check", "property_and_contact", "shared_terminals"],
+
+  "meta": {
+    "homeowner_title": "What would a new panel cost?",
+    "homeowner_intro": "The biggest job most houses ever need from an electrician, and the one with the widest prices out there. Eight questions and we'll show you an honest range — including whether you need it at all.",
+    "typical_question_count": 10,
+    "longest_path_question_count": 15,
+    "progress_style": "counted"
+  },
+
+  "overlays": [
+    { "when": { "var": "authorisation_required", "eq": true }, "apply": "T_needs_owner_authorisation" }
+  ],
+
+  "states": [
+    {
+      "id": "reason",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "reason",
+        "exhaustive": true,
+        "options": [
+          { "value": "no_room",        "label": "There's no room for any more circuits" },
+          { "value": "tripping",       "label": "Breakers keep tripping" },
+          { "value": "old_or_flagged", "label": "It's old, or an inspector or insurer flagged it" },
+          { "value": "adding_load",    "label": "I'm adding something big — EV charger, hot tub, heat pump, AC" },
+          { "value": "selling",        "label": "I'm selling the house" },
+          { "value": "damage_or_heat", "label": "Something's wrong with it — burning smell, scorch marks, it's warm, it buzzes or sparks" }
+        ]
+      },
+      "ask": {
+        "question": "What's making you look at your panel?",
+        "help": null,
+        "why": "Half the people who ask about a new panel don't need one. The answer changes what we look at."
+      },
+      "next": [
+        { "when": { "var": "reason", "eq": "damage_or_heat" }, "go": "T_urgent_dispatch", "says": "This is a safety call, not a pricing one" },
+        { "always": true, "go": "panel_check__include" }
+      ]
+    },
+
+    {
+      "id": "panel_check__include",
+      "kind": "fragment",
+      "fragment": "panel_check",
+      "next": [ { "always": true, "go": "circuits_in_use" } ]
+    },
+
+    {
+      "id": "circuits_in_use",
+      "kind": "question",
+      "answer": {
+        "type": "measurement",
+        "key": "circuits_in_use",
+        "unit": "switches",
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "estimate_options": [
+          { "value": 12, "label": "About a dozen", "estimated": true },
+          { "value": 20, "label": "Around twenty", "estimated": true },
+          { "value": 30, "label": "Thirty or more", "estimated": true }
+        ]
+      },
+      "ask": {
+        "question": "How many switches are in your panel?",
+        "help": "Count every switch except the big one at the top. Count a wide double switch as one. If you sent the photo, a rough number is fine — we'll count them properly ourselves.",
+        "why": "Every existing circuit has to be moved across and given a new breaker, and modern breakers cost several times what the old ones did. On a panel replacement, breakers are often the single biggest material cost — more than the panel."
+      },
+      "next": [ { "always": true, "go": "meter_position" } ]
+    },
+
+    {
+      "id": "meter_position",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "meter_position",
+        "unknown_option": "unknown",
+        "options": [
+          { "value": "directly_behind", "label": "Right behind it, on the other side of the wall" },
+          { "value": "same_wall",       "label": "On the same outside wall, near it" },
+          { "value": "far_away",        "label": "Somewhere else entirely" },
+          { "value": "no_meter_visible","label": "I can't see a meter — it might be inside, or shared" },
+          { "value": "unknown",         "label": "I'm not sure" }
+        ]
+      },
+      "ask": {
+        "question": "Where's your electric meter, compared to the panel?",
+        "help": "The meter is the glass or clear dome with the numbers, usually on an outside wall.",
+        "why": "If the meter is right there, replacing the panel is one job. If it's far away, it becomes two."
+      },
+      "next": [ { "always": true, "go": "service_entry" } ]
+    },
+
+    {
+      "id": "service_entry",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "service_entry",
+        "unknown_option": "unknown",
+        "options": [
+          { "value": "overhead",    "label": "Through the air, from a pole" },
+          { "value": "underground", "label": "Up out of the ground" },
+          { "value": "unknown",     "label": "I'm not sure" }
+        ]
+      },
+      "ask": {
+        "question": "How does the power get to your house?",
+        "help": "Stand outside and look up. If there's a cable from a pole to your roof or a mast, that's overhead. If there's nothing overhead and no pole nearby, it's underground.",
+        "why": "This is the single biggest thing that separates a $3,000 job from a $9,000 one. Underground services usually mean the utility company has to dig."
+      },
+      "next": [ { "always": true, "go": "panel_position_issue" } ]
+    },
+
+    {
+      "id": "panel_position_issue",
+      "kind": "question",
+      "answer": {
+        "type": "multi_choice",
+        "key": "panel_position_issue",
+        "exhaustive": true,
+        "allow_none": true,
+        "none_label": "None of these",
+        "options": [
+          { "value": "in_closet",     "label": "It's inside a clothes closet or a cupboard with things stored in it" },
+          { "value": "in_bathroom",   "label": "It's in a bathroom" },
+          { "value": "over_stairs",   "label": "It's over a stairway or somewhere you can't stand square in front of it" },
+          { "value": "blocked",       "label": "There's something big in front of it — shelving, a washer, a workbench" },
+          { "value": "low_ceiling",   "label": "It's in a crawlspace or an attic you can't stand up in" }
+        ]
+      },
+      "ask": {
+        "question": "Is anything awkward about where the panel is?",
+        "help": "Tick anything that's true. None of these are your fault — houses get built this way.",
+        "why": "The code requires a clear space in front of a panel, and a few of these locations aren't allowed at all any more. If yours is one of them, the new panel has to move — which is real extra work and we'd rather say so now than on the day."
+      },
+      "next": [ { "always": true, "go": "upgrade_target" } ]
+    },
+
+    {
+      "id": "upgrade_target",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "upgrade_target",
+        "unknown_option": "recommend",
+        "options": [
+          { "value": "like_for_like", "label": "Just replace what I've got", "hint": "Same size service, new panel and new breakers." },
+          { "value": "200a",          "label": "Upgrade to 200 amps", "hint": "The normal modern size. Room for an EV charger, a heat pump and more." },
+          { "value": "400a",          "label": "Upgrade to 400 amps", "hint": "Big houses, workshops, two EVs and a pool." },
+          { "value": "recommend",     "label": "Tell me what I need" }
+        ]
+      },
+      "ask": {
+        "question": "How much do you want to end up with?",
+        "help": null,
+        "why": "Going bigger costs more up front and saves a second job later. If you've no plans to add anything, like-for-like is often the right answer and we'll say so."
+      },
+      "next": [ { "always": true, "go": "outage_tolerance" } ]
+    },
+
+    {
+      "id": "outage_tolerance",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "outage_tolerance",
+        "exhaustive": true,
+        "options": [
+          { "value": "weekday_fine",  "label": "A weekday is fine" },
+          { "value": "weekend_only",  "label": "It'd have to be a weekend" },
+          { "value": "need_power",    "label": "I can't be without power — I work from home, or there's medical equipment" }
+        ]
+      },
+      "ask": {
+        "question": "Your power will be off for most of a day. When can we do that?",
+        "help": "Usually six to nine hours, sometimes longer if the utility company is slow to come back.",
+        "why": "Weekend work costs more, and if you can't lose power at all we need to plan a temporary supply."
+      },
+      "next": [ { "always": true, "go": "derive_resulting_service" } ]
+    },
+
+    {
+      "id": "derive_resulting_service",
+      "kind": "derive",
+      "sets": "resulting_service",
+      "explain": "What size service they finish with. The bug this fixes is subtle and expensive: pricing the new panel off the OLD service size means quoting a 100A panel for a 200A upgrade.",
+      "rules": [
+        { "when": { "var": "upgrade_target", "eq": "200a" }, "value": "200" },
+        { "when": { "var": "upgrade_target", "eq": "400a" }, "value": "400" },
+        { "when": { "var": "panel_capacity", "eq": "service_upgrade_needed" }, "value": "200" },
+        { "when": { "var": "load_risk", "in": ["high", "critical"] }, "value": "200" },
+        { "when": { "var": "service_size_stated", "in": ["150", "200", "400"] }, "value": "200" },
+        { "always": true, "value": "100" }
+      ],
+      "next": [ { "always": true, "go": "derive_upgrade_plan" } ]
+    },
+
+    {
+      "id": "derive_upgrade_plan",
+      "kind": "derive",
+      "sets": "upgrade_plan",
+      "explain": "Decides what job this actually is. Note the first rule: if the only problem is running out of spaces and the service itself is fine, the honest answer is a subpanel, not a new service — and it is roughly a third of the price. The machine must volunteer that.",
+      "rules": [
+        { "when": { "all": [ { "var": "reason", "eq": "no_room" }, { "var": "load_risk", "eq": "low" }, { "var": "panel_capacity", "ne": "hazard_panel" }, { "var": "upgrade_target", "in": ["recommend", "like_for_like"] } ] }, "value": "subpanel_is_enough" },
+        { "when": { "var": "panel_position_issue", "contains_any": ["in_bathroom", "over_stairs", "in_closet"] }, "value": "relocation_needed" },
+        { "when": { "var": "service_entry", "in": ["underground", "unknown"] }, "value": "underground_service" },
+        { "when": { "var": "meter_position", "in": ["far_away", "no_meter_visible", "unknown"] }, "value": "needs_survey" },
+        { "when": { "var": "upgrade_target", "eq": "400a" }, "value": "needs_survey" },
+        { "when": { "any": [ { "var": "upgrade_target", "eq": "200a" }, { "var": "panel_capacity", "eq": "service_upgrade_needed" }, { "var": "load_risk", "in": ["high", "critical"] } ] }, "value": "service_upgrade" },
+        { "when": { "var": "upgrade_target", "eq": "like_for_like" }, "value": "panel_swap" },
+        { "when": { "var": "panel_capacity", "eq": "hazard_panel" }, "value": "panel_swap" },
+        { "always": true, "value": "panel_swap" }
+      ],
+      "next": [ { "always": true, "go": "property_and_contact__include" } ]
+    },
+
+    {
+      "id": "property_and_contact__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "next": [ { "always": true, "go": "outcome" } ]
+    },
+
+    {
+      "id": "outcome",
+      "kind": "checkpoint",
+      "next": [
+        { "when": { "var": "upgrade_plan", "eq": "relocation_needed" }, "go": "T_panel_relocation" },
+        { "when": { "var": "upgrade_plan", "eq": "underground_service" }, "go": "T_service_upgrade_underground" },
+        { "when": { "var": "upgrade_plan", "eq": "needs_survey" }, "go": "T_site_visit_required" },
+        { "when": { "var": "upgrade_plan", "eq": "subpanel_is_enough" }, "go": "T_subpanel_instead" },
+        { "when": { "all": [ { "var": "upgrade_plan", "eq": "service_upgrade" }, { "var": "photo_status", "in": ["missing", "unreviewed"] } ] }, "go": "T_needs_panel_review" },
+        { "when": { "var": "upgrade_plan", "eq": "service_upgrade" }, "go": "T_service_upgrade_overhead" },
+        { "when": { "var": "photo_status", "in": ["missing", "unreviewed"] }, "go": "T_needs_panel_review" },
+        { "always": true, "go": "T_panel_swap_same_service" }
+      ]
+    }
+  ],
+
+  "terminals": [
+    {
+      "id": "T_panel_swap_same_service",
+      "kind": "quote",
+      "title": "A new panel, same size service",
+      "summary": "We replace the panel and every breaker in it, keeping your existing service size, meter and the cable coming in. Your house gets modern protection without the utility company being involved.",
+      "job_class": "panel_replacement",
+      "includes": [
+        "A new panel with room to spare",
+        "New breakers on every circuit, including the arc-fault and ground-fault types the code now requires",
+        "Moving all your existing circuits across, one at a time, labelled properly",
+        "Bringing the earthing and bonding up to current code",
+        "Permit and inspection",
+        "A typed list of what's on each breaker, in the door"
+      ],
+      "excludes_extra": [
+        "Fixing circuits that turn out to be faulty once they're on a modern breaker — arc-fault breakers find problems that old ones ignored. We'll show you and price it separately.",
+        "Any work the utility company charges you for directly"
+      ],
+      "line_items": [
+        { "id": "panel_200", "kind": "material", "label": "New panel", "catalog": "panel.200a_40sp",
+          "when": { "var": "resulting_service", "in": ["200", "400"] }, "qty": { "base": 1 } },
+        { "id": "panel_100", "kind": "material", "label": "New panel", "catalog": "panel.100a_20sp",
+          "when": { "var": "resulting_service", "eq": "100" }, "qty": { "base": 1 } },
+
+        { "id": "afci_breakers", "kind": "material", "label": "Arc-fault and dual-function breakers", "catalog": "breaker.1p_20a_afci",
+          "qty": { "base": 0, "per": [ { "of": "circuits_in_use", "rate": 1.0 } ],
+            "modifiers": [ { "always": true, "op": "multiply", "value": 0.7, "because": "Share of circuits the code requires arc-fault protection on — tune per jurisdiction" } ],
+            "round_to": 1 },
+          "tuning_note": "The 0.7 is the number to tune first and per city. Some jurisdictions require AFCI on every reused circuit on a replacement panel; some require none. At 20 circuits that difference is roughly $700 of parts." },
+        { "id": "standard_breakers", "kind": "material", "label": "Standard breakers", "catalog": "breaker.1p_20a",
+          "qty": { "base": 0,
+            "per": [ { "of": "circuits_in_use", "rate": 1.0 }, { "of": "major_loads", "rate": -1.0 } ],
+            "modifiers": [ { "always": true, "op": "multiply", "value": 0.3 } ], "min": 0, "round_to": 1 },
+          "note": "The big-appliance breakers are counted on their own line below, so they come out of this one rather than being charged twice." },
+        { "id": "double_pole_breakers", "kind": "material", "label": "Breakers for your big appliances", "catalog": "breaker.2p_30a",
+          "qty": { "base": 0, "per": [ { "of": "major_loads", "rate": 1.0, "count": true } ], "round_to": 1 } },
+
+        { "id": "grounding", "kind": "material", "label": "Ground rods", "catalog": "ground.rod_and_clamp", "qty": { "base": 2 } },
+        { "id": "gec", "kind": "material", "label": "Earthing cable", "catalog": "wire.bare_copper_4", "qty": { "base": 30 } },
+        { "id": "consumables", "kind": "material", "label": "Fixings, connectors, labels and sealant", "catalog": "misc.consumables_large", "qty": { "base": 1 } },
+
+        { "id": "swap_labour", "kind": "labour", "label": "Replacing the panel",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 3.5,
+            "per": [ { "of": "circuits_in_use", "rate": 0.18, "note": "Every circuit has to be identified, freed, re-terminated and tested" } ],
+            "modifiers": [
+              { "when": { "var": "panel_location", "eq": "exterior_wall" }, "op": "add", "value": 1.0, "because": "Working outdoors" },
+              { "when": { "var": "panel_location", "eq": "crawl_or_attic" }, "op": "multiply", "value": 1.3, "because": "Working somewhere you can't stand up" },
+              { "when": { "var": "panel_position_issue", "contains_any": ["blocked", "low_ceiling"] }, "op": "add", "value": 1.0, "because": "Clearing and working in an awkward space" },
+              { "when": { "var": "panel_brand", "in": ["federal_pacific", "zinsco", "challenger", "pushmatic"] }, "op": "add", "value": 1.5, "because": "Old panels come apart slowly and the wiring in them is usually short" }
+            ], "round_to": 0.25 } },
+        { "id": "helper_labour", "kind": "labour", "label": "A second electrician",
+          "rate": "labor.helper_hourly", "unit": "hr",
+          "qty": { "of_item": "swap_labour", "factor": 0.75, "round_to": 0.25 } },
+
+        { "id": "permit_fee", "kind": "fee", "label": "Permit and inspection", "rate": "permits.flat_fee",
+          "when": { "rate_card": "permits.policy", "eq": "we_pull_flat_fee" }, "qty": { "base": 1 } },
+        { "id": "permit_labour", "kind": "labour", "label": "Filing and meeting the inspector",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "when": { "rate_card": "permits.policy", "in": ["we_pull_flat_fee", "we_pull_bill_actual"] },
+          "qty": { "base": 0, "per": [ { "rate_card": "permits.filing_hours", "rate": 1.0 }, { "rate_card": "permits.inspection_meeting_hours", "rate": 1.0 } ] } },
+
+        { "id": "weekend_uplift", "kind": "adjustment", "label": "Weekend working",
+          "when": { "var": "outage_tolerance", "eq": "weekend_only" },
+          "applies_to": "labour", "multiply_by_rate_card": "labor.weekend_multiplier" }
+      ],
+
+      "addons": [
+        { "id": "temp_power", "label": "Temporary power while we work",
+          "when": { "var": "outage_tolerance", "eq": "need_power" },
+          "kind": "fee", "flat_usd": 350, "flat_usd_is_placeholder": true,
+          "copy": "A generator and a temporary feed so your fridge, wifi and any medical equipment stay on. We'll confirm the exact cost when we know what has to stay running.",
+          "in_range": false }
+      ],
+
+      "uncertainty": {
+        "base_spread_pct": null,
+        "extra_spread_pct": 5,
+        "extra_spread_because": "Old wiring in an old panel is short, brittle and sometimes spliced. We find out when the cover comes off.",
+        "widen": [
+          { "when": { "var": "circuits_in_use", "estimated": true }, "add_pct": 8, "because": "The number of circuits was estimated" },
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "add_pct": 10, "because": "Nobody has counted your breakers yet" },
+          { "when": { "var": "photo_status", "eq": "missing" }, "add_pct": 16, "because": "We haven't seen your panel at all" },
+          { "when": { "var": "panel_brand", "eq": "unknown" }, "add_pct": 5, "because": "We don't know what we're taking out" },
+          { "when": { "var": "service_size_stated", "eq": "unknown" }, "add_pct": 8, "because": "We don't know the size of your service" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+
+      "presentation": {
+        "cta": "Book a visit to confirm",
+        "secondary_cta": "Email me this",
+        "conditions": [
+          { "always": true, "say": "On a job this size we come and look before you commit to anything. The visit confirms the number — it doesn't become a sales call." },
+          { "when": { "var": "panel_brand", "in": ["federal_pacific", "zinsco", "challenger", "pushmatic"] }, "say": "Your panel is one of the brands that were withdrawn because their breakers can fail to trip. Replacing it is the right call regardless of what else you were planning." },
+          { "always": true, "say": "Modern breakers detect faults the old ones didn't. On about one job in four, one comes up the moment we energise. That's a real fault that was always there — we'll show you what we find and price it separately rather than hiding it in this number." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_service_upgrade_overhead",
+      "kind": "quote",
+      "title": "A full service upgrade",
+      "summary": "New panel, new meter enclosure, new mast and new cable from the utility's connection point. Your utility company disconnects in the morning and reconnects when the inspector has signed off.",
+      "job_class": "service_upgrade",
+      "extends": "T_panel_swap_same_service",
+      "includes_extra": [
+        "A new meter enclosure",
+        "A new mast and weatherhead where the utility's cable lands",
+        "New service cable from the meter to the panel",
+        "Arranging the disconnect and reconnect with your utility company",
+        "Meeting the inspector, and meeting the utility crew"
+      ],
+      "line_items_extra": [
+        { "id": "meter_base", "kind": "material", "label": "Meter enclosure", "catalog": "meter.base_200a", "qty": { "base": 1 } },
+        { "id": "mast_kit", "kind": "material", "label": "Mast and weatherhead", "catalog": "mast.riser_kit_2in", "qty": { "base": 1 } },
+        { "id": "mast_pipe", "kind": "material", "label": "Mast pipe", "catalog": "conduit.rigid_2", "qty": { "base": 10 } },
+        { "id": "service_cable", "kind": "material", "label": "Service cable", "catalog": "wire.ser_2_0",
+          "qty": { "base": 10,
+            "modifiers": [
+              { "when": { "var": "meter_position", "eq": "directly_behind" }, "op": "add", "value": 5 },
+              { "when": { "var": "meter_position", "eq": "same_wall" }, "op": "add", "value": 20 }
+            ] } },
+        { "id": "upgrade_labour", "kind": "labour", "label": "Meter, mast and service cable",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 6.0,
+            "modifiers": [
+              { "when": { "var": "meter_position", "eq": "same_wall" }, "op": "add", "value": 1.5, "because": "Running between two points on the outside of the house" }
+            ], "round_to": 0.25 } },
+        { "id": "upgrade_helper", "kind": "labour", "label": "A second electrician on the service work",
+          "rate": "labor.helper_hourly", "unit": "hr",
+          "qty": { "of_item": "upgrade_labour", "factor": 0.9, "round_to": 0.25 } },
+        { "id": "utility_fee", "kind": "fee", "label": "Utility disconnect and reconnect", "rate": "subs.utility_coordination_fee", "qty": { "base": 1 } }
+      ],
+      "uncertainty": {
+        "base_spread_pct": null,
+        "extra_spread_pct": 8,
+        "extra_spread_because": "Your utility company sets its own requirements for the mast height, the meter position and the connection, and we find out exactly what they want when we apply.",
+        "inherit_widen_from": "T_panel_swap_same_service"
+      },
+      "presentation": {
+        "cta": "Book a visit to confirm",
+        "conditions": [
+          { "always": true, "say": "Your utility may bill you directly for the disconnect and reconnect. We can't include what we don't control, so if they charge you, that's on top — usually somewhere between nothing and a few hundred dollars depending on who supplies you." },
+          { "always": true, "say": "This takes one long day, plus a wait for the inspector and the utility. We'll give you dates before you commit." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_subpanel_instead",
+      "kind": "quote",
+      "title": "You probably don't need a new panel",
+      "summary": "You've run out of room, but your service size looks fine. The cheaper answer is a second small panel fed from the first — it gives you the spaces you need without touching the meter, the utility or your existing circuits.",
+      "job_class": "subpanel",
+      "includes": [
+        "A subpanel mounted near your existing one",
+        "A feeder and a breaker in the main panel",
+        "Spare spaces for what you're adding and for next time",
+        "Permit and inspection"
+      ],
+      "line_items": [
+        { "id": "subpanel", "kind": "material", "label": "Subpanel", "catalog": "panel.sub_100a_12sp", "qty": { "base": 1 } },
+        { "id": "subfeed_breaker", "kind": "material", "label": "Feed breaker", "catalog": "breaker.2p_100a_subfeed", "qty": { "base": 1 } },
+        { "id": "subfeed_wire", "kind": "material", "label": "Feeder cable", "catalog": "wire.ser_2_0", "qty": { "base": 16 } },
+        { "id": "consumables", "kind": "material", "label": "Fixings and labels", "catalog": "misc.consumables_small", "qty": { "base": 1 } },
+        { "id": "subpanel_labour", "kind": "labour", "label": "Fitting and wiring the subpanel",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 3.5,
+            "modifiers": [
+              { "when": { "var": "panel_location", "eq": "exterior_wall" }, "op": "add", "value": 0.5 },
+              { "when": { "var": "panel_position_issue", "contains_any": ["blocked", "low_ceiling"] }, "op": "add", "value": 0.75 }
+            ], "round_to": 0.25 } },
+        { "id": "permit_fee", "kind": "fee", "label": "Permit and inspection", "rate": "permits.flat_fee",
+          "when": { "all": [ { "rate_card": "permits.policy", "eq": "we_pull_flat_fee" }, { "rate_card": "permits.required_by_job_class.subpanel", "eq": true } ] },
+          "qty": { "base": 1 } },
+        { "id": "permit_labour", "kind": "labour", "label": "Filing and inspection",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "when": { "rate_card": "permits.policy", "in": ["we_pull_flat_fee", "we_pull_bill_actual"] },
+          "qty": { "base": 0, "per": [ { "rate_card": "permits.filing_hours", "rate": 1.0 }, { "rate_card": "permits.inspection_meeting_hours", "rate": 1.0 } ] } }
+      ],
+      "alternatives": [
+        { "terminal": "T_panel_swap_same_service", "label": "Or replace the whole panel anyway",
+          "copy": "Worth it if your panel is old, if you want everything on modern breakers, or if you're selling." }
+      ],
+      "uncertainty": {
+        "base_spread_pct": null,
+        "widen": [
+          { "when": { "var": "photo_status", "in": ["missing", "unreviewed"] }, "add_pct": 10, "because": "We haven't confirmed there's room to feed a second panel" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "We're telling you this because it's true, not because it's the cheapest thing we could sell you. If a full replacement turns out to be the right call when we look, we'll show you why." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_service_upgrade_underground",
+      "kind": "no_quote",
+      "title": "Underground service — we need to see it",
+      "summary": "When the power comes up out of the ground, upgrading it stops being only our job. Your utility company owns the cable in the ground, sets the rules for the new one, and decides whether it needs replacing — and that decision can swing the price by thousands.",
+      "body": "We'll come out, look at the meter and the route, and call your utility with the details. Then you get a real number instead of a range so wide it's useless.",
+      "next_step": {
+        "cta": "Book a visit",
+        "cost_promise": "The visit is {{visit_fee_copy}}, credited against the work.",
+        "time_promise": "We'll have the utility's answer within a week of visiting."
+      },
+      "indicative": {
+        "show": true,
+        "label": "Underground service upgrades usually land between",
+        "disclaimer": "Not a quote. The spread is genuinely this wide and anyone who gives you a firm number over the internet for this is guessing.",
+        "source": "explicit",
+        "low_usd": 4500,
+        "high_usd": 14000,
+        "placeholder": true,
+        "placeholder_note": "PLACEHOLDER. This band must be replaced with the contractor's own last-twelve-months actuals before this terminal ships. It is here to show the shape, not to be believed."
+      },
+      "lead_flags": ["needs_site_visit", "high_value"]
+    },
+
+    {
+      "id": "T_panel_relocation",
+      "kind": "no_quote",
+      "title": "Your panel has to move",
+      "summary": "Panels aren't allowed in bathrooms or clothes closets, and you have to be able to stand square in front of one. Yours is somewhere the code no longer permits, so the new one can't go back where the old one was.",
+      "body": "That's not a disaster — it's usually a few feet, onto the other side of the same wall or into the garage. But where it goes and how the circuits reach it is a decision to make standing in the room, not on a form.",
+      "next_step": {
+        "cta": "Book a visit",
+        "cost_promise": "The visit is {{visit_fee_copy}}, credited against the work.",
+        "time_promise": "Within one business day."
+      },
+      "indicative": {
+        "show": true,
+        "label": "For reference, the panel work itself — before moving it — would be",
+        "disclaimer": "Moving it adds to this. How much depends on how far and what's in the way.",
+        "source": "terminal",
+        "terminal": "T_panel_swap_same_service"
+      },
+      "lead_flags": ["needs_site_visit"]
+    },
+
+    {
+      "id": "T_needs_panel_review",
+      "kind": "span",
+      "title": "Here's the range — we'll narrow it today",
+      "summary": "Until we've counted the breakers in your photo, this covers both the simpler and the fuller version of the job.",
+      "spans": ["T_subpanel_instead", "T_service_upgrade_overhead"],
+      "resolution": {
+        "promise": "Within one business day.",
+        "on_resolve": "re_evaluate",
+        "narrowing_rule": "Re-evaluation may only move the range inside what was shown. Anything above the high end is a phone call, not a new number.",
+        "notify": ["sms", "email"]
+      },
+      "presentation": {
+        "cta": "Book a visit — we'll confirm the price first",
+        "conditions": [
+          { "when": { "var": "photo_status", "eq": "missing" }, "say": "A photo of the open panel door cuts this range roughly in half. It takes ten seconds." }
+        ]
+      }
+    }
+  ],
+
+  "honesty": {
+    "max_spread_pct": null,
+    "on_exceed_max_spread": "T_site_visit_required",
+    "never_quote_from_form": ["T_service_upgrade_overhead"],
+    "never_quote_from_form_note": "A service upgrade range may be SHOWN from the form, but the machine must never offer to book the work or take money without a visit. The CTA on that terminal books a visit, not a job.",
+    "refuse_to_quote_when": [
+      { "when": { "var": "reason", "eq": "damage_or_heat" }, "because": "A panel that smells, scorches or gets warm is a safety call. Pricing it is the wrong response." },
+      { "when": { "var": "service_entry", "in": ["underground", "unknown"] }, "because": "The utility company controls the price and we don't know their answer yet." },
+      { "when": { "var": "property_type", "eq": "mobile_home" }, "because": "Manufactured homes use a different kind of service equipment." }
+    ]
+  }
+}

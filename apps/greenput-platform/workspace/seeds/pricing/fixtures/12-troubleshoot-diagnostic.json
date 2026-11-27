@@ -1,0 +1,21 @@
+{
+  "machine": "troubleshooting-callout",
+  "title": "A breaker that keeps tripping, several rooms, same day",
+  "note": "Prices the visit, never the repair. The range comes from a real statement about time, not a percentage pad.",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "symptom": "breaker_trips",
+    "scope": "several_rooms",
+    "when_started": "after_work",
+    "access": "someone_home",
+    "urgency": "today"
+  }
+}

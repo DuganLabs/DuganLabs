@@ -12,3 +12,9 @@ regexes = ['''ACCESS_AUD = "[0-9a-f]{64}"''']
 description = "Cloudflare Web Analytics beacon tokens (public: served in every page's HTML)"
 regexTarget = "line"
 regexes = ['''data-cf-beacon='\{"token":"[0-9a-f]{32}"\}'''']
+
+[[allowlists]]
+description = "GreenPut test fixtures (fake API keys and token UUIDs in *.spec.ts)"
+paths = ['''apps/greenput-platform/workspace/.*\.spec\.ts$''']
+regexes = ['''gp_abcdefgh12345678901234567890ab''', '''gp_0123456789abcdef0123456789abcdef''', '''123e4567-e89b-42d3-a456-426614174000''', '''3b0d1a2c-7f4e-4a5b-9c8d-0e1f2a3b4c5d''']
+condition = "AND"

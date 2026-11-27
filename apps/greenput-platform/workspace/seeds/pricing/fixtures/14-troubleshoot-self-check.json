@@ -1,0 +1,8 @@
+{
+  "machine": "troubleshooting-callout",
+  "title": "Dead outlets and they haven't pressed reset yet",
+  "answers": {
+    "symptom": "dead_outlets",
+    "reset_attempted": "havent_tried"
+  }
+}

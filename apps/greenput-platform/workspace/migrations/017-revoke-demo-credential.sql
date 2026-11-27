@@ -1,0 +1,30 @@
+-- @apply: per-statement
+-- 017 — revoke the published demo password.
+--
+-- scripts/preview/seed.sql carried `password_hash = 'demo1234'` for
+-- demo@greenput.com, role owner, and .github/workflows/ci.yml executes that
+-- file against the PRODUCTION database on every deploy ("Seed the demo
+-- tenant" — demo.greenput.com is a real reference micro-site, so the workspace
+-- genuinely has to exist there). apps/api/src/lib/password.ts authenticates a
+-- stored value containing no colon by comparing it to the submitted password,
+-- so that string was a working owner login on production, and it was written
+-- on line 4 of a file in the repository.
+--
+-- The seed no longer writes it, but INSERT OR IGNORE means the row is already
+-- there with the old value and would keep it forever. This clears it.
+--
+-- '' is the NO_PASSWORD sentinel: verifyPassword returns {valid:false} on it
+-- before reaching the plaintext branch, so the account simply has no password
+-- login. It has no passkey and no recovery number either, which is correct for
+-- a workspace that exists to be looked at rather than signed into.
+--
+-- DELIBERATELY NARROW. Other rows in this database also hold cleartext
+-- passwords, and this migration leaves them alone: there is no
+-- password-reset flow anywhere in the API (verified: no reset, change, or
+-- forgot endpoint exists), so clearing one would lock its owner out with no
+-- way back. Those upgrade themselves — the login path rehashes a plaintext
+-- match to PBKDF2 on success (apps/api/src/routes/auth.ts) — so signing in
+-- once converts them. The difference that makes this one urgent is that its
+-- password was published.
+UPDATE users SET password_hash = '', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE email = 'demo@greenput.com' AND password_hash = 'demo1234';
+UPDATE users SET password_hash = '', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = '00000000-0000-4000-8000-000000000002' AND password_hash NOT LIKE '%:%' AND password_hash != '';

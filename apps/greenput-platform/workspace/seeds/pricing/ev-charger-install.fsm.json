@@ -1,0 +1,556 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "machine",
+  "slug": "ev-charger-install",
+  "vertical": "ev_charger",
+  "job_class": "ev_charger",
+  "name": "Level 2 EV charger install",
+  "trade": "electrical",
+  "locale": "en-US",
+  "entry": "charger_location",
+  "includes_fragments": ["wire_run", "panel_check", "property_and_contact", "shared_terminals"],
+
+  "meta": {
+    "homeowner_title": "Get a price for your EV charger",
+    "homeowner_intro": "Nine questions, about two minutes, and a real price at the end — not a call-back. We honour whatever this gives you.",
+    "typical_question_count": 9,
+    "longest_path_question_count": 14,
+    "progress_style": "counted"
+  },
+
+  "overlays": [
+    { "when": { "var": "authorisation_required", "eq": true }, "apply": "T_needs_owner_authorisation" }
+  ],
+
+  "states": [
+    {
+      "id": "charger_location",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "charger_location",
+        "exhaustive": true,
+        "options": [
+          { "value": "attached_garage_inside", "label": "Inside my attached garage" },
+          { "value": "garage_outside_wall",    "label": "On the outside wall of the garage" },
+          { "value": "carport_or_driveway",    "label": "In a carport, or on the driveway" },
+          { "value": "detached_garage",        "label": "In a detached garage or shop" },
+          { "value": "parking_pad",            "label": "At a parking spot away from the house" }
+        ]
+      },
+      "ask": {
+        "question": "Where do you want the charger?",
+        "help": "Think about where the car actually sits, and which side the charge port is on. Most chargers come with a cable around 18 to 25 feet.",
+        "why": "Inside a garage is the simplest and cheapest case. Anything outdoors needs weatherproof parts, and anything in a separate building usually means digging."
+      },
+      "next": [
+        { "always": true, "go": "derive_destination_outdoors" }
+      ]
+    },
+
+    {
+      "id": "derive_destination_outdoors",
+      "kind": "derive",
+      "sets": "destination_outdoors",
+      "explain": "Lets the shared wire-run questions know whether to ask about weather and digging, without the fragment having to know anything about EV chargers.",
+      "rules": [
+        { "when": { "var": "charger_location", "eq": "attached_garage_inside" }, "value": false },
+        { "always": true, "value": true }
+      ],
+      "next": [ { "always": true, "go": "charge_speed" } ]
+    },
+
+    {
+      "id": "charge_speed",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "charge_speed",
+        "unknown_option": "not_sure",
+        "options": [
+          { "value": "32a",      "label": "Normal — full overnight", "hint": "About 25-30 miles of range per hour. This is what most people get and it is plenty for daily driving." },
+          { "value": "48a",      "label": "Fast — for a big battery or two cars", "hint": "About 40 miles of range per hour. Needs heavier wire and has to be wired in directly, not plugged in." },
+          { "value": "not_sure", "label": "I don't know — recommend one", "hint": "We'll price the normal one. It suits almost everybody." }
+        ]
+      },
+      "ask": {
+        "question": "How fast do you want it to charge?",
+        "help": "Faster charging costs more to install because it needs thicker wire and a bigger breaker — not because the charger costs more.",
+        "why": "This sets the size of the circuit, which sets the price of the wire and the breaker."
+      },
+      "next": [ { "always": true, "go": "charger_supply" } ]
+    },
+
+    {
+      "id": "charger_supply",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "charger_supply",
+        "exhaustive": true,
+        "options": [
+          { "value": "have_it",      "label": "I already have it" },
+          { "value": "buying_it",    "label": "I've ordered one, it's not here yet" },
+          { "value": "need_one",     "label": "No — include one in the price" }
+        ]
+      },
+      "ask": {
+        "question": "Do you have the charger already?",
+        "help": "If you already have one, get it out of the box and check the next question — the answer is usually printed on it or in the first page of the manual.",
+        "why": "If we supply it, that's a real cost in the price. If you supply it, it isn't."
+      },
+      "next": [
+        { "when": { "var": "charger_supply", "eq": "need_one" }, "go": "charger_connection_supplied" },
+        { "always": true, "go": "charger_connection" }
+      ]
+    },
+
+    {
+      "id": "charger_connection",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "charger_connection",
+        "unknown_option": "dont_know",
+        "options": [
+          { "value": "plug_in",    "label": "It has a plug on the end", "hint": "A big three-prong-plus-round plug, like an electric range. Called a 14-50." },
+          { "value": "hardwired",  "label": "It's wired in directly", "hint": "Wires go straight into the box, no plug." },
+          { "value": "dont_know",  "label": "I don't know" }
+        ]
+      },
+      "ask": {
+        "question": "Does your charger plug in, or wire in directly?",
+        "help": "Look at the cable coming out of the back or bottom of the unit. A plug is unmistakable — it's chunky and has four pins.",
+        "why": "A plug-in charger needs a special safety breaker that costs about three times a normal one, because the code requires it for that kind of outlet. Wiring in directly avoids that. It's often the biggest surprise on an EV quote, so we'd rather tell you now."
+      },
+      "next": [ { "always": true, "go": "derive_circuit" } ]
+    },
+
+    {
+      "id": "charger_connection_supplied",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "charger_connection",
+        "exhaustive": true,
+        "options": [
+          { "value": "hardwired", "label": "Wire it in directly", "hint": "Cheaper, tidier, and what we'd suggest if the charger isn't going to move." },
+          { "value": "plug_in",   "label": "Put an outlet in and plug it in", "hint": "Costs more — a plug-in outlet for a charger needs a special safety breaker — but you can unplug the charger and take it with you." }
+        ]
+      },
+      "ask": {
+        "question": "Since we're supplying it — plug it in, or wire it in?",
+        "help": null,
+        "why": "Wiring in is usually a couple of hundred dollars cheaper because of the breaker the code requires behind a plug."
+      },
+      "next": [ { "always": true, "go": "derive_circuit" } ]
+    },
+
+    {
+      "id": "derive_circuit",
+      "kind": "derive",
+      "sets": "circuit_amps",
+      "explain": "Turns the plain-English charging speed into a circuit size. Note the cap: a plug-in charger cannot be run above a 50A circuit, so choosing 'fast' AND 'plug in' quietly becomes a 50A circuit and the quote says so out loud.",
+      "rules": [
+        { "when": { "all": [ { "var": "charge_speed", "eq": "48a" }, { "var": "charger_connection", "eq": "plug_in" } ] }, "value": 50, "notice": "speed_capped_by_plug" },
+        { "when": { "var": "charge_speed", "eq": "48a" }, "value": 60 },
+        { "when": { "var": "charger_connection", "eq": "plug_in" }, "value": 50 },
+        { "always": true, "value": 40 }
+      ],
+      "next": [ { "always": true, "go": "derive_gfci" } ]
+    },
+
+    {
+      "id": "derive_gfci",
+      "kind": "derive",
+      "sets": "gfci_breaker_required",
+      "explain": "NEC 625.54: a receptacle serving an EVSE has to be GFCI protected. A hardwired charger has that protection built in, so it does not. This one rule is worth roughly a hundred dollars of breaker and it is the line homeowners most often query.",
+      "rules": [
+        { "when": { "var": "charger_connection", "eq": "plug_in" }, "value": true },
+        { "when": { "var": "charger_connection", "eq": "dont_know" }, "value": true, "notice": "assumed_plug_in" },
+        { "always": true, "value": false }
+      ],
+      "next": [ { "always": true, "go": "panel_check__include" } ]
+    },
+
+    {
+      "id": "panel_check__include",
+      "kind": "fragment",
+      "fragment": "panel_check",
+      "next": [ { "always": true, "go": "wire_run__include" } ]
+    },
+
+    {
+      "id": "wire_run__include",
+      "kind": "fragment",
+      "fragment": "wire_run",
+      "next": [ { "always": true, "go": "derive_conductor" } ]
+    },
+
+    {
+      "id": "derive_conductor",
+      "kind": "derive",
+      "sets": "conductor_spec",
+      "explain": "Picks the wire. The rule that surprises people: 6-gauge romex is only rated 55A, so a 60A circuit cannot use it — it has to be individual conductors in conduit. That single code fact is the difference between a $3.40/ft job and a conduit job, and no homeowner has any way to know it.",
+      "rules": [
+        { "when": { "var": "outdoor_exposure", "eq": "underground" }, "value": "thhn_in_pvc_buried" },
+        { "when": { "var": "route_difficulty", "eq": "surface_conduit" }, "value": "thhn_in_emt" },
+        { "when": { "var": "circuit_amps", "gte": 60 }, "value": "thhn_in_emt" },
+        { "when": { "var": "circuit_amps", "eq": 50 }, "value": "nm_b_6_2" },
+        { "always": true, "value": "nm_b_8_2" }
+      ],
+      "next": [ { "always": true, "go": "derive_voltage_drop" } ]
+    },
+
+    {
+      "id": "derive_voltage_drop",
+      "kind": "derive",
+      "sets": "upsize_for_voltage_drop",
+      "explain": "Long runs lose voltage. The real number is a calculation, not a rule of thumb: at 240V a 32A continuous load on #8 copper stays inside 3% to roughly 145 feet, and a 48A load on #6 to roughly 150. So we set the trigger at a conservative 120 feet rather than repeating the common myth that anything over 50 feet needs upsizing — it does not, and charging for it would be dishonest.",
+      "rules": [
+        { "when": { "var": "run_distance_ft", "gt": 120 }, "value": true },
+        { "always": true, "value": false }
+      ],
+      "next": [ { "always": true, "go": "property_and_contact__include" } ]
+    },
+
+    {
+      "id": "property_and_contact__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "next": [ { "always": true, "go": "outcome" } ]
+    },
+
+    {
+      "id": "outcome",
+      "kind": "checkpoint",
+      "explain": "The only place a terminal is chosen. Order matters and is the order of seriousness: safety, then capacity, then the normal job, then 'we haven't looked at your photo yet'.",
+      "next": [
+        { "when": { "var": "panel_capacity", "eq": "hazard_panel" }, "go": "T_hazard_panel", "says": "The panel is a recalled or withdrawn brand" },
+        { "when": { "var": "aluminium_branch_visible", "eq": true }, "go": "T_site_visit_required", "says": "Aluminium branch wiring is visible" },
+        { "when": { "var": "panel_capacity", "eq": "service_upgrade_needed" }, "go": "T_service_upgrade_required", "says": "The service itself is too small" },
+        { "when": { "all": [ { "var": "load_risk", "in": ["high", "critical"] }, { "var": "panel_capacity", "in": ["spare_capable", "spare_needs_tandem"] } ] }, "go": "T_load_management", "says": "There's room in the panel but maybe not in the service" },
+        { "when": { "var": "load_risk", "eq": "high" }, "go": "T_service_upgrade_required", "says": "The service is tight and the panel is full too" },
+        { "when": { "var": "panel_capacity", "eq": "full_needs_subpanel" }, "go": "T_subpanel_required", "says": "No spaces left in the panel" },
+        { "when": { "var": "panel_capacity", "in": ["spare_capable", "spare_needs_tandem"] }, "go": "T_standard_install", "says": "There's room — the normal job" },
+        { "always": true, "go": "T_needs_panel_review", "says": "We haven't been able to read the panel yet" }
+      ]
+    }
+  ],
+
+  "terminals": [
+    {
+      "id": "T_standard_install",
+      "kind": "quote",
+      "title": "A new charger circuit from your existing panel",
+      "summary": "Your panel has room. We add a breaker, run a new dedicated circuit to where the car sits, and connect the charger.",
+      "job_class": "ev_charger",
+      "includes": [
+        "A new dedicated circuit sized for your charger",
+        "A breaker fitted in your existing panel, and the panel list updated",
+        "Wire run from the panel to the charger, clipped and secured properly",
+        "Mounting and connecting the charger, testing it, and charging your car once before we leave",
+        "Cleaning up after ourselves"
+      ],
+      "excludes_extra": [
+        "The charger itself, unless you asked us to supply one",
+        "Any upgrade to the panel or the service, if reading your photo shows one is needed"
+      ],
+      "line_items": [
+        { "id": "trip", "kind": "fee", "label": "Call-out", "rate": "fees.trip_charge",
+          "when": { "rate_card": "fees.trip_charge_policy", "eq": "always" }, "qty": { "base": 1 } },
+
+        { "id": "setup_labour", "kind": "labour", "label": "Getting set up and protecting the space",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0.5,
+            "modifiers": [
+              { "when": { "var": "route_difficulty", "in": ["fish_and_patch", "surface_conduit"] }, "op": "add", "value": 0.25, "because": "Dust sheets and masking in a finished room" }
+            ], "round_to": 0.25 } },
+
+        { "id": "panel_labour", "kind": "labour", "label": "Work in the panel",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 1.5,
+            "modifiers": [
+              { "when": { "var": "panel_location", "eq": "exterior_wall" }, "op": "add", "value": 0.5, "because": "Working at an outdoor panel" },
+              { "when": { "var": "panel_capacity", "eq": "spare_needs_tandem" }, "op": "add", "value": 0.75, "because": "Rearranging breakers to free up a pair of spaces" }
+            ], "round_to": 0.25 } },
+
+        { "id": "run_labour", "kind": "labour", "label": "Running the wire",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0,
+            "per": [ { "of": "run_distance_ft", "rate": 0.025, "note": "1.5 minutes per foot on open framing — the easy case. Every other route multiplies up from here." } ],
+            "modifiers": [
+              { "when": { "var": "route_difficulty", "eq": "attic_or_crawl" }, "op": "multiply", "value": 2.1, "because": "Working in an attic or crawlspace" },
+              { "when": { "var": "route_difficulty", "eq": "surface_conduit" }, "op": "multiply", "value": 2.9, "because": "Bending and strapping conduit" },
+              { "when": { "var": "route_difficulty", "eq": "fish_and_patch" }, "op": "multiply", "value": 4.2, "because": "Fishing wire inside a finished wall" },
+              { "when": { "var": "route_difficulty", "eq": "unknown" }, "op": "multiply", "value": 2.5, "because": "We don't know what the walls are like yet" },
+              { "when": { "var": "route_crosses", "eq": "one_wall" }, "op": "add", "value": 0.4, "because": "Drilling and sealing one wall" },
+              { "when": { "var": "route_crosses", "eq": "across_house" }, "op": "add", "value": 1.2, "because": "Crossing floors or the whole house" },
+              { "when": { "var": "route_crosses", "eq": "other_building" }, "op": "add", "value": 1.6, "because": "Getting out of one building and into another" },
+              { "when": { "var": "destination_outdoors", "eq": true }, "op": "add", "value": 0.5, "because": "Going through an outside wall and sealing it" },
+              { "when": { "var": "outdoor_exposure", "eq": "underground" }, "op": "add", "value": 1.0, "because": "Bringing the run up and down out of the ground" }
+            ],
+            "min": 0.5, "round_to": 0.25 } },
+
+        { "id": "helper_labour", "kind": "labour", "label": "A second pair of hands",
+          "rate": "labor.helper_hourly", "unit": "hr",
+          "when": { "any": [ { "var": "run_distance_ft", "gt": 75 }, { "all": [ { "var": "route_difficulty", "in": ["attic_or_crawl", "fish_and_patch"] }, { "var": "run_distance_ft", "gt": 40 } ] } ] },
+          "qty": { "of_item": "run_labour", "factor": 0.6, "round_to": 0.25 } },
+
+        { "id": "charger_end_labour", "kind": "labour", "label": "Mounting and connecting the charger",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 1.25,
+            "modifiers": [
+              { "when": { "var": "destination_outdoors", "eq": true }, "op": "add", "value": 0.3, "because": "Weather-sealing the connection" },
+              { "when": { "var": "route_crosses", "eq": "other_building" }, "op": "add", "value": 0.4, "because": "Fitting a shut-off at the far building" }
+            ], "round_to": 0.25 } },
+
+        { "id": "breaker_gfci", "kind": "material", "label": "GFCI breaker (required behind a plug-in charger)",
+          "catalog": "breaker.2p_50a_gfci", "when": { "var": "gfci_breaker_required", "eq": true }, "qty": { "base": 1 } },
+        { "id": "breaker_40", "kind": "material", "label": "40A breaker", "catalog": "breaker.2p_40a",
+          "when": { "all": [ { "var": "gfci_breaker_required", "eq": false }, { "var": "circuit_amps", "eq": 40 } ] }, "qty": { "base": 1 } },
+        { "id": "breaker_50", "kind": "material", "label": "50A breaker", "catalog": "breaker.2p_50a",
+          "when": { "all": [ { "var": "gfci_breaker_required", "eq": false }, { "var": "circuit_amps", "eq": 50 } ] }, "qty": { "base": 1 } },
+        { "id": "breaker_60", "kind": "material", "label": "60A breaker", "catalog": "breaker.2p_60a",
+          "when": { "all": [ { "var": "gfci_breaker_required", "eq": false }, { "var": "circuit_amps", "gte": 60 } ] }, "qty": { "base": 1 } },
+
+        { "id": "wire_nm8", "kind": "material", "label": "8-gauge cable", "catalog": "wire.nm_b_8_2",
+          "when": { "all": [ { "var": "conductor_spec", "eq": "nm_b_8_2" }, { "var": "upsize_for_voltage_drop", "eq": false } ] },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ], "note": "12ft of base covers slack inside the panel and at the charger" }, "waste_pct": null },
+        { "id": "wire_nm6", "kind": "material", "label": "6-gauge cable", "catalog": "wire.nm_b_6_2",
+          "when": { "any": [ { "var": "conductor_spec", "eq": "nm_b_6_2" }, { "all": [ { "var": "conductor_spec", "eq": "nm_b_8_2" }, { "var": "upsize_for_voltage_drop", "eq": true } ] } ] },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] }, "waste_pct": null },
+        { "id": "wire_thhn6", "kind": "material", "label": "6-gauge conductors", "catalog": "wire.thhn_6",
+          "when": { "var": "conductor_spec", "in": ["thhn_in_emt", "thhn_in_pvc_buried"] },
+          "qty": { "base": 36, "per": [ { "of": "run_distance_ft", "rate": 3.0, "note": "two hots and a ground" } ] }, "waste_pct": null },
+        { "id": "conduit_emt", "kind": "material", "label": "Conduit", "catalog": "conduit.emt_075",
+          "when": { "var": "conductor_spec", "eq": "thhn_in_emt" },
+          "qty": { "base": 4, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+        { "id": "conduit_pvc", "kind": "material", "label": "Buried conduit", "catalog": "conduit.pvc_1",
+          "when": { "var": "conductor_spec", "eq": "thhn_in_pvc_buried" },
+          "qty": { "base": 8, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+
+        { "id": "receptacle", "kind": "material", "label": "14-50 outlet, industrial grade", "catalog": "device.recept_14_50",
+          "when": { "var": "charger_connection", "in": ["plug_in", "dont_know"] }, "qty": { "base": 1 } },
+        { "id": "recept_box", "kind": "material", "label": "Outlet box", "catalog": "box.surface_2g",
+          "when": { "var": "charger_connection", "in": ["plug_in", "dont_know"] }, "qty": { "base": 1 } },
+        { "id": "wp_cover", "kind": "material", "label": "Weatherproof cover", "catalog": "box.wp_in_use_cover",
+          "when": { "all": [ { "var": "charger_connection", "in": ["plug_in", "dont_know"] }, { "var": "destination_outdoors", "eq": true } ] }, "qty": { "base": 1 } },
+        { "id": "disconnect", "kind": "material", "label": "Shut-off switch at the far building", "catalog": "disconnect.3r_60a",
+          "when": { "var": "route_crosses", "eq": "other_building" }, "qty": { "base": 1 } },
+
+        { "id": "evse", "kind": "allowance", "label": "Charger (allowance)", "catalog": "evse.allowance_l2",
+          "when": { "var": "charger_supply", "eq": "need_one" }, "qty": { "base": 1 },
+          "allowance_note": "An allowance, not a specific product. Pick the charger you want and we'll credit or charge the difference at cost." },
+
+        { "id": "consumables_small", "kind": "material", "label": "Fixings, connectors and labels", "catalog": "misc.consumables_small",
+          "when": { "var": "run_distance_ft", "lte": 50 }, "qty": { "base": 1 } },
+        { "id": "consumables_large", "kind": "material", "label": "Fixings, connectors and labels", "catalog": "misc.consumables_large",
+          "when": { "var": "run_distance_ft", "gt": 50 }, "qty": { "base": 1 } },
+
+        { "id": "trench_lawn", "kind": "sub", "label": "Digging (lawn)", "rate": "subs.trench_lawn_per_ft",
+          "when": { "all": [ { "var": "outdoor_exposure", "eq": "underground" }, { "var": "trench_surface", "in": ["lawn", "unknown"] } ] },
+          "qty": { "base": 0, "per": [ { "of": "trench_distance_ft", "rate": 1.0 } ] } },
+        { "id": "trench_gravel", "kind": "sub", "label": "Digging (gravel or roots)", "rate": "subs.trench_gravel_roots_per_ft",
+          "when": { "all": [ { "var": "outdoor_exposure", "eq": "underground" }, { "var": "trench_surface", "eq": "gravel" } ] },
+          "qty": { "base": 0, "per": [ { "of": "trench_distance_ft", "rate": 1.0 } ] } },
+
+        { "id": "permit_fee", "kind": "fee", "label": "Permit and inspection", "rate": "permits.flat_fee",
+          "when": { "all": [ { "rate_card": "permits.policy", "eq": "we_pull_flat_fee" }, { "rate_card": "permits.required_by_job_class.ev_charger", "eq": true } ] },
+          "qty": { "base": 1 } },
+        { "id": "permit_labour", "kind": "labour", "label": "Filing the permit and meeting the inspector",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "when": { "all": [ { "rate_card": "permits.policy", "in": ["we_pull_flat_fee", "we_pull_bill_actual"] }, { "rate_card": "permits.required_by_job_class.ev_charger", "eq": true } ] },
+          "qty": { "base": 0, "per": [ { "rate_card": "permits.filing_hours", "rate": 1.0 }, { "rate_card": "permits.inspection_meeting_hours", "rate": 1.0 } ] } }
+      ],
+
+      "addons": [
+        { "id": "patching", "label": "Patching the openings we cut",
+          "when": { "var": "route_difficulty", "eq": "fish_and_patch" },
+          "kind": "sub", "rate": "subs.drywall_patch_per_opening",
+          "qty": { "base": 2, "per": [ { "of": "run_distance_ft", "rate": 0.06 } ], "round_to": 1 },
+          "copy": "We can arrange patching, taped and sanded ready for paint. Painting is yours. If you'd rather handle it, we'll leave the cut pieces on site.",
+          "in_range": false }
+      ],
+
+      "uncertainty": {
+        "base_spread_pct": null,
+        "widen": [
+          { "when": { "var": "run_distance_ft", "estimated": true }, "add_pct": 6, "because": "The distance was estimated rather than measured" },
+          { "when": { "var": "wall_finish", "eq": "unknown" }, "add_pct": 8, "because": "We don't know what the walls are like" },
+          { "when": { "var": "route_difficulty", "eq": "unknown" }, "add_pct": 8, "because": "We don't know how the wire gets there" },
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "add_pct": 10, "because": "Nobody has looked at your panel photo yet" },
+          { "when": { "var": "photo_status", "eq": "missing" }, "add_pct": 14, "because": "We haven't seen your panel" },
+          { "when": { "var": "trench_surface", "eq": "unknown" }, "add_pct": 8, "because": "We don't know what's under the ground" },
+          { "when": { "var": "panel_brand", "eq": "unknown" }, "add_pct": 5, "because": "Breaker prices vary a lot by panel brand" },
+          { "when": { "var": "service_size_stated", "eq": "unknown" }, "add_pct": 5, "because": "We don't know the size of your service" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+
+      "presentation": {
+        "cta": "Book this in",
+        "secondary_cta": "Text me this price",
+        "conditions": [
+          { "when": { "var": "charger_connection", "eq": "dont_know" }, "say": "We've priced this as a plug-in charger, which is the more expensive of the two. If yours wires in directly, we'll take about $150 off before you pay anything." },
+          { "when": { "notice": "speed_capped_by_plug" }, "say": "You asked for fast charging and a plug. Those two don't go together — a plug-in charger is limited to a 50A circuit. We've priced the fastest plug-in setup. If you want the full speed, we'd wire it in directly instead; say the word and we'll re-price it." },
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "say": "We'll look at your panel photo within a few hours and narrow this down. The top of the range won't move." },
+          { "when": { "var": "route_difficulty", "eq": "fish_and_patch" }, "say": "This price includes opening the wall and putting the wire in. It does not include making the wall look new again — see the patching option below." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_subpanel_required",
+      "kind": "quote",
+      "title": "A small extra panel, then your charger",
+      "summary": "Your panel is out of spaces. The usual fix isn't a new service — it's a small second panel fed off the first one, which gives you room for the charger and a few spares for next time.",
+      "job_class": "subpanel",
+      "extends": "T_standard_install",
+      "extends_note": "Everything the standard install charges, plus the subpanel. Authored as an extension so a contractor who edits the run-labour maths edits it once.",
+      "includes_extra": [
+        "A 100A subpanel mounted next to or near your existing one",
+        "A feeder from the main panel to it",
+        "Spare spaces for future circuits"
+      ],
+      "line_items_extra": [
+        { "id": "subpanel", "kind": "material", "label": "Subpanel", "catalog": "panel.sub_100a_12sp", "qty": { "base": 1 } },
+        { "id": "subfeed_breaker", "kind": "material", "label": "Feed breaker in the main panel", "catalog": "breaker.2p_100a_subfeed", "qty": { "base": 1 } },
+        { "id": "subfeed_wire", "kind": "material", "label": "Feeder cable", "catalog": "wire.ser_2_0",
+          "qty": { "base": 10, "per": [ { "of": "subpanel_distance_ft", "rate": 1.0, "default": 6 } ] } },
+        { "id": "ground_rod", "kind": "material", "label": "Ground rod", "catalog": "ground.rod_and_clamp",
+          "when": { "var": "route_crosses", "eq": "other_building" }, "qty": { "base": 1 } },
+        { "id": "subpanel_labour", "kind": "labour", "label": "Fitting and wiring the subpanel",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 3.0, "round_to": 0.25 } }
+      ],
+      "uncertainty": {
+        "base_spread_pct": null,
+        "extra_spread_pct": 4,
+        "extra_spread_because": "Where exactly the second panel can go is a judgement call we make on site.",
+        "inherit_widen_from": "T_standard_install"
+      },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "We're suggesting this rather than a whole new service because your service size looks fine — you've just run out of room in the box. It's the cheaper answer and it leaves you space for the next thing." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_load_management",
+      "kind": "quote",
+      "title": "Your charger, sharing power with the house",
+      "summary": "Your panel has room, but your home's total electrical service is tight — a 100A service already running an electric range, dryer or heat pump doesn't have much left. Rather than upgrading the whole service, we fit a load-management device: it watches what the house is using and quietly slows the charger when everything's on at once. Overnight, you'd never notice.",
+      "job_class": "ev_charger",
+      "extends": "T_standard_install",
+      "includes_extra": [
+        "A load-management module fitted at the panel",
+        "Setting it up and demonstrating it before we go"
+      ],
+      "line_items_extra": [
+        { "id": "load_module", "kind": "material", "label": "Load-management module", "catalog": "loadmgmt.evse_module", "qty": { "base": 1 } },
+        { "id": "load_module_labour", "kind": "labour", "label": "Fitting and setting up the module",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 1.5, "round_to": 0.25 } },
+        { "id": "load_calc", "kind": "labour", "label": "Load calculation for the permit",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 1.0 } }
+      ],
+      "alternatives": [
+        { "terminal": "T_service_upgrade_required", "label": "Or upgrade the service instead",
+          "copy": "If you're planning a heat pump, a second car or an addition, it can be worth doing the bigger job once. Here's what that costs." }
+      ],
+      "uncertainty": { "base_spread_pct": null, "extra_spread_pct": 6, "extra_spread_because": "Until the load calculation is done we can't be certain this route is permitted in your jurisdiction.", "inherit_widen_from": "T_standard_install" },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "This depends on a load calculation, which we do before we file the permit. If it comes back saying your service genuinely can't take it, we'll tell you before we order anything and you'll owe us nothing." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_service_upgrade_required",
+      "kind": "no_quote",
+      "kind_note": "Deliberately NOT a quote. This machine never collected the answers a service upgrade actually prices off — how many circuits come back, where the meter is, whether the service comes in overhead. Emitting a number here would be the machine pricing a job it did not ask about. It shows an indicative band, names the real machine, and books a visit.",
+      "title": "Your service needs upgrading first",
+      "summary": "Adding a charger to your home would draw more than your electrical service can safely supply. That's a bigger job than the charger: a new panel, a new meter enclosure, and your utility company involved.",
+      "job_class": "service_upgrade",
+      "handoff_machine": "panel-service-upgrade",
+      "handoff_note": "Hands off to the service-upgrade machine, carrying the answers already collected so the homeowner is never asked the same thing twice. `composed_of` below is the shape a future combined quote would take once the handoff machine has run — it is not evaluated from here.",
+      "body": "Adding a charger is the small half of this job. The big half is the service, and that one needs someone standing in front of your meter before anybody says a number.",
+      "next_step": {
+        "cta": "Book a visit",
+        "alt_cta": "Show me the cheaper option first",
+        "cost_promise": "The visit is {{visit_fee_copy}}, credited against the work.",
+        "time_promise": "We'll confirm a time within one business day.",
+        "handoff_machine": "panel-service-upgrade"
+      },
+      "indicative": {
+        "show": true,
+        "label": "A service upgrade with a charger on the end of it usually lands between",
+        "disclaimer": "Not a quote. We have not asked you the questions that price this properly — the next screen does.",
+        "source": "explicit",
+        "low_usd": 3500,
+        "high_usd": 9500,
+        "placeholder": true,
+        "placeholder_note": "PLACEHOLDER. Replace with the contractor's own last-twelve-months actuals before shipping."
+      },
+      "lead_flags": ["needs_site_visit", "high_value"],
+      "composed_of": [
+        { "machine": "panel-service-upgrade", "terminal": "T_service_upgrade_overhead" },
+        { "machine": "ev-charger-install", "terminal": "T_standard_install", "discount": { "drop_items": ["trip", "permit_fee"], "because": "One visit, one permit" } }
+      ],
+      "uncertainty": { "base_spread_pct": null, "extra_spread_pct": 8, "extra_spread_because": "Service upgrades involve the utility company, whose schedule and requirements we don't control." },
+      "presentation": {
+        "cta": "Book a visit to confirm",
+        "conditions": [
+          { "always": true, "say": "We won't take a deposit on a job this size from a form. Someone comes out, confirms it, and then you decide." },
+          { "always": true, "say": "There may be a cheaper way. If your panel has room and it's only the total that's tight, a load-management device can let you charge without upgrading anything. Ask us — we'd rather sell you the small job if it's the right one." }
+        ]
+      },
+      "alternatives": [
+        { "terminal": "T_load_management", "label": "Or share power instead of upgrading", "copy": "Cheaper, quicker, and usually enough." }
+      ]
+    },
+
+    {
+      "id": "T_needs_panel_review",
+      "kind": "span",
+      "title": "Here's your range — we'll narrow it today",
+      "summary": "Everything except your panel is clear. Until one of our electricians has read the photo, this range covers both possibilities: a straightforward job if there's room in the panel, and the bigger one if there isn't.",
+      "spans": ["T_standard_install", "T_subpanel_required"],
+      "span_note": "Not a wider version of one price — literally the cheapest outcome's low end to the most expensive outcome's high end. The homeowner is being shown the real shape of their uncertainty, not a padded guess.",
+      "resolution": {
+        "promise": "Within one business day, usually within a few hours.",
+        "on_resolve": "re_evaluate",
+        "narrowing_rule": "Re-evaluation may only move the range INSIDE what was shown. If reading the photo reveals an outcome above this high end, we do not reprice silently — we call.",
+        "notify": ["sms", "email"]
+      },
+      "presentation": {
+        "cta": "Book the earliest slot — we'll confirm the price first",
+        "secondary_cta": "Just send me the price when you know",
+        "conditions": [
+          { "when": { "var": "photo_status", "eq": "missing" }, "say": "If you send us a photo of your panel now, we can usually cut this range in half within the hour." },
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "say": "Your photo's with us. Nothing more needed from you." }
+        ]
+      }
+    }
+  ],
+
+  "honesty": {
+    "max_spread_pct": null,
+    "on_exceed_max_spread": "T_site_visit_required",
+    "refuse_to_quote_when": [
+      { "when": { "var": "run_distance_ft", "gt": 150 }, "because": "Past 150 feet the route matters more than the distance and we'd be guessing." },
+      { "when": { "var": "trench_surface", "eq": "concrete" }, "because": "Cutting a driveway is a different trade with a price we can't guess from a form." },
+      { "when": { "var": "aluminium_branch_visible", "eq": true }, "because": "Aluminium branch wiring changes what we can connect to and has to be looked at." },
+      { "when": { "var": "property_type", "eq": "mobile_home" }, "because": "Manufactured homes have a different kind of service equipment and the rules are different." },
+      { "when": { "var": "load_risk", "eq": "critical" }, "because": "A 60A service can't take a charger on any reading. That's a service upgrade conversation, not a charger one." }
+    ]
+  },
+
+  "notices": {
+    "speed_capped_by_plug": "Fast charging and a plug don't go together — we've priced the fastest plug-in setup.",
+    "assumed_plug_in": "We've assumed a plug-in charger, which is the dearer option."
+  }
+}

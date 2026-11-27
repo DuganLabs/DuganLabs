@@ -1,0 +1,42 @@
+{
+  "machine": "panel-service-upgrade",
+  "title": "A Federal Pacific panel, like for like",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "reason": "old_or_flagged",
+    "panel_location": "interior",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "spare_capable",
+        "panel_brand": "federal_pacific",
+        "panel_spaces_free": 2,
+        "panel_main_amps": 100,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "100",
+    "major_loads": [
+      "electric_dryer"
+    ],
+    "circuits_in_use": {
+      "value": 20,
+      "estimated": true
+    },
+    "meter_position": "same_wall",
+    "service_entry": "overhead",
+    "panel_position_issue": [
+      "blocked"
+    ],
+    "upgrade_target": "like_for_like",
+    "outage_tolerance": "weekday_fine"
+  }
+}

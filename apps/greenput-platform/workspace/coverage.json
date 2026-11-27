@@ -1,0 +1,786 @@
+{
+  "updated": "2026-10-22",
+  "unit": "page",
+  "composed": 32,
+  "total": 57,
+  "coveragePercent": 56,
+  "upstreamCandidates": [
+    "bn-metric",
+    "bn-card-grid",
+    "bn-info-card",
+    "bn-icon-tile",
+    "bn-column",
+    "bn-split",
+    "bn-cta",
+    "bn-large-title",
+    "bn-kicker",
+    "bn-lead",
+    "bn-note",
+    "bn-panel",
+    "bn-steps",
+    "bn-definitions",
+    "bn-checks",
+    "bn-inset-list",
+    "bn-badge",
+    "bn-field",
+    "bn-scroll",
+    "bn-cluster",
+    "data-placement=floating on bn-tab-bar"
+  ],
+  "pages": [
+    {
+      "app": "marketing",
+      "path": "/",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-brand",
+        "bn-button",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-lead",
+        "bn-cluster",
+        "bn-note",
+        "bn-split",
+        "bn-panel",
+        "bn-metrics",
+        "bn-metric",
+        "bn-inset-list",
+        "bn-inset-row",
+        "bn-badge",
+        "bn-steps",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-icon-tile",
+        "bn-cta",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/features",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-split",
+        "bn-figure",
+        "bn-checks",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-cta",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/pricing",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-checks",
+        "bn-definitions",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/contact",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-split",
+        "bn-panel",
+        "bn-form",
+        "bn-field",
+        "bn-field-row",
+        "bn-note",
+        "bn-button",
+        "bn-inset-list",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/about",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-panel",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-steps",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/technology",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-metrics",
+        "bn-metric",
+        "bn-scroll",
+        "bn-table",
+        "bn-definitions",
+        "bn-cta",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/ai",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-panel",
+        "bn-info-card",
+        "bn-inset-list",
+        "bn-definitions",
+        "bn-cluster",
+        "bn-button",
+        "bn-card-grid",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/investors",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-definitions",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/privacy",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/terms",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/orange-county-electricians",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/tesla-wall-connector",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/wall-connector-panel-upgrade",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/wall-connector-vs-nema-14-50",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/why-ev-charger-quotes-vary",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/two-evs-one-panel",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/tesla-powerwall",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/guides/homeowner-pricing",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-lead",
+        "bn-definitions",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "marketing",
+      "path": "/404",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-brand",
+        "bn-button",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-lead",
+        "bn-cluster",
+        "bn-note",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-inset-list",
+        "bn-inset-row",
+        "bn-steps",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/services",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-lead",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/about",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-lead",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-definitions",
+        "bn-button",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/contact",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-lead",
+        "bn-field",
+        "bn-field-row",
+        "bn-note",
+        "bn-button",
+        "bn-steps",
+        "bn-column",
+        "bn-site-footer"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/proposal/:id",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-panel",
+        "bn-large-title",
+        "bn-kicker",
+        "bn-note"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/invoice/:token",
+      "status": "composed",
+      "organisms": [
+        "bn-section",
+        "bn-panel",
+        "bn-column",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-definitions",
+        "bn-badge",
+        "bn-split",
+        "bn-scroll",
+        "bn-note",
+        "bn-cluster",
+        "bn-button"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-lead",
+        "bn-card-grid",
+        "bn-info-card",
+        "bn-panel",
+        "bn-button"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote/s/:id",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-lead",
+        "bn-cluster",
+        "bn-button",
+        "bn-note",
+        "bn-panel"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote/s/:id/book",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-lead",
+        "bn-panel",
+        "bn-button"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote/s/:id/booked",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-definitions",
+        "bn-panel",
+        "bn-button",
+        "bn-cluster"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote/s/:id/reschedule",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-lead",
+        "bn-panel",
+        "bn-button"
+      ]
+    },
+    {
+      "app": "tenant-site",
+      "path": "/quote/s/:id/cancel",
+      "status": "composed",
+      "organisms": [
+        "bn-topbar",
+        "bn-rail",
+        "bn-tab-bar",
+        "bn-section",
+        "bn-column",
+        "bn-site-footer",
+        "bn-kicker",
+        "bn-large-title",
+        "bn-lead",
+        "bn-cluster",
+        "bn-button",
+        "bn-note"
+      ]
+    },
+    {
+      "app": "platform",
+      "path": "/login",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/recover",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/accept-invite/:token",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/onboarding",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/dashboard",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/activity",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/leads",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/leads/:id",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/opportunities",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/opportunities/:id",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/customers",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/customers/:id",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/estimates",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/estimates/:id",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/jobs",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/jobs/:id",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/campaigns",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/inventory",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/vehicles",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/plugins",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/reviews",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/reports",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/settings",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/chat",
+      "status": "not-started",
+      "organisms": []
+    },
+    {
+      "app": "platform",
+      "path": "/chat/:id",
+      "status": "not-started",
+      "organisms": []
+    }
+  ]
+}

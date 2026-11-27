@@ -1,0 +1,45 @@
+{
+  "machine": "ev-charger-install",
+  "title": "Detached garage, 48A hardwired, 40ft of trench, charger supplied",
+  "note": "The expensive-but-still-quotable end: conduit instead of romex because 6-gauge cable isn't rated for a 60A circuit, plus digging and a shut-off at the far building.",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "charger_location": "detached_garage",
+    "charge_speed": "48a",
+    "charger_supply": "need_one",
+    "charger_connection": "hardwired",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "spare_capable",
+        "panel_brand": "square_d",
+        "panel_spaces_free": 6,
+        "panel_main_amps": 200,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "200",
+    "major_loads": [
+      "electric_range",
+      "central_ac"
+    ],
+    "run_distance_ft": 110,
+    "route_crosses": "other_building",
+    "wall_finish": "open_framing",
+    "outdoor_exposure": "underground",
+    "trench_surface": "lawn",
+    "trench_distance_ft": {
+      "value": 40,
+      "estimated": true
+    }
+  }
+}

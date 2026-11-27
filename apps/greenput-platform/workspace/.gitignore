@@ -1,0 +1,78 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+dist-worker
+tmp
+out-tsc
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Claude Code worktrees (cowork sandbox)
+.claude/worktrees/
+
+.nx/cache
+.nx/workspace-data
+
+.angular
+
+# Wrangler local-dev simulation state (D1 sqlite, KV, etc.)
+.wrangler/
+
+# Wrangler local secret overrides (e.g. ADMIN_SETUP_TOKEN for a local
+# bootstrap). Real values — never committed; see docs/admin-bootstrap.md.
+.dev.vars
+.dev.vars.*
+
+__screenshots__/
+
+# Pact contracts (generated)
+contracts/pacts/
+
+.nx/polygraph
+
+# Audit script output (scripts/audit/*.mjs) — uploaded as CI artifacts,
+# never committed.
+/reports/
+
+# Playwright failure artefacts (traces, error contexts). e2e/responsive.config.ts
+# redirects these under dist/; e2e/playwright.config.ts still uses the default.
+test-results/
+
+# Skills installed from a marketplace are not committed. Install Modern Web
+# Guidance locally (see AGENTS.md); don't commit the skill files or the lock.
+# `.agents/*` rather than `.agents/` so git still descends and sees any later
+# negations, matching BaseNative.
+.agents/*
+skills-lock.json

@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "fragment",
+  "id": "property_and_contact",
+  "name": "The property and who you are",
+  "purpose": "The qualifying questions every machine needs and none of them should ask first. Always placed AFTER the priced questions: a homeowner who has already answered five things about their garage will give you a phone number; one who is asked for it on screen one will not.",
+  "screen_budget_note": "Deliberately two screens, not five. Every screen costs completions, and none of these questions is interesting to the person answering — so they get grouped. This is what the `group` answer type is for.",
+  "requires": [],
+  "provides": ["property_type", "property_ownership", "authorisation_required", "service_zip", "timing", "first_name", "last_name", "phone", "email", "preferred_contact"],
+  "entry": "property_basics",
+
+  "states": [
+    {
+      "id": "property_basics",
+      "kind": "question",
+      "answer": {
+        "type": "group",
+        "fields": [
+          {
+            "key": "property_type",
+            "type": "choice",
+            "exhaustive": true,
+            "label": "What kind of building is it?",
+            "options": [
+              { "value": "single_family", "label": "A house" },
+              { "value": "townhouse",     "label": "A townhouse or duplex" },
+              { "value": "condo_apt",     "label": "A condo or apartment" },
+              { "value": "mobile_home",   "label": "A mobile or manufactured home" },
+              { "value": "commercial",    "label": "A business or commercial building" }
+            ]
+          },
+          {
+            "key": "property_ownership",
+            "type": "choice",
+            "exhaustive": true,
+            "label": "Do you own it?",
+            "options": [
+              { "value": "owner",           "label": "I own it" },
+              { "value": "tenant",          "label": "I rent it" },
+              { "value": "manager_or_agent","label": "I manage it for the owner" }
+            ]
+          }
+        ]
+      },
+      "ask": {
+        "question": "Two quick things about the place.",
+        "help": null,
+        "why": "Condos, apartments and mobile homes have different rules about who owns the wiring. And permanent electrical work needs the owner's sign-off — if you rent, you still get the price, we just can't start without them."
+      },
+      "next": [
+        { "when": { "var": "property_type", "eq": "commercial" }, "go": "T_out_of_scope" },
+        { "always": true, "go": "derive_authorisation" }
+      ]
+    },
+
+    {
+      "id": "derive_authorisation",
+      "kind": "derive",
+      "sets": "authorisation_required",
+      "explain": "A tenant is NOT a dead end. They get the same number; the quote carries a line saying the owner has to approve, and the lead is flagged so nobody wastes a visit.",
+      "rules": [
+        { "when": { "var": "property_ownership", "eq": "owner" }, "value": false },
+        { "when": { "var": "property_type", "eq": "condo_apt" }, "value": true },
+        { "always": true, "value": true }
+      ],
+      "next": [
+        { "always": true, "go": "contact_details" }
+      ]
+    },
+
+    {
+      "id": "contact_details",
+      "kind": "question",
+      "answer": {
+        "type": "group",
+        "fields": [
+          { "key": "service_zip", "type": "zip", "label": "ZIP code", "required": true },
+          {
+            "key": "timing", "type": "choice", "exhaustive": true, "label": "When are you hoping to get this done?",
+            "style": "chips",
+            "options": [
+              { "value": "asap",       "label": "As soon as you can" },
+              { "value": "this_month", "label": "Next few weeks" },
+              { "value": "planning",   "label": "Just planning" }
+            ]
+          },
+          { "key": "first_name", "type": "text",  "label": "First name", "required": true },
+          { "key": "last_name",  "type": "text",  "label": "Last name", "required": false },
+          { "key": "phone",      "type": "phone", "label": "Mobile number", "required": true },
+          { "key": "email",      "type": "email", "label": "Email", "required": false },
+          {
+            "key": "preferred_contact", "type": "choice", "exhaustive": true, "label": "How should we reach you?",
+            "style": "chips", "default": "text",
+            "options": [
+              { "value": "text",  "label": "Text" },
+              { "value": "email", "label": "Email" },
+              { "value": "phone", "label": "Call" }
+            ]
+          }
+        ]
+      },
+      "ask": {
+        "question": "Where should we send your price?",
+        "help": "We'll send it in the next minute. No calls unless you ask for one.",
+        "why": "The ZIP is for permit fees and travel — we'd rather tell you now if you're outside where we work. The rest is just where the price goes."
+      },
+      "next": [
+        { "when": { "env": "in_service_area", "eq": false }, "go": "T_out_of_area" },
+        { "always": true, "go": "__return__" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# Staging environment wrangler config.
+# Used by scripts/staging/setup.sh and CI deploy.
+
+name = "greenput-tenant-staging"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput-staging"
+database_id = "2a19b75f-fa0a-4796-b368-062e6a7a2912"
+
+[[r2_buckets]]
+binding = "INTAKE_PHOTOS"
+bucket_name = "greenput-files-staging"
+
+[vars]
+ENVIRONMENT = "staging"
+# Deliberately empty: there is no api. hostname in this environment
+# (apps/api/wrangler.staging.toml's [[routes]] custom-domain block is
+# commented out, and preview deploys to a workers.dev name CI substitutes
+# at deploy time). An empty value makes every micro-site page here fall
+# back to Greenput's own share card instead of advertising a per-tenant
+# card URL that would 404. Set it once an API hostname exists here.
+BRAND_ORIGIN = ""
+# Deliberately empty. No reader: the booking-deposit page that read it
+# was removed when deposits were revoked (2026-10-20).
+API_ORIGIN = ""
+
+[dev]
+port = 8788
+local_protocol = "http"

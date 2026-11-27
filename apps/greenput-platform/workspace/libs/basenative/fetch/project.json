@@ -1,0 +1,21 @@
+{
+  "name": "basenative-fetch",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/basenative/fetch/src",
+  "tags": ["scope:basenative", "type:fetch"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/basenative/fetch/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config libs/basenative/fetch/vitest.config.ts"
+      }
+    }
+  }
+}

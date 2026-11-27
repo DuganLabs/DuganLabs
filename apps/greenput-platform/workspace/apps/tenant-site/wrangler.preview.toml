@@ -1,0 +1,34 @@
+# Preview environment wrangler config template.
+# CI substitutes __PR_NUMBER__ and __D1_PREVIEW_ID__
+# via scripts/preview/setup.sh before deploying.
+
+name = "greenput-tenant-preview-__PR_NUMBER__"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput-preview-__PR_NUMBER__"
+database_id = "__D1_PREVIEW_ID__"
+
+[[r2_buckets]]
+binding = "INTAKE_PHOTOS"
+bucket_name = "greenput-files-preview"
+
+[vars]
+ENVIRONMENT = "preview"
+# Deliberately empty: there is no api. hostname in this environment
+# (apps/api/wrangler.staging.toml's [[routes]] custom-domain block is
+# commented out, and preview deploys to a workers.dev name CI substitutes
+# at deploy time). An empty value makes every micro-site page here fall
+# back to Greenput's own share card instead of advertising a per-tenant
+# card URL that would 404. Set it once an API hostname exists here.
+BRAND_ORIGIN = ""
+# Deliberately empty. No reader: the booking-deposit page that read it
+# was removed when deposits were revoked (2026-10-20).
+API_ORIGIN = ""
+
+[dev]
+port = 8788
+local_protocol = "http"

@@ -1,0 +1,338 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "machine",
+  "slug": "troubleshooting-callout",
+  "vertical": "troubleshooting",
+  "job_class": "troubleshooting",
+  "name": "Something's not working",
+  "trade": "electrical",
+  "locale": "en-US",
+  "entry": "symptom",
+  "includes_fragments": ["property_and_contact", "shared_terminals"],
+
+  "meta": {
+    "homeowner_title": "Something electrical isn't working",
+    "homeowner_intro": "Tell us what's happening. We'll either tell you how to fix it yourself, tell you to call someone who isn't us, or book you in — in that order.",
+    "typical_question_count": 6,
+    "longest_path_question_count": 9,
+    "progress_style": "uncounted"
+  },
+
+  "design_note": "This machine is deliberately the one that quotes LEAST. It prices the visit, never the repair, because nobody can know what the repair is until someone has looked. Three of its six endings take no money at all. That is the point: the highest-frequency inbound call in residential electrical is also the one where an instant confident number is a lie, and the machine that says so is the one people come back to.",
+
+  "overlays": [],
+
+  "states": [
+    {
+      "id": "symptom",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "symptom",
+        "exhaustive": true,
+        "options": [
+          { "value": "burning_or_hot",   "label": "There's a burning smell, scorch marks, or something is hot or sparking" },
+          { "value": "shocks",           "label": "I'm getting shocks off an appliance, a tap or a switch" },
+          { "value": "half_house_dark",  "label": "Half the house has no power, or the lights are dim in some rooms and bright in others" },
+          { "value": "whole_house_dark", "label": "The whole house has no power" },
+          { "value": "breaker_trips",    "label": "A breaker keeps tripping" },
+          { "value": "gfci_trips",       "label": "An outlet with buttons on it keeps tripping" },
+          { "value": "dead_outlets",     "label": "Some outlets or lights have stopped working" },
+          { "value": "flickering",       "label": "Lights flicker or dim when something switches on" },
+          { "value": "buzzing",          "label": "Something buzzes, hums or crackles" },
+          { "value": "other",            "label": "Something else" }
+        ]
+      },
+      "ask": {
+        "question": "What's happening?",
+        "help": "Pick the closest one. If two apply, pick the one that worries you more.",
+        "why": "Some of these have a free answer. We'd rather give you that than take your money."
+      },
+      "next": [
+        { "when": { "var": "symptom", "in": ["burning_or_hot", "shocks"] }, "go": "T_urgent_dispatch", "says": "Safety first — no price on this screen" },
+        { "when": { "var": "symptom", "eq": "half_house_dark" }, "go": "T_call_utility_first", "says": "This is usually the utility's problem, not yours" },
+        { "when": { "var": "symptom", "eq": "whole_house_dark" }, "go": "whole_house_check" },
+        { "when": { "var": "symptom", "in": ["gfci_trips", "dead_outlets"] }, "go": "reset_attempted" },
+        { "always": true, "go": "scope" }
+      ]
+    },
+
+    {
+      "id": "whole_house_check",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "neighbours_have_power",
+        "unknown_option": "dont_know",
+        "options": [
+          { "value": "they_are_out_too", "label": "My neighbours are out too" },
+          { "value": "only_me",          "label": "Only my house" },
+          { "value": "dont_know",        "label": "I don't know" }
+        ]
+      },
+      "ask": {
+        "question": "Quick check — do your neighbours have power?",
+        "help": "Look out of the window, or text one of them.",
+        "why": "If the whole street is out it's an outage and there's nothing an electrician can do that the utility isn't already doing. That call is free. Ours isn't."
+      },
+      "next": [
+        { "when": { "var": "neighbours_have_power", "eq": "they_are_out_too" }, "go": "T_call_utility_first" },
+        { "always": true, "go": "T_call_utility_first" }
+      ]
+    },
+
+    {
+      "id": "reset_attempted",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "reset_attempted",
+        "exhaustive": true,
+        "options": [
+          { "value": "tried_it_works",     "label": "I tried that and it worked" },
+          { "value": "tried_no_luck",      "label": "I tried that and it didn't help" },
+          { "value": "trips_again",        "label": "It resets, then trips again" },
+          { "value": "havent_tried",       "label": "I haven't tried that" },
+          { "value": "cant_find_it",       "label": "I can't find a button like that" }
+        ]
+      },
+      "ask": {
+        "question": "Before anything else — have you pressed the reset button?",
+        "help": "Look for an outlet with two small buttons on it, usually marked TEST and RESET. Check bathrooms, the kitchen, the garage, outside and the basement — one of them often protects a whole string of others, including ones in completely different rooms. Press RESET firmly until it clicks. Also check every breaker in the panel: a tripped one sits slightly off-centre, and you have to push it all the way OFF before it will go back ON.",
+        "why": "This fixes it about a third of the time, for free, in two minutes. We'd be embarrassed to charge you a call-out for it."
+      },
+      "next": [
+        { "when": { "var": "reset_attempted", "eq": "tried_it_works" }, "go": "T_fixed_itself" },
+        { "when": { "var": "reset_attempted", "eq": "havent_tried" }, "go": "T_self_check_first" },
+        { "when": { "var": "reset_attempted", "eq": "cant_find_it" }, "go": "T_self_check_first" },
+        { "always": true, "go": "scope" }
+      ]
+    },
+
+    {
+      "id": "scope",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "scope",
+        "exhaustive": true,
+        "options": [
+          { "value": "one_thing",    "label": "One outlet, light or appliance" },
+          { "value": "one_room",     "label": "One room" },
+          { "value": "several_rooms","label": "Several rooms" },
+          { "value": "outside",      "label": "Something outside — a light, an outlet, the garage" }
+        ]
+      },
+      "ask": {
+        "question": "How much is affected?",
+        "help": null,
+        "why": "One dead outlet is usually a loose connection nearby. Several rooms means the problem is further back, and that takes longer to find."
+      },
+      "next": [ { "always": true, "go": "when_started" } ]
+    },
+
+    {
+      "id": "when_started",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "when_started",
+        "exhaustive": true,
+        "options": [
+          { "value": "after_storm",      "label": "After a storm or a power cut" },
+          { "value": "after_new_thing",  "label": "After we plugged in or installed something new" },
+          { "value": "after_work",       "label": "After building work, or someone else worked on it" },
+          { "value": "gradually",        "label": "It's been getting worse" },
+          { "value": "suddenly",         "label": "Suddenly, for no reason I can see" },
+          { "value": "always",           "label": "It's always been like this" }
+        ]
+      },
+      "ask": {
+        "question": "When did it start?",
+        "help": null,
+        "why": "It tells our electrician where to start looking, which is most of what you're paying for."
+      },
+      "next": [ { "always": true, "go": "access" } ]
+    },
+
+    {
+      "id": "access",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "access",
+        "exhaustive": true,
+        "options": [
+          { "value": "someone_home",  "label": "Someone will be there" },
+          { "value": "key_or_code",   "label": "I can leave a key or a code" },
+          { "value": "vacant",        "label": "It's empty at the moment" }
+        ]
+      },
+      "ask": {
+        "question": "Will someone be there to let us in?",
+        "help": "Whoever's there should be able to show us the problem — it saves us both time.",
+        "why": "Finding a fault is much quicker with the person who's seen it happening."
+      },
+      "next": [ { "always": true, "go": "urgency" } ]
+    },
+
+    {
+      "id": "urgency",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "urgency",
+        "exhaustive": true,
+        "options": [
+          { "value": "today",     "label": "Today if you can" },
+          { "value": "this_week", "label": "This week is fine" },
+          { "value": "flexible",  "label": "Whenever suits you" }
+        ]
+      },
+      "ask": {
+        "question": "How soon do you need someone?",
+        "help": null,
+        "why": "Same-day costs more because it means moving someone off another job. We'll always tell you the difference before you choose."
+      },
+      "next": [ { "always": true, "go": "property_and_contact__include" } ]
+    },
+
+    {
+      "id": "property_and_contact__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "next": [ { "always": true, "go": "outcome" } ]
+    },
+
+    {
+      "id": "outcome",
+      "kind": "checkpoint",
+      "next": [
+        { "always": true, "go": "T_diagnostic_visit" }
+      ]
+    }
+  ],
+
+  "terminals": [
+    {
+      "id": "T_diagnostic_visit",
+      "kind": "quote",
+      "title": "We'll come and find it",
+      "summary": "This is the price to come out, find the fault and tell you exactly what it takes to fix it. It is not the price of the repair — nobody honest can tell you that before they've looked.",
+      "job_class": "troubleshooting",
+      "quotes_what": "diagnosis_only",
+      "includes": [
+        "Travel to you",
+        "Up to {{diagnostic_hours}} hours of an electrician's time finding the fault",
+        "A plain explanation of what's wrong and what it takes to fix",
+        "A fixed price for the repair before any of it starts",
+        "Small fixes done there and then, if they're inside the time — a loose connection, a failed outlet, a dead switch"
+      ],
+      "excludes_extra": [
+        "The repair itself, beyond what fits in the time above",
+        "Parts beyond the odd outlet or switch"
+      ],
+      "line_items": [
+        { "id": "trip", "kind": "fee", "label": "Coming out to you", "rate": "fees.trip_charge",
+          "when": { "rate_card": "fees.trip_charge_policy", "in": ["always", "diagnostic_only"] }, "qty": { "base": 1 } },
+        { "id": "diagnostic_time", "kind": "labour", "label": "Finding the fault",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0, "per": [ { "rate_card": "fees.diagnostic_hours_included", "rate": 1.0 } ] } },
+        { "id": "second_hour", "kind": "labour", "label": "A second hour, if the fault is a hidden one",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "range_side": "high_only",
+          "range_side_note": "Counts toward the top of the range only. This is how the machine says 'it might take longer' in money instead of in weasel words.",
+          "qty": { "base": 1.0,
+            "modifiers": [
+              { "when": { "var": "scope", "eq": "several_rooms" }, "op": "add", "value": 0.5, "because": "More places to look" },
+              { "when": { "var": "when_started", "eq": "after_work" }, "op": "add", "value": 0.5, "because": "Somebody else's work is the hardest kind to trace" },
+              { "when": { "var": "when_started", "eq": "always" }, "op": "add", "value": 0.5, "because": "A fault that has always been there is usually buried in the original wiring" }
+            ], "round_to": 0.25 } },
+        { "id": "same_day", "kind": "fee", "label": "Same-day call-out", "rate": "fees.emergency_callout",
+          "when": { "var": "urgency", "eq": "today" }, "qty": { "base": 1 } }
+      ],
+      "uncertainty": {
+        "base_spread_pct": 0,
+        "base_spread_pct_note": "Deliberately zero. The range on this terminal comes entirely from the high_only line item — from a real statement about time, not a percentage pad. This is the one machine that can be nearly exact, and it should be.",
+        "flat_pad_usd": 0,
+        "widen": [
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+      "presentation": {
+        "cta": "Book a visit",
+        "secondary_cta": "Text me this",
+        "conditions": [
+          { "always": true, "say": "If it turns out to be something we can fix in the time you've already paid for, we fix it and you pay nothing more. That happens a lot." },
+          { "always": true, "say": "If it's bigger, you get a fixed price before we touch it, and you can say no. The visit still costs what it says here and nothing more." },
+          { "when": { "rate_card": "fees.trip_charge_policy", "eq": "diagnostic_only" }, "say": "If you go ahead with the repair, the call-out comes off it." },
+          { "when": { "var": "urgency", "eq": "today" }, "say": "Same-day means pulling someone off another customer's job, which is why it costs more. If tomorrow works, pick that and this comes down." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_call_utility_first",
+      "kind": "no_quote",
+      "title": "Call your power company before you call us",
+      "summary": "What you're describing is, most of the time, their equipment rather than yours — and their visit is free.",
+      "body": "Half the house dark, or lights dim in some rooms and unusually bright in others, is the classic sign of a failed neutral on the service — the cable between the pole and your meter. That's the utility's side of the line. They treat it as an emergency and they don't charge for it. If we came out, we'd look at it, tell you the same thing, and charge you for the privilege.\n\nThe same goes for a whole-house outage when your neighbours are out too: that's a fault on their network.\n\nIf they come out and tell you the problem is on your side of the meter, come straight back to us — we'll book you in and we'll take the utility's findings as the starting point.",
+      "next_step": {
+        "cta": "Find my utility's emergency number",
+        "alt_cta": "They've been out — book me in anyway",
+        "cost_promise": "Nothing, from us, today."
+      },
+      "indicative": { "show": false },
+      "lead_flags": ["utility_first", "return_candidate"],
+      "tone_note": "This is the single highest-trust screen in the whole product. Sending somebody to a free fix costs one call-out and buys a customer for a decade. Do not dilute it with an upsell above the fold.",
+      "safety_note": "Bright-then-dim lights with a failed neutral can put 200V across 120V appliances. Tell them to unplug sensitive electronics while they wait."
+    },
+
+    {
+      "id": "T_self_check_first",
+      "kind": "no_quote",
+      "title": "Try this first — it's free and it works about a third of the time",
+      "summary": "Before you book anyone, spend two minutes on this.",
+      "body": "1. Find every outlet in the house with TEST and RESET buttons on it. Look in bathrooms, the kitchen, the garage, the basement, and outside — including behind things. One of them often feeds outlets in other rooms entirely.\n\n2. Press RESET on each one, firmly, until it clicks.\n\n3. Go to the panel. A tripped breaker often doesn't look obviously off — it sits slightly out of line with its neighbours. Push it fully OFF first, then back ON. It won't reset from the middle position.\n\n4. If a breaker trips again straight away, stop. Leave it off and book us — something is actually wrong and resetting it repeatedly is not safe.\n\nIf none of that brings it back, come back here and we'll book you in. You won't have to answer these questions again.",
+      "next_step": {
+        "cta": "That fixed it — thanks",
+        "alt_cta": "No luck — book me a visit",
+        "cost_promise": "Nothing for trying."
+      },
+      "indicative": {
+        "show": true,
+        "label": "If you do need us, a visit to find the fault is",
+        "disclaimer": "That's the price of finding it, not fixing it.",
+        "source": "terminal",
+        "terminal": "T_diagnostic_visit"
+      },
+      "lead_flags": ["self_service_offered", "return_candidate"],
+      "tone_note": "Give the number for the visit here anyway. Someone who tries this and fails should not have to start again to find out what it costs."
+    },
+
+    {
+      "id": "T_fixed_itself",
+      "kind": "no_quote",
+      "title": "Glad that sorted it",
+      "summary": "Nothing owed. One thing worth knowing, though.",
+      "body": "A GFCI or a breaker that trips once and stays reset is usually fine — a wet outlet, a faulty appliance, a one-off. If the same one trips again within a few weeks, that's not a nuisance, it's a fault telling you about itself. Come back to us then and mention it, because it changes where we look.",
+      "next_step": {
+        "cta": "Save my answers in case it comes back",
+        "alt_cta": "Book a check-up anyway",
+        "cost_promise": null
+      },
+      "indicative": { "show": false },
+      "lead_flags": ["resolved_self_service", "return_candidate"],
+      "tone_note": "Do not ask for a booking here. Ask for permission to remember them."
+    }
+  ],
+
+  "honesty": {
+    "quotes_repairs": false,
+    "quotes_repairs_note": "This machine must never emit a price for a repair. If a contractor tries to add repair line items to T_diagnostic_visit in the authoring GUI, the validator should warn: a repair price derived from a symptom dropdown is a guess wearing a number.",
+    "refuse_to_quote_when": [
+      { "when": { "var": "symptom", "in": ["burning_or_hot", "shocks"] }, "because": "Safety. Pricing is the wrong response to a fire or shock risk." },
+      { "when": { "var": "symptom", "in": ["half_house_dark", "whole_house_dark"] }, "because": "It is probably the utility's free problem and we should say so." }
+    ]
+  }
+}

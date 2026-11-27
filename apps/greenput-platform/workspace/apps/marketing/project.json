@@ -1,0 +1,43 @@
+{
+  "name": "marketing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "gp",
+  "sourceRoot": "apps/marketing/src",
+  "tags": ["scope:marketing", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy --dry-run",
+        "cwd": "apps/marketing"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/marketing/src/worker"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config apps/marketing/vitest.config.ts"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler dev",
+        "cwd": "apps/marketing"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy",
+        "cwd": "apps/marketing"
+      }
+    }
+  }
+}

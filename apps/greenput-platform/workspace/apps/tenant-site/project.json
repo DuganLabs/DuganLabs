@@ -1,0 +1,43 @@
+{
+  "name": "tenant-site",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "gp",
+  "sourceRoot": "apps/tenant-site/src",
+  "tags": ["scope:tenant-site", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy --dry-run --outdir ../../dist/apps/tenant-site",
+        "cwd": "apps/tenant-site"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/tenant-site/src"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config apps/tenant-site/vitest.config.ts"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler dev",
+        "cwd": "apps/tenant-site"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec wrangler deploy",
+        "cwd": "apps/tenant-site"
+      }
+    }
+  }
+}

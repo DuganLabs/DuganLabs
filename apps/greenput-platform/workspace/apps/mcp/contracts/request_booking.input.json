@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "shop_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The one contractor this booking — and its grant — is for. In v1 this is the shop slug from its find_contractors profile_url."
+    },
+    "service": {
+      "type": "string",
+      "enum": [
+        "ev-charger-install",
+        "panel-upgrade",
+        "circuit-outlet",
+        "troubleshooting",
+        "surge-protection"
+      ]
+    },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "phone": { "type": "string", "minLength": 1 },
+        "email": { "type": "string", "minLength": 1 },
+        "service_address": { "type": "string", "minLength": 1 },
+        "job_details": { "type": "string", "minLength": 1 },
+        "photos": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false,
+      "description": "Customer details as provided. Only the fields named in grant.fields are recorded or shared; everything else is dropped."
+    },
+    "grant": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "name",
+              "phone",
+              "email",
+              "service_address",
+              "job_details",
+              "photos"
+            ]
+          },
+          "description": "Exactly the customer fields this grant allows GreenPut to share with the one shop named by shop_id. Nothing outside this list moves."
+        },
+        "purpose": {
+          "type": "string",
+          "const": "quote-and-schedule",
+          "description": "The only purpose a v1 grant can be issued for."
+        },
+        "allow_network_reroute": {
+          "type": "boolean",
+          "description": "May GreenPut re-share this lead with a different shop in the network pool if the named shop cannot take it? A reroute is a re-sharing event and is forbidden unless this is true."
+        },
+        "granted_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+          "description": "When the customer granted this."
+        }
+      },
+      "required": ["fields", "purpose", "allow_network_reroute", "granted_at"],
+      "additionalProperties": false,
+      "description": "The customer’s explicit, per-provider, per-field sharing grant. No grant, an empty grant, or a grant with no contact path is a hard stop: the call errors and nothing is recorded."
+    }
+  },
+  "required": ["shop_id", "service", "customer", "grant"],
+  "additionalProperties": false
+}

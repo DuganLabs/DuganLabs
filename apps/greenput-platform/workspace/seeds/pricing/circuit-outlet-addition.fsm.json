@@ -1,0 +1,529 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "machine",
+  "slug": "circuit-outlet-addition",
+  "vertical": "circuits",
+  "job_class": "new_circuit",
+  "name": "Adding an outlet or a circuit",
+  "trade": "electrical",
+  "locale": "en-US",
+  "entry": "what_for",
+  "includes_fragments": ["wire_run", "panel_check", "property_and_contact", "shared_terminals"],
+
+  "meta": {
+    "homeowner_title": "Need an outlet putting in?",
+    "homeowner_intro": "The most common thing we do. Answer a few questions and we'll price it — including telling you when the cheap version will do.",
+    "typical_question_count": 7,
+    "longest_path_question_count": 14,
+    "progress_style": "counted"
+  },
+
+  "overlays": [
+    { "when": { "var": "authorisation_required", "eq": true }, "apply": "T_needs_owner_authorisation" }
+  ],
+
+  "states": [
+    {
+      "id": "what_for",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "what_for",
+        "exhaustive": true,
+        "options": [
+          { "value": "general_outlet",  "label": "A normal outlet — bedroom, living room, garage" },
+          { "value": "outdoor_outlet",  "label": "An outdoor outlet" },
+          { "value": "kitchen_bath",    "label": "A kitchen or bathroom outlet" },
+          { "value": "dryer",           "label": "A 240V outlet for a dryer" },
+          { "value": "range",           "label": "A 240V outlet for a range or oven" },
+          { "value": "welder_shop",     "label": "A 240V outlet for a welder, compressor or shop tool" },
+          { "value": "hot_tub",         "label": "Power for a hot tub or spa" },
+          { "value": "window_ac",       "label": "A circuit for a window air conditioner or a space heater" },
+          { "value": "shop_subpanel",   "label": "Power out to a shed, shop or garage" }
+        ]
+      },
+      "ask": {
+        "question": "What's the outlet for?",
+        "help": "If it's for a specific appliance, pick that — the rules and the wire size are different for each one.",
+        "why": "A normal outlet and a dryer outlet are the same idea and about four times apart in price. This decides which one you're getting."
+      },
+      "next": [
+        { "when": { "var": "what_for", "eq": "hot_tub" }, "go": "spa_amps" },
+        { "when": { "var": "what_for", "eq": "shop_subpanel" }, "go": "derive_circuit_class" },
+        { "always": true, "go": "derive_circuit_class" }
+      ]
+    },
+
+    {
+      "id": "spa_amps",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "spa_amps",
+        "exhaustive": true,
+        "unknown_option": "unknown",
+        "options": [
+          { "value": "50", "label": "50 amps", "hint": "Most full-size hot tubs." },
+          { "value": "60", "label": "60 amps", "hint": "Bigger tubs, or ones with two heaters." },
+          { "value": "30", "label": "30 amps", "hint": "Small or plug-in tubs." },
+          { "value": "unknown", "label": "I don't know yet — the tub isn't here" }
+        ]
+      },
+      "ask": {
+        "question": "What does your tub need?",
+        "help": "It's on a plate on the side of the tub, or on the first page of the manual. If the tub hasn't arrived, pick 'I don't know' — we'll price the common one and confirm.",
+        "why": "Hot tubs need their own shut-off box within sight of the tub, a special breaker, and a bonding wire. The size of the tub sets all three."
+      },
+      "next": [ { "always": true, "go": "derive_circuit_class" } ]
+    },
+
+    {
+      "id": "derive_circuit_class",
+      "kind": "derive",
+      "sets": "circuit_class",
+      "explain": "Collapses nine plain-English answers into the six technically different jobs behind them. Everything downstream prices off this, not off what_for.",
+      "rules": [
+        { "when": { "var": "what_for", "eq": "hot_tub" }, "value": "spa_240" },
+        { "when": { "var": "what_for", "eq": "shop_subpanel" }, "value": "subpanel_feed" },
+        { "when": { "var": "what_for", "eq": "dryer" }, "value": "240_30" },
+        { "when": { "var": "what_for", "in": ["range", "welder_shop"] }, "value": "240_50" },
+        { "when": { "var": "what_for", "eq": "kitchen_bath" }, "value": "120_20_protected" },
+        { "when": { "var": "what_for", "eq": "outdoor_outlet" }, "value": "120_20_outdoor" },
+        { "when": { "var": "what_for", "eq": "window_ac" }, "value": "120_20_dedicated" },
+        { "always": true, "value": "120_15_general" }
+      ],
+      "next": [
+        { "always": true, "go": "class_defaults" }
+      ]
+    },
+
+    {
+      "id": "class_defaults",
+      "kind": "defaults",
+      "explain": "What the flow assumes for the questions this particular job doesn't need. A dryer circuit is one outlet and isn't a hot tub; saying so here means no price downstream can refer to an answer nobody was asked for.",
+      "sets": {
+        "outlet_count": 1,
+        "spa_amps": "not_applicable",
+        "tap_existing": "not_asked"
+      },
+      "next": [
+        { "when": { "var": "circuit_class", "in": ["120_15_general", "120_20_outdoor"] }, "go": "how_many" },
+        { "always": true, "go": "derive_destination_outdoors" }
+      ]
+    },
+
+    {
+      "id": "how_many",
+      "kind": "question",
+      "answer": {
+        "type": "measurement",
+        "key": "outlet_count",
+        "unit": "outlets",
+        "min": 1,
+        "max": 12,
+        "step": 1,
+        "default": 1
+      },
+      "ask": {
+        "question": "How many outlets?",
+        "help": "Outlets close together on the same wall are much cheaper than the first one — most of the cost is getting power to the wall in the first place.",
+        "why": "The first outlet carries the whole run. The rest are quick."
+      },
+      "next": [
+        { "when": { "var": "outlet_count", "lte": 3 }, "go": "tap_existing" },
+        { "always": true, "go": "derive_destination_outdoors" }
+      ]
+    },
+
+    {
+      "id": "tap_existing",
+      "kind": "question",
+      "answer": {
+        "type": "choice",
+        "key": "tap_existing",
+        "unknown_option": "not_sure",
+        "options": [
+          { "value": "yes",      "label": "Yes — there's one on the same wall or close by" },
+          { "value": "no",       "label": "No — nothing near it" },
+          { "value": "not_sure", "label": "I'm not sure what counts as close" }
+        ]
+      },
+      "ask": {
+        "question": "Is there already a working outlet near where you want the new one?",
+        "help": "Same wall, or the other side of the same wall, within about ten feet.",
+        "why": "If there is, we can usually run the new one off it in about an hour — no trip to the panel, no permit, a fraction of the price. It's worth a look before you spend more than you need to."
+      },
+      "next": [
+        { "when": { "var": "tap_existing", "eq": "yes" }, "go": "derive_destination_outdoors" },
+        { "always": true, "go": "derive_destination_outdoors" }
+      ]
+    },
+
+    {
+      "id": "derive_destination_outdoors",
+      "kind": "derive",
+      "sets": "destination_outdoors",
+      "rules": [
+        { "when": { "var": "what_for", "in": ["outdoor_outlet", "hot_tub", "shop_subpanel"] }, "value": true },
+        { "always": true, "value": false }
+      ],
+      "next": [ { "always": true, "go": "derive_needs_new_circuit" } ]
+    },
+
+    {
+      "id": "derive_needs_new_circuit",
+      "kind": "derive",
+      "sets": "needs_new_circuit",
+      "explain": "The cheap path. Only a small, general-purpose 120V job can be tapped off an existing circuit, and only when the homeowner says there's something to tap. Everything else needs its own circuit by code — a kitchen counter, a bathroom, a dryer, a tub, a shop.",
+      "rules": [
+        { "when": { "all": [ { "var": "tap_existing", "eq": "yes" }, { "var": "circuit_class", "eq": "120_15_general" }, { "var": "outlet_count", "lte": 3 } ] }, "value": false },
+        { "always": true, "value": true }
+      ],
+      "next": [
+        { "when": { "var": "needs_new_circuit", "eq": false }, "go": "contact_tap__include" },
+        { "always": true, "go": "panel_check__include" }
+      ]
+    },
+
+    {
+      "id": "derive_conductor_spec",
+      "kind": "derive",
+      "sets": "conductor_spec",
+      "explain": "Picks the cable once, for every kind of circuit this machine can produce. Before this existed, a hot-tub circuit priced with no cable and no breaker at all — the exact class of hole the 'a branch with no price' check is meant to catch, but one level deeper: a branch whose price was missing a line.",
+      "rules": [
+        { "when": { "all": [ { "var": "outdoor_exposure", "eq": "underground" }, { "var": "circuit_class", "in": ["240_50", "spa_240", "subpanel_feed", "240_30"] } ] }, "value": "thhn_in_pvc_buried" },
+        { "when": { "var": "outdoor_exposure", "eq": "underground" }, "value": "uf_b_10_2" },
+        { "when": { "var": "circuit_class", "eq": "240_30" }, "value": "nm_b_10_3" },
+        { "when": { "var": "circuit_class", "in": ["240_50", "spa_240", "subpanel_feed"] }, "value": "nm_b_6_3" },
+        { "always": true, "value": "nm_b_12_2" }
+      ],
+      "next": [ { "always": true, "go": "contact_full__include" } ]
+    },
+
+    {
+      "id": "panel_check__include",
+      "kind": "fragment",
+      "fragment": "panel_check",
+      "next": [ { "always": true, "go": "wire_run__include" } ]
+    },
+
+    {
+      "id": "wire_run__include",
+      "kind": "fragment",
+      "fragment": "wire_run",
+      "next": [ { "always": true, "go": "derive_conductor_spec" } ]
+    },
+
+    {
+      "id": "contact_tap__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "note": "The cheap path is genuinely a shorter flow — no panel photo, no run questions, five fewer screens. It gets its own copy of the contact questions and its own ending rather than being funnelled through the full one.",
+      "next": [ { "always": true, "go": "T_tap_existing_circuit" } ]
+    },
+
+    {
+      "id": "contact_full__include",
+      "kind": "fragment",
+      "fragment": "property_and_contact",
+      "next": [ { "always": true, "go": "outcome" } ]
+    },
+
+    {
+      "id": "outcome",
+      "kind": "checkpoint",
+      "next": [
+        { "when": { "var": "panel_capacity", "eq": "hazard_panel" }, "go": "T_hazard_panel" },
+        { "when": { "var": "circuit_class", "eq": "spa_240" }, "go": "T_hot_tub_circuit" },
+        { "when": { "var": "panel_capacity", "eq": "full_needs_subpanel" }, "go": "T_circuit_with_subpanel" },
+        { "when": { "any": [ { "var": "panel_capacity", "eq": "service_upgrade_needed" }, { "var": "load_risk", "in": ["high", "critical"] } ] }, "go": "T_site_visit_required", "says": "The service may not take another circuit" },
+        { "when": { "var": "photo_status", "in": ["missing", "unreviewed"] }, "go": "T_needs_panel_review" },
+        { "always": true, "go": "T_new_circuit" }
+      ]
+    }
+  ],
+
+  "terminals": [
+    {
+      "id": "T_tap_existing_circuit",
+      "kind": "quote",
+      "title": "A new outlet off the one you've already got",
+      "summary": "There's power in that wall already. We take a spur off the existing outlet and put your new one in — no trip to the panel, no permit, an hour or so.",
+      "job_class": "receptacle_replacement",
+      "includes": [
+        "The new outlet, wired from the existing one",
+        "A proper box cut into the wall",
+        "Testing that the circuit still does what it should with the extra load on it"
+      ],
+      "excludes_extra": [
+        "Patching and painting around the new box, beyond leaving it neat",
+        "Anything we find wrong with the existing circuit — we'll show you before touching it"
+      ],
+      "line_items": [
+        { "id": "trip", "kind": "fee", "label": "Call-out", "rate": "fees.trip_charge",
+          "when": { "rate_card": "fees.trip_charge_policy", "eq": "always" }, "qty": { "base": 1 } },
+        { "id": "labour", "kind": "labour", "label": "Fitting the outlet",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 1.0, "per": [ { "of": "outlet_count", "rate": 0.5, "minus": 1 } ],
+            "modifiers": [
+              { "when": { "var": "tap_existing", "eq": "not_sure" }, "op": "add", "value": 0.5, "because": "Finding out what's actually in the wall" }
+            ], "round_to": 0.25 } },
+        { "id": "recept", "kind": "material", "label": "Outlets", "catalog": "device.recept_15a_tr",
+          "qty": { "base": 0, "per": [ { "of": "outlet_count", "rate": 1.0 } ] } },
+        { "id": "box", "kind": "material", "label": "Boxes", "catalog": "box.old_work_1g",
+          "qty": { "base": 0, "per": [ { "of": "outlet_count", "rate": 1.0 } ] } },
+        { "id": "wire", "kind": "material", "label": "Cable", "catalog": "wire.nm_b_12_2",
+          "qty": { "base": 15, "per": [ { "of": "outlet_count", "rate": 8.0 } ] } },
+        { "id": "consumables", "kind": "material", "label": "Fixings and connectors", "catalog": "misc.consumables_small", "qty": { "base": 1 } }
+      ],
+      "uncertainty": {
+        "base_spread_pct": null,
+        "widen": [
+          { "when": { "var": "tap_existing", "eq": "not_sure" }, "add_pct": 12, "because": "We don't know yet whether there's something usable in that wall" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "If we get there and the nearby outlet turns out to be on a circuit that's already loaded, or it's a kitchen or bathroom circuit we're not allowed to extend, we'll tell you before we start and re-price it as a new circuit. You won't be charged for finding out." },
+          { "when": { "var": "tap_existing", "eq": "not_sure" }, "say": "We've priced the easy version. If the wall turns out to be empty, the job becomes a run back to the panel — that's a different number, and we'd show it to you before doing it." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_new_circuit",
+      "kind": "quote",
+      "title": "A new circuit from your panel",
+      "summary": "A dedicated circuit, its own breaker, run from your panel to where you need it.",
+      "job_class": "new_circuit",
+      "includes": [
+        "A new breaker in your panel and the panel list updated",
+        "Cable run from the panel to the outlet",
+        "The outlet fitted, tested and left working",
+        "Permit and inspection where your town requires one"
+      ],
+      "line_items": [
+        { "id": "trip", "kind": "fee", "label": "Call-out", "rate": "fees.trip_charge",
+          "when": { "rate_card": "fees.trip_charge_policy", "eq": "always" }, "qty": { "base": 1 } },
+
+        { "id": "setup_labour", "kind": "labour", "label": "Getting set up and protecting the space",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0.5,
+            "modifiers": [
+              { "when": { "var": "route_difficulty", "in": ["fish_and_patch", "surface_conduit"] }, "op": "add", "value": 0.25, "because": "Dust sheets and masking in a finished room" }
+            ], "round_to": 0.25 } },
+
+        { "id": "panel_labour", "kind": "labour", "label": "Work in the panel",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 1.0,
+            "modifiers": [
+              { "when": { "var": "panel_location", "eq": "exterior_wall" }, "op": "add", "value": 0.4 },
+              { "when": { "var": "panel_capacity", "eq": "spare_needs_tandem" }, "op": "add", "value": 0.75, "because": "Rearranging breakers to free up a space" }
+            ], "round_to": 0.25 } },
+
+        { "id": "run_labour", "kind": "labour", "label": "Running the cable",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0,
+            "per": [ { "of": "run_distance_ft", "rate": 0.025 } ],
+            "modifiers": [
+              { "when": { "var": "route_difficulty", "eq": "attic_or_crawl" }, "op": "multiply", "value": 2.1 },
+              { "when": { "var": "route_difficulty", "eq": "surface_conduit" }, "op": "multiply", "value": 2.9 },
+              { "when": { "var": "route_difficulty", "eq": "fish_and_patch" }, "op": "multiply", "value": 4.2 },
+              { "when": { "var": "route_difficulty", "eq": "unknown" }, "op": "multiply", "value": 2.5 },
+              { "when": { "var": "route_crosses", "eq": "one_wall" }, "op": "add", "value": 0.4 },
+              { "when": { "var": "route_crosses", "eq": "across_house" }, "op": "add", "value": 1.2 },
+              { "when": { "var": "route_crosses", "eq": "other_building" }, "op": "add", "value": 1.6 },
+              { "when": { "var": "destination_outdoors", "eq": true }, "op": "add", "value": 0.5 },
+              { "when": { "var": "outdoor_exposure", "eq": "underground" }, "op": "add", "value": 1.0 }
+            ], "min": 0.5, "round_to": 0.25 } },
+
+        { "id": "outlet_labour", "kind": "labour", "label": "Fitting the outlets",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "qty": { "base": 0.75, "per": [ { "of": "outlet_count", "rate": 0.4, "minus": 1, "default": 1 } ], "round_to": 0.25 } },
+
+        { "id": "breaker_afci", "kind": "material", "label": "Arc-fault breaker", "catalog": "breaker.1p_20a_afci",
+          "when": { "var": "circuit_class", "in": ["120_15_general", "120_20_protected", "120_20_dedicated"] }, "qty": { "base": 1 },
+          "tuning_note": "Arc-fault protection is required on new circuits in habitable rooms in most of the US. If your jurisdiction doesn't require it on this circuit type, swap this line for a standard breaker." },
+        { "id": "breaker_plain", "kind": "material", "label": "Breaker", "catalog": "breaker.1p_20a",
+          "when": { "var": "circuit_class", "eq": "120_20_outdoor" }, "qty": { "base": 1 } },
+        { "id": "breaker_30", "kind": "material", "label": "30A breaker", "catalog": "breaker.2p_30a",
+          "when": { "var": "circuit_class", "eq": "240_30" }, "qty": { "base": 1 } },
+        { "id": "breaker_50", "kind": "material", "label": "50A breaker", "catalog": "breaker.2p_50a",
+          "when": { "var": "circuit_class", "in": ["240_50", "spa_240"] }, "qty": { "base": 1 } },
+        { "id": "breaker_subfeed", "kind": "material", "label": "Feed breaker", "catalog": "breaker.2p_100a_subfeed",
+          "when": { "var": "circuit_class", "eq": "subpanel_feed" }, "qty": { "base": 1 } },
+
+        { "id": "wire_12", "kind": "material", "label": "Cable", "catalog": "wire.nm_b_12_2",
+          "when": { "var": "conductor_spec", "eq": "nm_b_12_2" },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 }, { "of": "outlet_count", "rate": 8.0, "minus": 1, "default": 1 } ] } },
+        { "id": "wire_uf10", "kind": "material", "label": "Buried cable", "catalog": "wire.uf_b_10_2",
+          "when": { "var": "conductor_spec", "eq": "uf_b_10_2" },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+        { "id": "wire_10_3", "kind": "material", "label": "Cable", "catalog": "wire.nm_b_10_3",
+          "when": { "var": "conductor_spec", "eq": "nm_b_10_3" },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+        { "id": "wire_6_3", "kind": "material", "label": "Cable", "catalog": "wire.nm_b_6_3",
+          "when": { "var": "conductor_spec", "eq": "nm_b_6_3" },
+          "qty": { "base": 12, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+        { "id": "wire_thhn6", "kind": "material", "label": "Conductors", "catalog": "wire.thhn_6",
+          "when": { "var": "conductor_spec", "eq": "thhn_in_pvc_buried" },
+          "qty": { "base": 48, "per": [ { "of": "run_distance_ft", "rate": 4.0, "note": "two hots, a neutral and a ground" } ] } },
+        { "id": "conduit_pvc", "kind": "material", "label": "Buried conduit", "catalog": "conduit.pvc_1",
+          "when": { "var": "conductor_spec", "eq": "thhn_in_pvc_buried" },
+          "qty": { "base": 8, "per": [ { "of": "run_distance_ft", "rate": 1.0 } ] } },
+
+        { "id": "recept_tr", "kind": "material", "label": "Outlets", "catalog": "device.recept_15a_tr",
+          "when": { "var": "circuit_class", "eq": "120_15_general" },
+          "qty": { "base": 0, "per": [ { "of": "outlet_count", "rate": 1.0, "default": 1 } ] } },
+        { "id": "recept_gfci", "kind": "material", "label": "GFCI outlet", "catalog": "device.recept_20a_gfci",
+          "when": { "var": "circuit_class", "eq": "120_20_protected" }, "qty": { "base": 1 } },
+        { "id": "recept_wr_gfci", "kind": "material", "label": "Weather-resistant GFCI outlet", "catalog": "device.recept_20a_wr_gfci",
+          "when": { "var": "circuit_class", "eq": "120_20_outdoor" },
+          "qty": { "base": 0, "per": [ { "of": "outlet_count", "rate": 1.0, "default": 1 } ] } },
+        { "id": "recept_14_30", "kind": "material", "label": "Dryer outlet", "catalog": "device.recept_14_30",
+          "when": { "var": "circuit_class", "eq": "240_30" }, "qty": { "base": 1 } },
+        { "id": "recept_6_50", "kind": "material", "label": "240V outlet", "catalog": "device.recept_6_50",
+          "when": { "var": "circuit_class", "eq": "240_50" }, "qty": { "base": 1 } },
+        { "id": "wp_cover", "kind": "material", "label": "Weatherproof in-use cover", "catalog": "box.wp_in_use_cover",
+          "when": { "var": "circuit_class", "eq": "120_20_outdoor" },
+          "qty": { "base": 0, "per": [ { "of": "outlet_count", "rate": 1.0, "default": 1 } ] } },
+        { "id": "box", "kind": "material", "label": "Boxes", "catalog": "box.old_work_1g",
+          "qty": { "base": 1, "per": [ { "of": "outlet_count", "rate": 1.0, "minus": 1, "default": 1 } ] } },
+
+        { "id": "trench_lawn", "kind": "sub", "label": "Digging (lawn)", "rate": "subs.trench_lawn_per_ft",
+          "when": { "all": [ { "var": "outdoor_exposure", "eq": "underground" }, { "var": "trench_surface", "in": ["lawn", "unknown"] } ] },
+          "qty": { "base": 0, "per": [ { "of": "trench_distance_ft", "rate": 1.0 } ] } },
+        { "id": "trench_gravel", "kind": "sub", "label": "Digging (gravel or roots)", "rate": "subs.trench_gravel_roots_per_ft",
+          "when": { "all": [ { "var": "outdoor_exposure", "eq": "underground" }, { "var": "trench_surface", "eq": "gravel" } ] },
+          "qty": { "base": 0, "per": [ { "of": "trench_distance_ft", "rate": 1.0 } ] } },
+
+        { "id": "consumables", "kind": "material", "label": "Fixings, connectors and labels", "catalog": "misc.consumables_small", "qty": { "base": 1 } },
+
+        { "id": "permit_fee", "kind": "fee", "label": "Permit and inspection", "rate": "permits.flat_fee",
+          "when": { "all": [ { "rate_card": "permits.policy", "eq": "we_pull_flat_fee" }, { "rate_card": "permits.required_by_job_class.new_circuit", "eq": true } ] },
+          "qty": { "base": 1 } },
+        { "id": "permit_labour", "kind": "labour", "label": "Filing and inspection",
+          "rate": "labor.electrician_hourly", "unit": "hr",
+          "when": { "all": [ { "rate_card": "permits.policy", "in": ["we_pull_flat_fee", "we_pull_bill_actual"] }, { "rate_card": "permits.required_by_job_class.new_circuit", "eq": true } ] },
+          "qty": { "base": 0, "per": [ { "rate_card": "permits.filing_hours", "rate": 1.0 }, { "rate_card": "permits.inspection_meeting_hours", "rate": 1.0 } ] } }
+      ],
+
+      "addons": [
+        { "id": "patching", "label": "Patching the openings we cut",
+          "when": { "var": "route_difficulty", "eq": "fish_and_patch" },
+          "kind": "sub", "rate": "subs.drywall_patch_per_opening",
+          "qty": { "base": 2, "per": [ { "of": "run_distance_ft", "rate": 0.06 } ], "round_to": 1 },
+          "copy": "Taped and sanded, ready for you to paint.", "in_range": false }
+      ],
+
+      "uncertainty": {
+        "base_spread_pct": null,
+        "widen": [
+          { "when": { "var": "run_distance_ft", "estimated": true }, "add_pct": 6, "because": "The distance was estimated" },
+          { "when": { "var": "wall_finish", "eq": "unknown" }, "add_pct": 8, "because": "We don't know what the walls are like" },
+          { "when": { "var": "route_difficulty", "eq": "unknown" }, "add_pct": 8, "because": "We don't know how the cable gets there" },
+          { "when": { "var": "photo_status", "eq": "unreviewed" }, "add_pct": 8, "because": "Nobody has looked at your panel photo yet" },
+          { "when": { "var": "photo_status", "eq": "missing" }, "add_pct": 12, "because": "We haven't seen your panel" },
+          { "when": { "var": "trench_surface", "eq": "unknown" }, "add_pct": 8, "because": "We don't know what's under the ground" },
+          { "when": { "var": "spa_amps", "eq": "unknown" }, "add_pct": 10, "because": "We don't know what the tub needs yet" },
+          { "when": { "env": "rate_card_tuned", "eq": false }, "add_pct": 10, "because": "This contractor has not finished setting their prices" }
+        ]
+      },
+
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "when": { "var": "circuit_class", "eq": "120_20_protected" }, "say": "Kitchen and bathroom outlets have to be on their own protected circuits — we can't spur them off something else, even if there's an outlet right there. That's why this is priced as a new circuit." },
+          { "when": { "var": "what_for", "eq": "dryer" }, "say": "Check which plug your dryer has before we come. Older dryers have a three-pin plug; new circuits have to be four-pin. If yours is the old kind we'll change the cord — about twenty minutes and the cost of the cord." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_hot_tub_circuit",
+      "kind": "quote",
+      "title": "Power for your hot tub",
+      "summary": "A dedicated 240V circuit with the shut-off box the code requires within sight of the tub, plus the bonding that keeps the water and the metalwork at the same potential.",
+      "job_class": "new_circuit",
+      "extends": "T_new_circuit",
+      "includes_extra": [
+        "A weatherproof shut-off box with a built-in safety breaker, within sight of the tub and the right distance from it",
+        "Bonding between the tub, the pump and any metal within reach of the water",
+        "Permit and inspection — hot tubs are always inspected"
+      ],
+      "line_items_extra": [
+        { "id": "spa_panel", "kind": "material", "label": "Spa shut-off box with safety breaker", "catalog": "disconnect.spa_panel_50a", "qty": { "base": 1 } },
+        { "id": "bonding_wire", "kind": "material", "label": "Bonding wire", "catalog": "wire.bare_copper_8", "qty": { "base": 30 } },
+        { "id": "spa_labour", "kind": "labour", "label": "Fitting the shut-off and bonding",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 2.0, "round_to": 0.25 } }
+      ],
+      "uncertainty": { "base_spread_pct": null, "extra_spread_pct": 5, "extra_spread_because": "Where exactly the shut-off can go depends on where the tub ends up sitting.", "inherit_widen_from": "T_new_circuit" },
+      "presentation": {
+        "cta": "Book this in",
+        "conditions": [
+          { "always": true, "say": "Don't fill the tub before we've been. The bonding has to be done with the equipment accessible, and it's a lot easier before there's 400 gallons in the way." },
+          { "when": { "var": "spa_amps", "eq": "unknown" }, "say": "We've priced a 50 amp tub, which is the common size. Send us the plate off the side when it arrives and we'll confirm — if it's smaller, this comes down." }
+        ]
+      }
+    },
+
+    {
+      "id": "T_circuit_with_subpanel",
+      "kind": "quote",
+      "title": "Your panel is full — so a small one alongside it",
+      "summary": "There's nowhere to put another breaker. Rather than replacing the whole panel, we add a small second one fed off it, and your new circuit goes in there with spaces left over.",
+      "job_class": "subpanel",
+      "extends": "T_new_circuit",
+      "includes_extra": [
+        "A subpanel next to your existing one, with spare spaces",
+        "A feeder and a breaker in the main panel"
+      ],
+      "line_items_extra": [
+        { "id": "subpanel", "kind": "material", "label": "Subpanel", "catalog": "panel.sub_100a_12sp", "qty": { "base": 1 } },
+        { "id": "subfeed_breaker", "kind": "material", "label": "Feed breaker", "catalog": "breaker.2p_100a_subfeed", "qty": { "base": 1 } },
+        { "id": "subfeed_wire", "kind": "material", "label": "Feeder cable", "catalog": "wire.ser_2_0", "qty": { "base": 16 } },
+        { "id": "subpanel_labour", "kind": "labour", "label": "Fitting and wiring the subpanel",
+          "rate": "labor.electrician_hourly", "unit": "hr", "qty": { "base": 3.0, "round_to": 0.25 } }
+      ],
+      "alternatives": [
+        { "terminal": null, "machine": "panel-service-upgrade", "label": "Or replace the panel instead",
+          "copy": "If your panel is old anyway, it can be better value to do that once rather than bolt something onto it." }
+      ],
+      "uncertainty": { "base_spread_pct": null, "extra_spread_pct": 4, "inherit_widen_from": "T_new_circuit" },
+      "presentation": { "cta": "Book this in" }
+    },
+
+    {
+      "id": "T_needs_panel_review",
+      "kind": "span",
+      "title": "Here's the range — we'll narrow it today",
+      "summary": "Everything except your panel is clear. This covers both a straightforward new circuit and the version where your panel turns out to be full.",
+      "spans": ["T_new_circuit", "T_circuit_with_subpanel"],
+      "resolution": {
+        "promise": "Within one business day, usually a few hours.",
+        "on_resolve": "re_evaluate",
+        "narrowing_rule": "Re-evaluation may only move the range inside what was shown.",
+        "notify": ["sms", "email"]
+      },
+      "presentation": {
+        "cta": "Book the earliest slot — we'll confirm the price first",
+        "conditions": [
+          { "when": { "var": "photo_status", "eq": "missing" }, "say": "A photo of the open panel door usually halves this range within the hour." }
+        ]
+      }
+    }
+  ],
+
+  "honesty": {
+    "max_spread_pct": null,
+    "on_exceed_max_spread": "T_site_visit_required",
+    "refuse_to_quote_when": [
+      { "when": { "var": "run_distance_ft", "gt": 150 }, "because": "Past 150 feet the route matters more than the distance." },
+      { "when": { "var": "trench_surface", "eq": "concrete" }, "because": "Cutting paving is a different trade." },
+      { "when": { "var": "aluminium_branch_visible", "eq": true }, "because": "Aluminium branch wiring changes what we can connect to." }
+    ],
+    "cheaper_alternative_rule": "When `needs_new_circuit` is false the machine MUST land on T_tap_existing_circuit even though the new-circuit terminal would earn three times as much. A machine that quietly stops offering its cheapest honest outcome is the failure mode that destroys trust in the whole product."
+  }
+}

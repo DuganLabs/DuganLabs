@@ -1,0 +1,73 @@
+name = "greenput-tenant"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput"
+database_id = "ec38a8c4-b992-4a92-b809-27554ae806af"
+
+# Tenant sites are served by subdomain (CLAUDE.md §3): the Worker resolves the
+# tenant from the hostname and reserves api/app/admin/www/mail/staging/
+# marketing/fallback as non-tenant slugs (RESERVED_SUBDOMAINS in
+# @greenput/shared/utils, shared with the slug allocation in
+# /api/auth/register).
+#
+# Until 2026-09-12 only `demo.greenput.com` was bound. Every other tenant host
+# was NXDOMAIN — green-electric.greenput.com included, whose workspace row had
+# carried that slug since March — so /api/auth/register handing a contractor a
+# slug did not give them a reachable micro-site. The wildcard route below, plus
+# the wildcard DNS record the deploy ensures, is what makes the subdomain in
+# the product's own topology real.
+#
+# WHY THE EXACT demo ROUTE STAYS. A Custom Domain is an exact-hostname binding
+# and outranks a wildcard route, so demo.greenput.com keeps being reached
+# exactly as it was. The wildcard is additive: the one tenant hostname with
+# real traffic behind it does not change how it is served on the same commit
+# that introduces the wildcard.
+#
+# WHY THIS IS SAFE FOR app.greenput.com. `*.greenput.com/*` matches the sign-in
+# host, which is a Pages custom domain. Rather than bet on which binding
+# Cloudflare prefers, src/index.ts stops answering 404 for a reserved subdomain
+# it knows an origin for and proxies to that origin instead. If the wildcard
+# never wins that branch is unreachable; if it does, sign-in still works.
+# `api.greenput.com` is a Worker Custom Domain, and `www`/apex are more
+# specific marketing routes, so neither depends on this.
+#
+# The deploy then checks all of it against the live edge and fails the job if
+# app/api/www stop serving what they should — "Verify hostname routing" in
+# .github/workflows/ci.yml.
+[[routes]]
+pattern = "demo.greenput.com"
+custom_domain = true
+
+[[routes]]
+pattern = "*.greenput.com/*"
+zone_name = "greenput.com"
+
+[vars]
+ENVIRONMENT = "production"
+# Where apps/brand-assets serves this tenant's share card
+# (https://brand.greenput.com/<slug>/<version>/card.png), which every micro-site
+# page advertises as its og:image. A [vars] entry rather than something derived
+# from the request hostname, because the derivation would be a guess: a
+# contractor on their own custom domain has nothing in the hostname that names
+# the brand Worker. Read ONLY to build that URL — never fetched by the page,
+# whose CSP is connect-src 'self'.
+BRAND_ORIGIN = "https://brand.greenput.com"
+# Where apps/api serves (its own custom domain in apps/api/wrangler.toml).
+# No reader: its only reader was the booking-deposit confirmation page
+# (/deposit/<token>), removed when deposits were revoked (2026-10-20).
+# /deposit/<token> now answers not-found. Left in place as deployed config.
+API_ORIGIN = "https://api.greenput.com"
+
+[dev]
+port = 8788
+local_protocol = "http"
+
+# The panel photo a homeowner attaches on the quote form (PR #121). One bucket,
+# two names: the API binds it as FILES, this Worker as INTAKE_PHOTOS.
+[[r2_buckets]]
+binding = "INTAKE_PHOTOS"
+bucket_name = "greenput-files"

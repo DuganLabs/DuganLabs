@@ -1,0 +1,258 @@
+{
+  "schema_version": "1.0.0",
+  "slug": "greenput-default-electrical-us",
+  "name": "Greenput default — residential electrical (US)",
+  "currency": "USD",
+  "trade": "electrical",
+  "disclaimer": "EVERY NUMBER IN THIS FILE IS A PLACEHOLDER DEFAULT, NOT MARKET TRUTH. They are plausible 2026 US residential figures chosen so a new workspace produces a sane range on day one. Labour rates vary roughly 2x between metros, material prices move monthly, and permit fees are entirely jurisdictional. A contractor MUST tune these during setup; Greenput should treat an untuned rate card as a warning state on every quote it backs.",
+  "tuning_state": "untuned_default",
+
+  "labor": {
+    "electrician_hourly": {
+      "label": "What do you charge for an hour of a licensed electrician's time?",
+      "value": 110,
+      "unit": "hr",
+      "typical_range": [75, 185],
+      "note": "Billed rate, not your cost. If you quote flat-rate off a book, enter the hourly this book implies for a 4-hour job."
+    },
+    "helper_hourly": {
+      "label": "And for a helper or apprentice, when you bring one?",
+      "value": 65,
+      "unit": "hr",
+      "typical_range": [40, 95]
+    },
+    "after_hours_multiplier": {
+      "label": "Evenings and nights are charged at",
+      "value": 1.5,
+      "unit": "x",
+      "typical_range": [1.0, 2.0]
+    },
+    "weekend_multiplier": {
+      "label": "Weekends are charged at",
+      "value": 1.25,
+      "unit": "x",
+      "typical_range": [1.0, 2.0]
+    }
+  },
+
+  "fees": {
+    "trip_charge": {
+      "label": "Do you charge to come out?",
+      "value": 79,
+      "unit": "flat",
+      "typical_range": [0, 149]
+    },
+    "trip_charge_policy": {
+      "label": "When does that apply?",
+      "value": "diagnostic_only",
+      "options": {
+        "always": "On every job, on top of the work",
+        "diagnostic_only": "Only on diagnostic call-outs (rolled into the repair if they go ahead)",
+        "never": "Never — it's built into my hourly"
+      }
+    },
+    "minimum_job": {
+      "label": "What is the smallest amount you will do a job for?",
+      "value": 285,
+      "unit": "flat",
+      "typical_range": [125, 450],
+      "note": "No machine may ever emit a low end below this."
+    },
+    "emergency_callout": {
+      "label": "Same-day emergency call-out",
+      "value": 225,
+      "unit": "flat",
+      "typical_range": [0, 500],
+      "note": "Shown as a disclosed rate on urgent terminals, never as a quote."
+    },
+    "diagnostic_hours_included": {
+      "label": "How much time does a diagnostic call-out include?",
+      "value": 1.0,
+      "unit": "hr",
+      "typical_range": [0.5, 2.0]
+    }
+  },
+
+  "materials": {
+    "markup_pct": {
+      "label": "How much do you add to parts?",
+      "value": 35,
+      "unit": "%",
+      "typical_range": [0, 100],
+      "note": "Applied to your cost. Enter 0 if your hourly already covers parts margin."
+    },
+    "sales_tax_pct": {
+      "label": "Sales tax you have to charge on materials",
+      "value": 0,
+      "unit": "%",
+      "typical_range": [0, 11],
+      "note": "Default 0 because taxability of contractor-installed materials differs by state and by whether you buy tax-paid. Set this deliberately or leave it at 0 and absorb it in markup."
+    },
+    "waste_pct_default": {
+      "label": "Wire and conduit waste allowance",
+      "value": 12,
+      "unit": "%",
+      "typical_range": [5, 25]
+    },
+    "catalog": {
+      "breaker.2p_40a":            { "label": "2-pole 40A breaker", "unit": "each", "cost": 42, "typical_range": [22, 85], "note": "Price varies 3x by panel brand. Square D QO and Eaton CH sit at the top; BR/Homeline at the bottom." },
+      "breaker.2p_50a":            { "label": "2-pole 50A breaker", "unit": "each", "cost": 48, "typical_range": [25, 95] },
+      "breaker.2p_60a":            { "label": "2-pole 60A breaker", "unit": "each", "cost": 58, "typical_range": [30, 110] },
+      "breaker.2p_50a_gfci":       { "label": "2-pole 50A GFCI breaker", "unit": "each", "cost": 135, "typical_range": [95, 210], "note": "Required when a 14-50 receptacle feeds an EVSE (NEC 625.54). This single part is the most common reason a plug-in install prices above a hardwired one." },
+      "breaker.2p_30a":            { "label": "2-pole 30A breaker", "unit": "each", "cost": 34, "typical_range": [18, 70] },
+      "breaker.1p_20a":            { "label": "1-pole 20A breaker", "unit": "each", "cost": 12, "typical_range": [6, 30] },
+      "breaker.1p_20a_afci":       { "label": "1-pole 20A AFCI / dual-function breaker", "unit": "each", "cost": 52, "typical_range": [35, 90], "note": "The hidden cost of a panel replacement. Where the AHJ requires AFCI on reused circuits, a 20-circuit swap can carry $700-$1,000 of these." },
+      "breaker.2p_100a_subfeed":   { "label": "2-pole 100A sub-feed breaker", "unit": "each", "cost": 95, "typical_range": [55, 180] },
+      "wire.nm_b_14_2":            { "label": "14/2 NM-B (romex), 15A", "unit": "ft", "cost": 0.55, "typical_range": [0.35, 1.10] },
+      "wire.nm_b_12_2":            { "label": "12/2 NM-B (romex), 20A", "unit": "ft", "cost": 0.85, "typical_range": [0.55, 1.70] },
+      "wire.nm_b_10_2":            { "label": "10/2 NM-B, 30A", "unit": "ft", "cost": 1.35, "typical_range": [0.90, 2.60] },
+      "wire.nm_b_10_3":            { "label": "10/3 NM-B, 30A with neutral (dryer)", "unit": "ft", "cost": 2.00, "typical_range": [1.30, 3.80] },
+      "wire.nm_b_8_2":             { "label": "8/2 NM-B, 40A", "unit": "ft", "cost": 2.20, "typical_range": [1.45, 4.20] },
+      "wire.nm_b_6_2":             { "label": "6/2 NM-B, 50A", "unit": "ft", "cost": 3.40, "typical_range": [2.30, 6.50] },
+      "wire.nm_b_6_3":             { "label": "6/3 NM-B, 50A with neutral (range)", "unit": "ft", "cost": 4.30, "typical_range": [2.90, 8.00] },
+      "wire.thhn_8":               { "label": "#8 THHN, per conductor", "unit": "ft", "cost": 0.48, "typical_range": [0.30, 0.95] },
+      "wire.thhn_6":               { "label": "#6 THHN, per conductor", "unit": "ft", "cost": 0.78, "typical_range": [0.50, 1.50] },
+      "wire.uf_b_10_2":            { "label": "10/2 UF-B direct burial", "unit": "ft", "cost": 1.80, "typical_range": [1.20, 3.40] },
+      "wire.uf_b_6_2":             { "label": "6/2 UF-B direct burial", "unit": "ft", "cost": 4.20, "typical_range": [2.80, 8.00] },
+      "wire.ser_2_0":              { "label": "2/0 SER or SEU, 200A service", "unit": "ft", "cost": 11.50, "typical_range": [7.50, 22.00] },
+      "wire.bare_copper_4":        { "label": "#4 bare copper (grounding electrode conductor)", "unit": "ft", "cost": 2.40, "typical_range": [1.60, 4.80] },
+      "wire.bare_copper_8":        { "label": "#8 bare copper (bonding)", "unit": "ft", "cost": 1.10, "typical_range": [0.70, 2.20] },
+      "conduit.emt_075":           { "label": "3/4\" EMT with fittings", "unit": "ft", "cost": 1.45, "typical_range": [0.95, 2.80] },
+      "conduit.pvc_075":           { "label": "3/4\" PVC with fittings", "unit": "ft", "cost": 0.85, "typical_range": [0.55, 1.70] },
+      "conduit.pvc_1":             { "label": "1\" PVC with fittings", "unit": "ft", "cost": 1.30, "typical_range": [0.85, 2.50] },
+      "conduit.lft_075":           { "label": "3/4\" liquidtight flex whip", "unit": "ft", "cost": 3.10, "typical_range": [2.00, 6.00] },
+      "conduit.rigid_2":           { "label": "2\" rigid service mast", "unit": "ft", "cost": 9.00, "typical_range": [6.00, 17.00] },
+      "device.recept_14_50":       { "label": "NEMA 14-50 receptacle, industrial grade", "unit": "each", "cost": 58, "typical_range": [14, 95], "note": "The $14 residential part is the one that melts under 8 hours a night of EV charging. Spec the industrial one and say so on the quote." },
+      "device.recept_6_50":        { "label": "NEMA 6-50 receptacle", "unit": "each", "cost": 22, "typical_range": [12, 45] },
+      "device.recept_14_30":       { "label": "NEMA 14-30 dryer receptacle", "unit": "each", "cost": 18, "typical_range": [10, 38] },
+      "device.recept_20a_gfci":    { "label": "20A GFCI receptacle", "unit": "each", "cost": 24, "typical_range": [14, 45] },
+      "device.recept_20a_wr_gfci": { "label": "20A weather-resistant GFCI receptacle", "unit": "each", "cost": 28, "typical_range": [18, 55] },
+      "device.recept_15a_tr":      { "label": "15A tamper-resistant receptacle", "unit": "each", "cost": 3.50, "typical_range": [1.80, 9.00] },
+      "device.switch_single_pole": { "label": "Single-pole switch", "unit": "each", "cost": 4.00, "typical_range": [2.00, 12.00] },
+      "box.old_work_1g":           { "label": "Single-gang old-work box", "unit": "each", "cost": 2.50, "typical_range": [1.50, 6.00] },
+      "box.surface_2g":            { "label": "Two-gang surface box", "unit": "each", "cost": 9, "typical_range": [5, 20] },
+      "box.wp_in_use_cover":       { "label": "Weatherproof in-use cover", "unit": "each", "cost": 26, "typical_range": [15, 48] },
+      "box.fan_brace":             { "label": "Fan-rated brace box", "unit": "each", "cost": 18, "typical_range": [11, 35] },
+      "disconnect.3r_60a":         { "label": "NEMA 3R 60A non-fused disconnect", "unit": "each", "cost": 62, "typical_range": [38, 120] },
+      "disconnect.spa_panel_50a":  { "label": "Spa panel, 50A GFCI, NEMA 3R", "unit": "each", "cost": 185, "typical_range": [120, 320] },
+      "panel.200a_40sp":           { "label": "200A 40-space main breaker load centre", "unit": "each", "cost": 420, "typical_range": [280, 850] },
+      "panel.100a_20sp":           { "label": "100A 20-space main breaker load centre", "unit": "each", "cost": 185, "typical_range": [120, 400] },
+      "panel.sub_100a_12sp":       { "label": "100A 12-space subpanel", "unit": "each", "cost": 110, "typical_range": [70, 240] },
+      "meter.base_200a":           { "label": "200A meter base", "unit": "each", "cost": 155, "typical_range": [95, 320] },
+      "mast.riser_kit_2in":        { "label": "2\" mast riser kit (weatherhead, straps, sill plate)", "unit": "each", "cost": 180, "typical_range": [110, 380] },
+      "ground.rod_and_clamp":      { "label": "8ft ground rod with clamp", "unit": "each", "cost": 22, "typical_range": [14, 45] },
+      "spd.type2_50ka":            { "label": "Type 2 surge protective device, ~50kA", "unit": "each", "cost": 135, "typical_range": [80, 260] },
+      "spd.type2_80ka":            { "label": "Type 2 surge protective device, ~80kA, longer warranty", "unit": "each", "cost": 260, "typical_range": [160, 480] },
+      "spd.point_of_use":          { "label": "Point-of-use surge strip for sensitive electronics", "unit": "each", "cost": 45, "typical_range": [25, 120] },
+      "evse.allowance_l2":         { "label": "Level 2 charger allowance (if we supply)", "unit": "each", "cost": 480, "typical_range": [350, 900], "note": "An ALLOWANCE, not a product. The quote must say which charger it assumes, or say plainly that the homeowner picks and any difference is passed through." },
+      "loadmgmt.evse_module":      { "label": "EV load-management / power-sharing module", "unit": "each", "cost": 420, "typical_range": [280, 800], "note": "The device that avoids a service upgrade on a tight 100A service. Often the honest cheaper answer." },
+      "fixture.allowance_basic":   { "label": "Light fixture allowance (if we supply)", "unit": "each", "cost": 95, "typical_range": [40, 400] },
+      "misc.consumables_small":    { "label": "Consumables — staples, connectors, caulk, labels", "unit": "job", "cost": 22, "typical_range": [10, 45] },
+      "misc.consumables_large":    { "label": "Consumables — large job", "unit": "job", "cost": 65, "typical_range": [35, 140] }
+    }
+  },
+
+  "permits": {
+    "policy": {
+      "label": "Who deals with permits?",
+      "value": "we_pull_flat_fee",
+      "options": {
+        "we_pull_flat_fee": "We pull it and charge a flat fee",
+        "we_pull_bill_actual": "We pull it and pass the actual fee through",
+        "homeowner_pulls": "The homeowner pulls it",
+        "no_permit": "We don't permit this kind of work"
+      }
+    },
+    "flat_fee": {
+      "label": "Your flat permit fee",
+      "value": 285,
+      "unit": "flat",
+      "typical_range": [60, 600],
+      "note": "Genuinely jurisdictional. An EV-charger permit is $60 in one town and $450 plus a stamped load calculation in the next. This is the single number most worth tuning per city you work in."
+    },
+    "filing_hours": { "label": "Time to file the permit", "value": 0.75, "unit": "hr", "typical_range": [0.25, 3] },
+    "inspection_meeting_hours": { "label": "Time to meet the inspector", "value": 1.0, "unit": "hr", "typical_range": [0.5, 3] },
+    "required_by_job_class": {
+      "label": "Which of these do you permit?",
+      "value": {
+        "ev_charger": true,
+        "new_circuit": true,
+        "panel_replacement": true,
+        "service_upgrade": true,
+        "subpanel": true,
+        "surge_protection": false,
+        "fixture_swap": false,
+        "receptacle_replacement": false,
+        "troubleshooting": false
+      }
+    }
+  },
+
+  "subs": {
+    "trench_lawn_per_ft":        { "label": "Trenching through lawn or soft dirt", "value": 14, "unit": "ft", "typical_range": [8, 30] },
+    "trench_gravel_roots_per_ft":{ "label": "Trenching through gravel or heavy roots", "value": 26, "unit": "ft", "typical_range": [15, 55] },
+    "concrete_cut_patch_per_ft": { "label": "Cutting and patching concrete or asphalt", "value": 55, "unit": "ft", "typical_range": [30, 140], "note": "Wide by nature. Where a run has to cross a slab, the machine should widen the band, not pretend to know." },
+    "drywall_patch_per_opening": { "label": "Patching a drywall opening (not painted)", "value": 135, "unit": "each", "typical_range": [75, 300] },
+    "utility_coordination_fee":  { "label": "Utility disconnect / reconnect fee you have to pay", "value": 0, "unit": "flat", "typical_range": [0, 500], "note": "Many utilities bill the homeowner directly. Default 0 and disclose it as a pass-through." }
+  },
+
+  "uncertainty": {
+    "label": "How sure do you want your ranges to be?",
+    "preset": "comfortable",
+    "presets": {
+      "tight":       { "base_spread_pct": 8,  "flat_pad_usd": 40,  "blurb": "Narrow ranges. You will occasionally eat a surprise to honour one." },
+      "comfortable": { "base_spread_pct": 12, "flat_pad_usd": 60,  "blurb": "The default. Wide enough to absorb a normal bad day." },
+      "wide":        { "base_spread_pct": 20, "flat_pad_usd": 100, "blurb": "Loose ranges. You will almost always come in under the top, which reads well — but a wide range converts worse." }
+    },
+    "base_spread_pct": 12,
+    "flat_pad_usd": 60,
+    "flat_pad_cap_pct": 5,
+    "flat_pad_cap_note": "The flat pad never exceeds this share of the estimate. Without it a fixed dollar pad invents a huge percentage range on a small job — a $60 pad on a $420 surge protector is a 30% band conjured out of nothing, which is the opposite of honest.",
+    "skew": 0.6,
+    "skew_note": "Fraction of the spread placed ABOVE the point estimate. 0.5 is symmetric. The default 0.6 reflects that electrical surprises are one-tailed: you find things behind walls, you never find fewer.",
+    "round_to": 25,
+    "max_spread_pct": 45,
+    "max_spread_note": "Above this, the machine must stop quoting and book a visit. A range that wide is not information.",
+    "widen": {
+      "measurement_estimated_pct": 6,
+      "answer_unknown_pct": 8,
+      "photo_unreviewed_pct": 10,
+      "photo_missing_pct": 14,
+      "surface_unknown_pct": 8,
+      "panel_brand_unknown_pct": 5,
+      "untuned_rate_card_pct": 10
+    }
+  },
+
+  "presentation": {
+    "always_show_exclusions": true,
+    "never_show_point_price": true,
+    "standard_exclusions": [
+      "Patching and painting where we have to open a wall",
+      "Restoring lawn, landscaping or paving over a trench",
+      "Anything we find that is already unsafe and has to be fixed before we can connect",
+      "Utility company charges, if your utility bills you directly",
+      "Permit fees, if you choose to pull the permit yourself"
+    ],
+    "range_promise": "This is the price we will honour. If we get there and the job is genuinely different from what you described, we stop and talk to you before doing anything that costs more."
+  },
+
+  "setup_wizard": {
+    "title": "Set your prices once",
+    "intro": "Answer six questions about how you charge. That's it — Greenput turns them into an instant price for every job type you switch on, and you can change any of them whenever you like.",
+    "steps": [
+      { "id": "hourly",     "asks": "labor.electrician_hourly",  "screen": "What do you charge for an hour of your time?", "helper": "Your billed rate for a licensed electrician. Not your cost." },
+      { "id": "trip",       "asks": "fees.trip_charge",          "screen": "Do you charge to come out?", "helper": "Lots of electricians charge a call-out fee and waive it if the customer goes ahead. Say how you do it and we'll apply it the same way every time." },
+      { "id": "minimum",    "asks": "fees.minimum_job",          "screen": "What's the smallest job you'll take?", "helper": "No price we show will ever start below this." },
+      { "id": "markup",     "asks": "materials.markup_pct",      "screen": "How much do you add to parts?", "helper": "We keep a parts list with normal prices. You can change any of them — most people change three or four and leave the rest." },
+      { "id": "permits",    "asks": "permits.policy",            "screen": "Who deals with permits?", "helper": "If you pull them, tell us what you charge. Permit fees change from town to town, so it's worth setting this per area you work in." },
+      { "id": "confidence", "asks": "uncertainty.preset",        "screen": "How sure do you want your prices to be?", "helper": "Homeowners see a range until you confirm the work order, then one exact number. You're committing to honour the range. A tighter range converts better and leaves you less room. Most people start Comfortable." }
+    ],
+    "then": {
+      "screen": "That's your pricing engine.",
+      "body": "Switch on the jobs you want instant prices for. We'll show you exactly what a homeowner would be quoted for a typical version of each one, using your numbers — change anything that looks wrong.",
+      "preview_note": "Every job type shows a worked example before you turn it on. You are never asked to trust a number you haven't seen produced."
+    },
+    "closing_note": "You just built a pricing engine. It runs the same way every time, it shows its work, and nobody has to be at a desk for it to answer."
+  }
+}

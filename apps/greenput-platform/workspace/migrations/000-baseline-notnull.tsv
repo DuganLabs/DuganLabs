@@ -1,0 +1,61 @@
+# FROZEN SNAPSHOT — DO NOT EDIT BY HAND, DO NOT REGENERATE.
+#
+# Every NOT NULL column in the live `greenput` database, observed 2026-09-11.
+#
+# The companion to 000-baseline-columns.tsv. That file catches a column schema.sql
+# declares that no migration can create. This one catches a column that exists on both
+# sides but disagrees about whether NULL is allowed — which is not a cosmetic
+# difference: schema.sql declared `users.password_hash TEXT` (nullable) for passwordless
+# signup while the live table declared it NOT NULL, so every attempt to create an
+# account returned 500 with
+#   D1_ERROR: NOT NULL constraint failed: users.password_hash
+# A fresh database worked. The real one rejected every signup.
+#
+# SQLite cannot ALTER a column's nullability, so a mismatch is resolved either by
+# changing what the code writes or by rebuilding the table — never by editing this file.
+# Regenerating it from a newer database would absorb the very drift it exists to catch.
+#
+# Format: <table>\t<comma-separated NOT NULL columns>
+activity_log	workspace_id,entity_type,entity_id,action,created_at
+admin_users	email,display_name,created_at
+admin_webauthn_credentials	admin_user_id,credential_id,public_key,counter,device_type,backed_up,created_at
+api_keys	workspace_id,name,key_prefix,key_hash,scopes,created_at,created_by
+asset_assignments	workspace_id,asset_id,user_id,action,notes,created_at
+assets	workspace_id,name,category,status,condition,location,notes,created_at,updated_at
+branding	workspace_id,primary_color,secondary_color,accent_color,font_family,email_footer,updated_at
+campaigns	workspace_id,name,status,channel,leads_generated,start_date,notes,created_at,updated_at,created_by
+chat_messages	chat_room_id,user_id,user_name,content,created_at
+chat_read_receipts	user_id,chat_room_id,last_read_at
+chat_rooms	workspace_id,name,created_by,created_at
+custom_roles	workspace_id,name,permissions,created_at,updated_at
+customers	workspace_id,first_name,last_name,email,phone,preferred_contact,street,city,state,zip,notes,total_job_value,job_count,created_at,updated_at,created_by
+deletion_requests	workspace_id,requested_by,status,scheduled_deletion_at,created_at
+error_logs	severity,category,code,message,created_at
+estimates	workspace_id,opportunity_id,estimate_number,title,status,line_items,subtotal,tax_rate,tax_amount,total,notes,created_at,updated_at,created_by
+files	workspace_id,entity_type,entity_id,filename,content_type,size,r2_key,uploaded_by,created_at
+form_submissions	workspace_id,form_data,processed,created_at
+inventory_items	workspace_id,name,description,category,quantity,min_quantity,unit_cost,unit_price,supplier,location,created_at,updated_at
+inventory_transactions	workspace_id,item_id,type,quantity,notes,created_at,created_by
+job_line_items	job_id,description,quantity,unit_price,total
+jobs	workspace_id,opportunity_id,customer_id,job_number,title,status,street,city,state,zip,scheduled_start,scheduled_end,total,notes,created_at,updated_at,created_by
+lead_meter_events	workspace_id,lead_id,vertical,service_type,price_usd,status,notes,created_at
+leads	workspace_id,first_name,last_name,email,phone,preferred_contact,status,source,service_type,notes,created_at,updated_at,created_by
+maintenance_logs	workspace_id,asset_id,type,description,performed_at,created_at
+notification_log	workspace_id,channel,event_type,recipient,status,sent_at
+notification_preferences	user_id,event_type,channel,enabled
+opportunities	workspace_id,lead_id,title,status,value,service_type,notes,created_at,updated_at,created_by
+payments	workspace_id,amount,currency,status,description,created_at,updated_at
+plugin_installations	workspace_id,plugin_id,config,enabled,installed_at,installed_by
+plugins	name,slug,description,version,author,category,events,config_schema,active,created_at
+portal_tokens	customer_id,workspace_id,token,expires_at,created_at
+review_requests	workspace_id,customer_id,job_id,channel,status,created_at
+reviews	workspace_id,platform,rating,content,author_name,responded,created_at
+sso_configurations	workspace_id,provider,issuer_url,enabled,created_at,updated_at
+subscriptions	workspace_id,stripe_subscription_id,stripe_customer_id,plan,status,current_period_start,current_period_end,cancel_at_period_end,created_at,updated_at
+user_workspaces	user_id,workspace_id,role,joined_at
+users	workspace_id,first_name,last_name,email,role,password_hash,created_at,updated_at
+vehicles	workspace_id,name,make,model,status,mileage,notes,created_at,updated_at
+webauthn_credentials	user_id,credential_id,public_key,counter,device_type,backed_up,created_at
+webhook_deliveries	webhook_id,event_type,payload,attempts,created_at
+webhooks	workspace_id,url,events,secret,active,created_at,updated_at,created_by
+workspaces	name,trade,phone,email,street,city,state,zip,created_at,billing_status

@@ -1,0 +1,31 @@
+-- @apply: per-statement
+-- 013 — workspaces.updated_at: the column PATCH /api/workspace has always
+-- written to, and workspaces has never had.
+--
+-- apps/api/src/routes/workspace.ts builds its UPDATE with `updated_at = ?`
+-- unconditionally, before any of the caller's fields. Against a table with no
+-- such column, D1 rejects the whole statement — so PATCH /api/workspace has
+-- returned 500 on every call it has ever received, in every environment. That
+-- is every Settings save, and every onboarding step that writes a workspace
+-- field. Confirmed against schema.sql in node:sqlite: "no such column:
+-- updated_at".
+--
+-- Added rather than removed from the query, because `users` already carries
+-- exactly this column with exactly this default, the write is genuinely
+-- meaningful (a workspace row is edited over its whole life), and the
+-- activity_log row the handler writes afterwards is not a substitute for
+-- knowing when the row itself last moved.
+--
+-- Nullable, and no default. SQLite's ALTER TABLE ADD COLUMN rejects a
+-- non-constant default outright ("Cannot add a column with non-constant
+-- default"), so `NOT NULL DEFAULT (datetime('now'))` — which is what
+-- users.updated_at carries — cannot be reached on a live table without
+-- rebuilding workspaces, and workspaces is the parent of most of this schema.
+-- A constant default would stamp every future row with a fixed wrong value, and
+-- a column that disagrees with schema.sql is what the drift guard exists to
+-- refuse. So schema.sql declares it nullable too, and the two agree.
+--
+-- Existing rows are backfilled from created_at: a workspace nobody has edited
+-- was last changed when it was created.
+ALTER TABLE workspaces ADD COLUMN updated_at TEXT;
+UPDATE workspaces SET updated_at = created_at WHERE updated_at IS NULL;

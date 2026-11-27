@@ -1,0 +1,11 @@
+# Pins `doppler run` to this repo's project and config, so nobody passes
+# --project/--config by hand and nobody runs a deploy against the wrong one.
+#
+# One config, `repository`, on purpose: the account stays on Doppler's free
+# developer tier, which allows a single root config per project. CI reads it
+# through a read-only service token (GitHub secret DOPPLER_TOKEN); a developer
+# machine reads it through `doppler login`. Same values either way — that is
+# the point of scripts/deploy/local.sh.
+setup:
+  project: greenput
+  config: repository

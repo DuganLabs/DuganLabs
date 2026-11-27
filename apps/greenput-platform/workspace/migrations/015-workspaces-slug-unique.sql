@@ -1,0 +1,55 @@
+-- 015 — make workspaces.slug uniqueness real on a long-lived database.
+--
+-- WHAT WAS WRONG
+--
+-- schema.sql declared `slug TEXT UNIQUE`, so every fresh database and every
+-- test fixture built from schema.sql enforced it. The two long-lived databases
+-- do not have it and never could: they got the column from
+-- migrations/001-workspaces-slug.sql, which is exactly
+--   ALTER TABLE workspaces ADD COLUMN slug TEXT;
+-- and SQLite's ADD COLUMN cannot carry a UNIQUE constraint. Verified against
+-- the live databases on 2026-09-11:
+--
+--   greenput          CREATE TABLE workspaces (..., created_at TEXT NOT NULL
+--                     DEFAULT (datetime('now')), slug TEXT, billing_status ...)
+--                     indexes: sqlite_autoindex_workspaces_1 (id),
+--                     idx_workspaces_slug (NOT unique),
+--                     idx_workspaces_billing_status,
+--                     idx_workspaces_custom_hostname (unique, partial),
+--                     idx_workspaces_custom_domain_status
+--   greenput-staging  slug is inside the CREATE TABLE as `slug TEXT UNIQUE`
+--                     (sqlite_autoindex_workspaces_2) — this database predates
+--                     001, so the ALTER was skipped as a duplicate column.
+--
+-- So production had no uniqueness at all and staging had it by accident. Six
+-- call sites resolve a tenant with `WHERE slug = ? LIMIT 1` — including
+-- apps/tenant-site/src/index.ts, /api/public/workspace/:slug and the intake and
+-- contact endpoints — and with duplicates possible they would serve, and
+-- attribute inbound leads to, whichever row SQLite happened to return first.
+--
+-- WHY AN INDEX AND NOT A CONSTRAINT
+--
+-- A column-level UNIQUE can only be added by rebuilding `workspaces`, which is
+-- the parent of most of this schema. A partial UNIQUE index gives the same
+-- guarantee, can be created on a populated table, and is the same shape
+-- already used for `custom_hostname`. `WHERE slug IS NOT NULL` because a
+-- workspace without a micro-site address is normal — five rows in `greenput`
+-- carry slug NULL today — and many rows must be allowed to share that.
+--
+-- schema.sql now declares this index and NOT a column-level UNIQUE, so a test
+-- fixture built from schema.sql enforces slug uniqueness the same way
+-- production does, rather than more strictly than production does.
+--
+-- IF THIS MIGRATION FAILS
+--
+-- It fails only if two rows already share a non-NULL slug, and then it aborts
+-- the deploy rather than silently continuing without the guarantee. That is the
+-- intended behaviour. Find them with
+--   SELECT slug, COUNT(*) FROM workspaces
+--    WHERE slug IS NOT NULL GROUP BY slug HAVING COUNT(*) > 1;
+-- and decide by hand which tenant keeps the address — an automatic rename here
+-- would move a live contractor's site without anyone noticing. Checked
+-- 2026-09-11: `greenput` holds two non-NULL slugs (`green-electric`, `demo`)
+-- and `greenput-staging` one (`demo`), so there is nothing to resolve today.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_slug_unique
+  ON workspaces(slug) WHERE slug IS NOT NULL;

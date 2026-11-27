@@ -1,0 +1,53 @@
+name = "greenput-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput"
+database_id = "ec38a8c4-b992-4a92-b809-27554ae806af"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "bd581f8f43214a1f96463bcaf13b4f82"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "greenput-files"
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+[[routes]]
+pattern = "api.greenput.com"
+custom_domain = true
+
+# The Custom Domain above is NOT enough on its own. apps/tenant-site holds the
+# `*.greenput.com/*` wildcard ROUTE (since #147), and a route outranks a
+# Custom Domain for the same hostname — so from the moment that wildcard
+# existed, api.greenput.com was answered by the tenant Worker's 404 page and
+# the API was unreachable in production (caught by the post-deploy hostname
+# check on 2026-09-14). Route precedence is by specificity, so this exact
+# hostname route beats the wildcard and hands api.greenput.com back to this
+# Worker. Keep both: the Custom Domain owns the DNS record and the
+# certificate; the route owns the dispatch.
+[[routes]]
+pattern = "api.greenput.com/*"
+zone_name = "greenput.com"
+
+[vars]
+ENVIRONMENT = "production"
+# apps/brand-assets — the Worker that draws share cards (GP-108). Only used to
+# build the URLs /api/auth/register hands back.
+BRAND_ORIGIN = "https://brand.greenput.com"
+
+[dev]
+port = 8787
+local_protocol = "http"

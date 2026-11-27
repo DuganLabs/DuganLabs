@@ -1,0 +1,21 @@
+{
+  "name": "basenative-auth-webauthn",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/basenative/auth-webauthn/src",
+  "tags": ["scope:basenative", "type:auth"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/basenative/auth-webauthn/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config libs/basenative/auth-webauthn/vitest.config.ts"
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "data_mode": { "type": "string", "enum": ["mock", "live"] },
+    "notice": { "type": "string" },
+    "service": {
+      "type": "string",
+      "enum": [
+        "ev-charger-install",
+        "panel-upgrade",
+        "circuit-outlet",
+        "troubleshooting",
+        "surge-protection"
+      ]
+    },
+    "state": { "type": "string", "const": "awaiting_answers" },
+    "price": { "type": "null" },
+    "label": {
+      "type": "string",
+      "const": "no price until the qualification questions are answered — then one exact quote"
+    },
+    "basis": {
+      "type": "string",
+      "description": "Name of the pricing engine the quote runs on."
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "The owned GreenPut page this answer comes from."
+    }
+  },
+  "required": [
+    "data_mode",
+    "notice",
+    "service",
+    "state",
+    "price",
+    "label",
+    "basis",
+    "source_url"
+  ],
+  "additionalProperties": false
+}

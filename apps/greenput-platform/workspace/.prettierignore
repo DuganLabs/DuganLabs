@@ -1,0 +1,8 @@
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/.nx/cache
+/.nx/workspace-data
+.angular
+# Generated embedding of the installed @basenative/platform stylesheets.
+libs/shared/design/src/platform-sheet.ts

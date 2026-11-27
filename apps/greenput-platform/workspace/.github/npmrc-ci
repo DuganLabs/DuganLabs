@@ -1,0 +1,6 @@
+# CI-only user-level npm config. Loaded via NPM_CONFIG_USERCONFIG in .github/workflows/*.yml.
+# BaseNative 2.x publishes only to npmjs.org (trusted publishing), so @basenative
+# resolves from the public registry with no token. This matches the project .npmrc;
+# it stays as a user-level config so CI never falls back to a developer machine's
+# scope mapping. Nothing in the workspace resolves from GitHub Packages anymore.
+@basenative:registry=https://registry.npmjs.org/

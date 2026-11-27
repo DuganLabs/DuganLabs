@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "shared_terminals",
+  "id": "shared_terminals",
+  "purpose": "The endings every machine needs and none of them should re-author. Merged into each machine at load time; a machine may override any of them by declaring a terminal with the same id. Three of the five deliberately produce NO price — see honesty rules H3-H5. All five are written to keep the homeowner, not to close the tab.",
+
+  "terminals": [
+    {
+      "id": "T_site_visit_required",
+      "kind": "no_quote",
+      "title": "We'd be guessing, and we'd rather not",
+      "summary": "Everything you've told us points at a job where the price depends on something we genuinely cannot see from here. We could show you a number spanning two thousand dollars, but that isn't a price, it's a shrug.",
+      "body": "Here's what we'll do instead: one of our electricians comes out, looks at the one thing that decides this, and gives you a fixed number on the spot — not a range, a number. It takes about twenty minutes.",
+      "next_step": {
+        "cta": "Book a visit",
+        "cost_promise": "The visit is {{visit_fee_copy}}, and if you go ahead with the work it comes off the price.",
+        "time_promise": "We'll confirm a time within one business day."
+      },
+      "indicative": {
+        "show": true,
+        "label": "For what it's worth, jobs that start like yours usually land somewhere in this range",
+        "disclaimer": "This is not a quote and we are not committing to it. It's the honest shape of the thing.",
+        "source": "machine_span"
+      },
+      "lead_flags": ["needs_site_visit"],
+      "tone_note": "Never the words 'we cannot quote this'. The homeowner hears 'go away'. Say what we know, name the one unknown, give a next step with a price attached to it."
+    },
+
+    {
+      "id": "T_hazard_panel",
+      "kind": "no_quote",
+      "title": "Before anything else — about your panel",
+      "summary": "From your photo, your panel looks like one of a handful of brands that were recalled or withdrawn from sale because their breakers can fail to trip. Federal Pacific Stab-Lok, Zinsco, Challenger and Pushmatic are the usual ones.",
+      "body": "We're not going to sell you a new circuit in a panel like that, because adding load to it is the wrong move and we'd be taking your money to make something worse. What we'd normally do is replace the panel first, then do the work you actually came here for — often on the same day, and the second job gets cheaper because we're already there and already inside it.",
+      "next_step": {
+        "cta": "See what replacing it involves",
+        "alt_cta": "Book a visit to confirm",
+        "cost_promise": "We'll confirm from the photo for free. If we're wrong about the brand, we'll say so and go straight back to pricing what you asked for.",
+        "handoff_machine": "panel-service-upgrade"
+      },
+      "indicative": {
+        "show": true,
+        "label": "Replacing a panel like this usually runs",
+        "disclaimer": "Not a quote — it depends on how many circuits come back and what your town requires.",
+        "source": "handoff_machine_span"
+      },
+      "lead_flags": ["hazard_panel", "high_value"],
+      "tone_note": "This is the moment a homeowner decides whether you are honest. Explain the actual reason, name the brands so they can look it up themselves, and offer to be wrong."
+    },
+
+    {
+      "id": "T_urgent_dispatch",
+      "kind": "urgent",
+      "title": "Stop and read this",
+      "summary": "What you've described can be an active fire or shock risk. Please don't wait for a price.",
+      "body": "If you can see smoke or flame, get out and call 911. Otherwise: switch off the breaker for that circuit if you can reach the panel safely, don't use the outlet or fixture, and call us now.",
+      "next_step": {
+        "cta": "Call now",
+        "alt_cta": "Request a same-day call-back",
+        "cost_promise": "Our call-out for an emergency is {{emergency_callout_copy}}, plus time and parts. We'll tell you the repair price before we start it.",
+        "surface_phone_immediately": true
+      },
+      "indicative": { "show": false },
+      "lead_flags": ["urgent", "safety"],
+      "tone_note": "No price on this screen above the safety instruction. Disclose the call-out rate so nobody feels ambushed, then get out of the way."
+    },
+
+    {
+      "id": "T_out_of_area",
+      "kind": "referral",
+      "title": "You're just outside where we work",
+      "summary": "We'd have to charge you for the drive, and that isn't fair on either of us.",
+      "body": "Your answers are saved. If you'd like, we'll pass them to an electrician who does cover your area — you won't have to fill any of this in again.",
+      "next_step": {
+        "cta": "Find me someone local",
+        "alt_cta": "Send me the price anyway, for reference",
+        "cost_promise": null
+      },
+      "indicative": {
+        "show": true,
+        "label": "For reference, a job like yours priced at our rates would be",
+        "disclaimer": "Someone else's rates will differ. Use this as a sanity check on whatever you're quoted.",
+        "source": "machine_span"
+      },
+      "lead_flags": ["out_of_area", "referral_candidate"],
+      "tone_note": "Giving away the number here costs nothing and buys enormous trust. They will remember who told them what the job was worth."
+    },
+
+    {
+      "id": "T_out_of_scope",
+      "kind": "referral",
+      "title": "This one's outside what we do",
+      "summary": "We're a residential electrical outfit — houses, townhouses and the odd condo. Commercial work runs under different rules, different inspections and different insurance.",
+      "body": "We'd rather tell you now than three days from now.",
+      "next_step": {
+        "cta": "Refer me to a commercial electrician",
+        "alt_cta": "I think this is residential after all",
+        "cost_promise": null
+      },
+      "indicative": { "show": false },
+      "lead_flags": ["out_of_scope"],
+      "tone_note": "Short. Do not make them read a paragraph about what you don't do."
+    },
+
+    {
+      "id": "T_needs_owner_authorisation",
+      "kind": "overlay",
+      "overlay_note": "Not an ending — a condition laid over whichever priced ending the traversal reached. The price does not change; a line of copy and a lead flag are added.",
+      "title": "Here's your price — with one condition",
+      "summary": "This is what the work costs. Because you rent, we'll need the owner or the management company to approve it in writing before we can start.",
+      "body": "Send them this page — it has everything they'd ask for: what's being done, what it costs, and who's doing it.",
+      "next_step": {
+        "cta": "Forward this to my landlord",
+        "alt_cta": "I'll get approval and come back"
+      },
+      "lead_flags": ["authorisation_required"],
+      "tone_note": "Not a rejection. The price is real and unchanged — the condition is an extra line, not a different outcome."
+    }
+  ]
+}

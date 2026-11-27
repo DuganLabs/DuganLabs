@@ -1,0 +1,39 @@
+{
+  "machine": "ev-charger-install",
+  "title": "100A service, three big loads — the cheaper answer to a service upgrade",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "charger_location": "attached_garage_inside",
+    "charge_speed": "32a",
+    "charger_supply": "have_it",
+    "charger_connection": "hardwired",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "spare_capable",
+        "panel_brand": "square_d",
+        "panel_spaces_free": 2,
+        "panel_main_amps": 100,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "100",
+    "major_loads": [
+      "electric_range",
+      "electric_dryer",
+      "central_ac"
+    ],
+    "run_distance_ft": 20,
+    "route_crosses": "same_room",
+    "wall_finish": "open_framing"
+  }
+}

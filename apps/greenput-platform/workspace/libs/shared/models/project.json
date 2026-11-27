@@ -1,0 +1,26 @@
+{
+  "name": "shared-models",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/models/src",
+  "tags": ["scope:shared", "type:models"],
+  "// test": "tsc runs FIRST and is part of the gate, not a convenience. wire.spec.ts asserts every model against the wire contract using samples typed `Required<Model>`, so a new model field is only caught if something type-checks this project — and nothing else in CI does (there is no repo-wide typecheck job; `platform:typecheck` exists but no workflow runs it).",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/shared/models/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm exec tsc -p libs/shared/models/tsconfig.json --noEmit",
+          "pnpm exec vitest run --config libs/shared/models/vitest.config.ts"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

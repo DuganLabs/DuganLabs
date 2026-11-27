@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "greenput-platform",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "run", "platform:dev"],
+      "port": 4200
+    },
+    {
+      "name": "greenput-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "run", "api:dev"],
+      "port": 8787
+    },
+    {
+      "name": "greenput-marketing",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["nx", "run", "marketing:dev"],
+      "port": 8790
+    }
+  ]
+}

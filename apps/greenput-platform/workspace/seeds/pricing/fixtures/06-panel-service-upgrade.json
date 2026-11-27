@@ -1,0 +1,40 @@
+{
+  "machine": "panel-service-upgrade",
+  "title": "100A to 200A, overhead service, 24 circuits",
+  "note": "Watch the breaker line. On a 24-circuit panel the arc-fault breakers cost more than the panel.",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "reason": "adding_load",
+    "panel_location": "garage",
+    "panel_photo": {
+      "status": "reviewed",
+      "fields": {
+        "panel_capacity": "service_upgrade_needed",
+        "panel_brand": "ge",
+        "panel_spaces_free": 0,
+        "panel_main_amps": 100,
+        "aluminium_branch_visible": false
+      }
+    },
+    "service_size_stated": "100",
+    "major_loads": [
+      "electric_range",
+      "electric_dryer",
+      "central_ac"
+    ],
+    "circuits_in_use": 24,
+    "meter_position": "directly_behind",
+    "service_entry": "overhead",
+    "panel_position_issue": [],
+    "upgrade_target": "200a",
+    "outage_tolerance": "weekday_fine"
+  }
+}

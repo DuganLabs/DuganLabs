@@ -1,0 +1,18 @@
+{
+  "machine": "circuit-outlet-addition",
+  "title": "Two outlets off the one already in the wall — the cheap honest answer",
+  "answers": {
+    "property_type": "single_family",
+    "property_ownership": "owner",
+    "service_zip": "78704",
+    "timing": "asap",
+    "first_name": "Dana",
+    "last_name": "Ortiz",
+    "phone": "512-555-0134",
+    "email": "dana@example.com",
+    "preferred_contact": "text",
+    "what_for": "general_outlet",
+    "outlet_count": 2,
+    "tap_existing": "yes"
+  }
+}

@@ -1,0 +1,38 @@
+# Preview environment wrangler config template.
+# CI substitutes __PR_NUMBER__, __D1_PREVIEW_ID__, and __KV_PREVIEW_ID__
+# via scripts/preview/setup.sh before deploying.
+
+name = "greenput-api-preview-__PR_NUMBER__"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "greenput-preview-__PR_NUMBER__"
+database_id = "__D1_PREVIEW_ID__"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "__KV_PREVIEW_ID__"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "greenput-files-preview"
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_ROOM", class_name = "ChatRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+[vars]
+ENVIRONMENT = "preview"
+BRAND_ORIGIN = ""
+
+[dev]
+port = 8787
+local_protocol = "http"

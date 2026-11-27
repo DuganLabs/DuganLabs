@@ -23,9 +23,9 @@
     }
   ],
   "theme": {
-    "accent": "#c23d22",
+    "accent": "#b3361d",
     "accentInk": "#ffffff",
-    "accentStrong": "#a3321b",
+    "accentStrong": "#9e2f19",
     "accentDark": "#ff8a70",
     "accentInkDark": "#2a0c05",
     "accentStrongDark": "#ffa48f"

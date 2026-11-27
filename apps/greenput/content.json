@@ -7,8 +7,8 @@
     "accent": "#1f7a4d",
     "accentInk": "#ffffff",
     "accentStrong": "#17603c",
-    "accentDark": "#1f7a4d",
-    "accentInkDark": "#ffffff",
+    "accentDark": "#4db87e",
+    "accentInkDark": "#07231a",
     "accentStrongDark": "#78c79e"
   },
   "_sources": "Copy from greenput.com (meta description, h2/h3, feature paragraphs) on 2026-11-26. Brand green from greenput.com CSS (--color-palette-green-600/700/300).",
@@ -25,7 +25,7 @@
     {
       "icon": "calendar",
       "title": "Quote to paid, in one system",
-      "body": "Scheduling, customers, invoicing and payments for electricians, plumbers, HVAC techs and roofers."
+      "body": "Scheduling, customers, invoicing, and payments for electricians, plumbers, HVAC techs, and roofers."
     },
     {
       "icon": "card",
@@ -38,7 +38,7 @@
       {
         "icon": "inbox",
         "title": "Lead Management",
-        "detail": "Website, referrals and campaigns"
+        "detail": "Website, referrals, and campaigns"
       },
       {
         "icon": "calendar",
@@ -48,7 +48,7 @@
       {
         "icon": "card",
         "title": "Invoicing & Payments",
-        "detail": "Quote to paid, in one system"
+        "detail": "Estimates, deposits, and invoices in one place"
       }
     ]
   },

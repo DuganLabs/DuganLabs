@@ -3,8 +3,8 @@
   "domain": "warrendugan.com",
   "source": "warrendugan",
   "status": "coming-soon",
-  "headline": "Warren Dugan",
-  "idea": "Software, music, movement. A new site is on the way.",
+  "headline": "Software, music, movement",
+  "idea": "Personal site of Warren Dugan — a new home is on the way.",
   "theme": {
     "accent": "#1d1d1f",
     "accentInk": "#ffffff",
@@ -13,6 +13,7 @@
     "accentStrongDark": "#f5f5f7"
   },
   "monogram": "W",
+  "parentLabel": "",
   "cta": "Follow along",
   "privateUrl": "https://private.warrendugan.com/",
   "privateLabel": "the current site",

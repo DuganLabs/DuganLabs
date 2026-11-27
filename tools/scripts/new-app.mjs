@@ -73,7 +73,7 @@ service = "dl-leads-staging"
 [env.staging.vars]
 TURNSTILE_SITE_KEY = "TODO-phase3"
 ACCESS_TEAM_DOMAIN = "TODO.cloudflareaccess.com"
-ACCESS_AUD = "TODO-phase3"
+ACCESS_AUD = "" # staging has no Access app; /app fails closed (403)
 `);
 
 put('deploy.json', JSON.stringify({

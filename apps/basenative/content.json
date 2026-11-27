@@ -3,34 +3,35 @@
   "domain": "basenative.com",
   "source": "basenative",
   "status": "coming-soon",
+  "monogram": "BN",
   "headline": "Apple-grade design, all in code",
-  "idea": "An open-source design system kit, fully in code: accessible components on real HTML elements, in light and dark, built on web standards.",
+  "idea": "An open-source design system kit: 47 accessible components on native HTML elements, in light and dark.",
   "points": [
     {
       "icon": "layers",
-      "title": "Real HTML elements",
-      "body": "Accessible components built on the elements the browser already gives you."
+      "title": "Native HTML elements",
+      "body": "Built on button, dialog, details, table, and the popover API — no virtual DOM."
     },
     {
       "icon": "spark",
       "title": "Light and dark",
-      "body": "Every component, in both themes, out of the box."
+      "body": "Token-driven components in both color schemes, from 320px phones to desktops."
     },
     {
       "icon": "shield",
-      "title": "Ready for agents",
-      "body": "AI-safe and ready for agents, built on web standards."
+      "title": "AI-safe and agent-ready",
+      "body": "Templates never call eval, running under strict CSP with structured validation and MCP."
     }
   ],
   "theme": {
-    "accent": "#2f5bea",
-    "accentInk": "#ffffff",
-    "accentStrong": "#2a50d0",
-    "accentDark": "#8aa6ff",
-    "accentInkDark": "#0a1030",
-    "accentStrongDark": "#a6bbff"
+    "accent": "#e8920a",
+    "accentInk": "#0c0b09",
+    "accentStrong": "#995c00",
+    "accentDark": "#f5a623",
+    "accentInkDark": "#0c0b09",
+    "accentStrongDark": "#f5a623"
   },
   "privateUrl": "https://private.basenative.com/",
   "privateLabel": "the BaseNative docs",
-  "_sources": "basenative.com h1 + meta description (2026-11-26)."
+  "_sources": "basenative.com h1 + BaseNative README + canonical amber #e8920a / #0c0b09 (2026-11-27)."
 }

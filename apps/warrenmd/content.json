@@ -12,8 +12,9 @@
     "accentStrongDark": "#9ad2ee"
   },
   "monogram": "W",
-  "headline": "WarrenMD",
-  "idea": "A personal site and gamer tag. The name nods to Warren, Maryland, the old town now under Liberty Reservoir, and to a middle and last initial.",
+  "parentLabel": "",
+  "headline": "Personal site & gamer tag",
+  "idea": "Named for Warren, Maryland — the old town under Liberty Reservoir — and a middle and last initial.",
   "cta": "Follow along",
   "_sources": "Owner: personal/gamer-tag site; nod to Warren, Maryland (submerged under Liberty Reservoir); MD = middle + last initials."
 }

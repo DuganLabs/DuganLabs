@@ -22,7 +22,7 @@ const assetVersion = new URL(import.meta.url).searchParams.get('v');
 let selectTemplate = null;
 const templateText = () =>
   (selectTemplate ??= fetch(
-    assetVersion ? `/bn-css/select/index.html?v=${assetVersion}` : '/bn-css/select/index.html',
+    assetVersion ? `/bn-css/select/?v=${assetVersion}` : '/bn-css/select/',
   )
     .then((response) => response.text())
     .then((text) => text.replace(/^\s*<template>/, '').replace(/<\/template>\s*$/, '')));

@@ -123,6 +123,8 @@ jobs:
           cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Build
+        env:
+          SITE_URL: https://basenative-docs.pages.dev
         run: pnpm run build:pages:no-cloud
       - name: Deploy to Cloudflare Pages
         env:
@@ -148,7 +150,10 @@ jobs:
           cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install chromium --with-deps
-      - run: pnpm build:pages:no-cloud
+      - name: Build
+        env:
+          SITE_URL: https://basenative-docs.pages.dev
+        run: pnpm build:pages:no-cloud
       - name: Accessibility audit (axe-core)
         run: pnpm audit:axe
       - name: UX audit (Laws of UX)
@@ -157,10 +162,12 @@ jobs:
         run: pnpm audit:observatory
         env:
           DEPLOY_URL: https://basenative-docs.pages.dev
-      - name: Lighthouse audit (Agentic browsing)
+      - name: Lighthouse audit (all 5 categories)
         run: pnpm audit:lighthouse
         env:
+          SITE_URL: https://basenative-docs.pages.dev
           LIGHTHOUSE_URLS: https://basenative-docs.pages.dev/,https://basenative-docs.pages.dev/docs/
+          LIGHTHOUSE_CATEGORIES: performance,accessibility,best-practices,seo,agentic-browsing
       - name: Upload audit reports
         if: always()
         uses: actions/upload-artifact@v7

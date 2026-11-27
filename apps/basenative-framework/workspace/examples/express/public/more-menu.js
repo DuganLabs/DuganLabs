@@ -27,30 +27,26 @@
     var left = Math.min(Math.max(8, box.right - width), window.innerWidth - width - 8);
     var top = Math.max(8, box.top - height - gap);
     if (!sheet) {
-      sheet = document.createElement('style');
-      sheet.setAttribute('data-bn-more-menu', '');
-      document.head.append(sheet);
+      sheet = new CSSStyleSheet();
+      document.adoptedStyleSheets = document.adoptedStyleSheets.concat(sheet);
     }
     var id = menu.id ? '#' + CSS.escape(menu.id) : 'nav[variant="app-bar"] > menu';
     var ua = navigator.userAgent;
     var webkit = /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
-    if (webkit) {
-      sheet.textContent =
-        id +
+    var rule = webkit
+      ? id +
         '{position:fixed;margin:0;inset:auto;position-area:unset;position-anchor:none;left:' +
         Math.round(left) +
         'px;top:' +
         Math.round(top) +
-        'px;right:auto;bottom:auto;}';
-    } else {
-      sheet.textContent =
-        id +
+        'px;right:auto;bottom:auto;}'
+      : id +
         '{position:fixed !important;margin:0 !important;inset:auto !important;left:' +
         Math.round(left) +
         'px !important;top:' +
         Math.round(top) +
         'px !important;right:auto !important;bottom:auto !important;}';
-    }
+    sheet.replaceSync(rule);
   }
 
   document.addEventListener(

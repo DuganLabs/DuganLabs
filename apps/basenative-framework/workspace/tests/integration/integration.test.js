@@ -26,11 +26,15 @@ import { computeCompareStats } from '../../scripts/compare-stats.js';
 import {
   renderRoute,
   renderComponentPage,
+  renderNotFoundPage,
   siteRoutes,
   componentStylesheets,
   componentTemplates,
   assetSources,
   renderPlaygroundPreview,
+  siteCsp,
+  playgroundPreviewCsp,
+  importMapCspHash,
 } from '../../examples/express/page.js';
 import {
   codeLines,
@@ -44,6 +48,8 @@ import { trinityDemos } from '../../examples/express/trinity-catalog.js';
 import {
   renderTrinity,
   renderTrinityVm,
+  siteBundleCss,
+  trinityChromeCss,
   trinityComponentInfo,
 } from '../../examples/express/trinity.js';
 import { getAppNavItems } from '../../examples/express/site-data.js';
@@ -481,8 +487,10 @@ describe('the /components app demo tells the static visitor where their tasks go
 
   it('persists to localStorage in the same file as the signals', () => {
     const view = readFileSync(repo('examples/express/views/components.html'), 'utf8');
-    assert.match(view, /localStorage\.getItem/);
-    assert.match(view, /localStorage\.setItem/);
+    assert.ok(view.includes('src="/components-tasks.js"'), 'components view loads external tasks module');
+    const script = readFileSync(repo('examples/express/public/components-tasks.js'), 'utf8');
+    assert.match(script, /localStorage\.getItem/);
+    assert.match(script, /localStorage\.setItem/);
   });
 });
 
@@ -509,23 +517,15 @@ describe('every published route is reachable from the navigation', () => {
     }
   });
 
-  it('carries the shell-critical CSS inline, independent of the cached stylesheet chain', () => {
-    // Pages' assets are cached for hours while the HTML is revalidated
-    // per visit. The window chrome is inlined so a stale stylesheet
-    // cannot drop the shell grid or the phone app bar (the 2026-10-20
-    // incident).
+  it('ships one versioned minified site stylesheet with zero inline <style> blocks', () => {
     const html = renderRoute(siteRoutes[0], { tasks: [], hasApi: false });
-    assert.ok(
-      html.includes('<style data-bn-critical="shell">'),
-      'the shell-critical style block renders',
-    );
-    const style = html.slice(
-      html.indexOf('<style data-bn-critical="shell">'),
-      html.indexOf('</style>', html.indexOf('<style data-bn-critical="shell">')),
-    );
-    assert.ok(style.includes('aside[variant="sidebar"]'), 'the sidebar rules are inlined');
-    assert.ok(style.includes('nav[variant="app-bar"]'), 'the app bar rules are inlined');
-    assert.ok(style.includes('nav[variant="app-bar"]'), 'the bar rules are inlined');
+    assert.ok(html.includes('href="/site.css?v='), 'rendered page links versioned /site.css');
+    assert.doesNotMatch(html, /<style\b/i, 'strict CSP forbids inline <style> blocks');
+    const bundle = siteBundleCss();
+    assert.ok(bundle.includes('aside[variant=sidebar]'), 'sidebar rules are bundled');
+    assert.ok(bundle.includes('nav[variant=app-bar]'), 'app bar rules are bundled');
+    assert.ok(bundle.includes('[data-bn-skip-link]'), 'skip link rules are bundled');
+    assert.ok(bundle.includes('[data-bn-visually-hidden]'), 'visually-hidden rules are bundled');
     assert.ok(
       readFileSync(repo('packages/components/src/tokens.css'), 'utf8').includes(
         '--position-app-bar: var(--position-fixed)',
@@ -534,16 +534,8 @@ describe('every published route is reachable from the navigation', () => {
     );
   });
 
-  it('the inlined shell CSS is self-contained: every token it uses, it defines or falls back', () => {
-    // A var(--*) with no fallback still has to be defined — in the
-    // block itself (the components' own tokens) or in tokens.css (the
-    // layer-0 primitives the block maps from). A fallback is enough:
-    // the shell must lay out when the stylesheet chain is stale.
-    const html = renderRoute(siteRoutes[0], { tasks: [], hasApi: false });
-    const style = html.slice(
-      html.indexOf('<style data-bn-critical="shell">'),
-      html.indexOf('</style>', html.indexOf('<style data-bn-critical="shell">')),
-    );
+  it('the shell CSS is self-contained: every token it uses, it defines or falls back', () => {
+    const style = trinityChromeCss();
     const tokensCss = readFileSync(repo('packages/components/src/tokens.css'), 'utf8');
     const defined = new Set(
       [...(style + tokensCss).matchAll(/(--[a-z0-9_-]+)\s*:/g)].map((m) => m[1]),
@@ -559,8 +551,27 @@ describe('every published route is reachable from the navigation', () => {
       [],
       `shell CSS references tokens it does not define: ${missing.join(', ')}`,
     );
-    assert.ok(style.includes('main[variant='), 'the shell layout rules are inlined');
-    assert.ok(style.includes('aside[variant='), 'the sidebar rules are inlined');
+    assert.ok(style.includes('main[variant='), 'the shell layout rules are included');
+    assert.ok(style.includes('aside[variant='), 'the sidebar rules are included');
+  });
+
+  it('enforces a strict CSP without unsafe-inline on site routes and marks 404 noindex', () => {
+    const csp = siteCsp();
+    assert.ok(!csp.includes("'unsafe-inline'"), 'site CSP must not allow unsafe-inline');
+    assert.ok(csp.includes("frame-ancestors 'none'"), 'site CSP must forbid framing');
+    assert.ok(csp.includes("base-uri 'self'"), 'site CSP must restrict base-uri');
+    assert.ok(csp.includes("object-src 'none'"), 'site CSP must forbid objects');
+    assert.ok(csp.includes(importMapCspHash()), 'site CSP must hash the deterministic importmap');
+
+    const previewCsp = playgroundPreviewCsp();
+    assert.ok(previewCsp.includes("frame-ancestors 'self'"), 'preview allows same-origin framing');
+
+    const notFound = renderNotFoundPage();
+    assert.ok(
+      notFound.includes('<meta name="robots" content="noindex, nofollow" />'),
+      '404 page carries noindex',
+    );
+    assert.ok(!notFound.includes('rel="canonical"'), '404 page omits canonical link');
   });
 
   it('home names the installed runtime and the effect rule, with no inline style', () => {
@@ -1219,6 +1230,7 @@ describe('the contents navs have a working scrollspy', () => {
     // list works in dev and tests and 404s on the live site.
     const build = readFileSync(repo('scripts/build-pages.js'), 'utf8');
     for (const route of siteRoutes) {
+      if (route.internal) continue;
       const html = renderRoute(route, { tasks: [], hasApi: false });
       for (const [, file] of html.matchAll(/<script[^>]*\ssrc="\/([\w.-]+\.js)(?:\?[^"]*)?"/g)) {
         assert.ok(
@@ -1271,11 +1283,11 @@ describe('the contents navs have a working scrollspy', () => {
   });
 
   it('the asset version covers every component template the specimens fetch', () => {
-    const files = componentTemplates().map((f) => f.split('/src/')[1]);
+    const files = componentTemplates().map((f) => f.replaceAll('\\', '/').split('/src/')[1]);
     assert.ok(files.includes('combobox/index.html'), 'combobox template not hashed');
     assert.ok(files.includes('tree/index.html'), 'tree template not hashed');
     const src = readFileSync(repo('examples/express/public/specimens.js'), 'utf8');
-    assert.match(src, /fetch\(versioned\(`\/bn-css\/\$\{name\}\/index\.html`\)\)/);
+    assert.match(src, /fetch\(versioned\(`\/bn-css\/\$\{name\}\/`\)\)/);
   });
 
   it('the scrollspy marks the link for the section across the centre line', () => {
@@ -1357,7 +1369,7 @@ describe('component pages are built from the shared stack, not hand spacing', ()
 describe('the asset version covers every stylesheet the CSS chain is built from', () => {
   it('hashes each component styles.css, so a component restyle busts cached trinity.css', () => {
     const hashed = new Set(
-      componentStylesheets().map((f) => f.split('packages/components/src/')[1]),
+      componentStylesheets().map((f) => f.replaceAll('\\', '/').split('packages/components/src/')[1]),
     );
     for (const d of readdirSync(repo('packages/components/src'), { withFileTypes: true })) {
       if (d.isDirectory() && existsSync(repo(`packages/components/src/${d.name}/styles.css`))) {
@@ -1387,8 +1399,8 @@ describe('the asset version covers every stylesheet the CSS chain is built from'
       if (route.internal) continue;
       const html = renderRoute(route, { tasks: [], hasApi: false });
       for (const [, url] of html.matchAll(/["'(](\/[^"'()?\s]+)\?v=/g)) {
-        /* trinity.css is assembled from the component sheets, all hashed. */
-        if (url === '/bn-css/trinity.css') continue;
+        /* site.css and trinity.css are assembled from hashed component/site sheets. */
+        if (url === '/site.css' || url === '/bn-css/trinity.css') continue;
         const [prefix, dir] = mounts.find(([m]) => url.startsWith(m));
         const file = repo(dir + url.slice(prefix.length)).replaceAll('\\', '/');
         if (!hashed.has(file)) missing.add(`${route.path}: ${url}`);

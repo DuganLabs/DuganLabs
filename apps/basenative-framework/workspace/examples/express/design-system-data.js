@@ -158,19 +158,9 @@ export function getDesignSystemContext() {
   }));
 
   const radiusSteps = family(light, '--size-radius-');
-  const ladderCss = raw(
-    `<style>@layer components {\n${[
-      ...systemColors.map((c) => `[data-bn-swatch="${c.name}"]{background:var(${c.name})}`),
-      ...radiusSteps.map(
-        (step) =>
-          `[data-bn-radius="${step.name}"]{border-radius:var(${step.name});background:var(--color-tint)}`,
-      ),
-    ].join('\n')}\n}</style>`,
-  );
 
   return {
     radiusSteps,
-    ladderCss,
     rolesTable: tokenTable('Color and surface roles — the names components consume', roleRows),
     roleCount: roleRows.length,
     systemColors,

@@ -8,8 +8,9 @@ import {
   renderNotFoundPage,
   renderPlaygroundPreview,
   siteRoutes,
+  siteSecurityHeaders,
 } from './page.js';
-import { trinitySiteCss } from './trinity.js';
+import { siteBundleCss, trinitySiteCss } from './trinity.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = join(__dirname, '..', '..');
@@ -25,20 +26,10 @@ const app = express();
 // own preview frame on the live site while every local run passed.
 // The preview document is the one exception — the playground frames
 // it, so it is frameable by the site itself. Keep the two in sync.
-const CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'";
 app.use((req, res, next) => {
   const isPreview =
     req.path === '/playground/preview' || req.path.startsWith('/playground/preview/');
-  res.set({
-    'X-Frame-Options': isPreview ? 'SAMEORIGIN' : 'DENY',
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-    'Content-Security-Policy': isPreview ? `${CSP}; frame-ancestors 'self'` : CSP,
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-    'Cross-Origin-Opener-Policy': 'same-origin',
-  });
+  res.set(siteSecurityHeaders({ preview: isPreview }));
   next();
 });
 
@@ -59,6 +50,9 @@ app.use(
 );
 
 app.use(express.json());
+app.get('/site.css', (req, res) => {
+  res.type('css').send(siteBundleCss());
+});
 app.use(express.static(join(__dirname, 'public')));
 app.get('/bn-css/trinity.css', (req, res) => {
   res.type('css').send(trinitySiteCss());

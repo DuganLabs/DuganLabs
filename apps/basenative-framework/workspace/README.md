@@ -149,7 +149,7 @@ Read [docs/llm/START.md](docs/llm/START.md) first (deployed as `/llms-start.txt`
 | [`@basenative/server`](packages/server)                   | SSR — render(), streaming, hydration markers                                                                                          |
 | [`@basenative/router`](packages/router)                   | SSR-aware routing with params, wildcards, query helpers                                                                               |
 | [`@basenative/forms`](packages/forms)                     | Signal-based field state, validators, Zod adapter                                                                                     |
-| [`@basenative/components`](packages/components)           | 15 semantic UI components with design token theming                                                                                   |
+| [`@basenative/components`](packages/components)           | 47 accessible semantic UI components with design token theming                                                                        |
 | [`@basenative/auth`](packages/auth)                       | Session management, RBAC, password hashing, OAuth providers                                                                           |
 | [`@basenative/db`](packages/db)                           | Query builder + SQLite/PostgreSQL/D1 adapters                                                                                         |
 | [`@basenative/hmr`](packages/hmr)                         | Dev-only hot module replacement — patches the DOM, keeps focus and caret                                                              |
@@ -171,7 +171,7 @@ Read [docs/llm/START.md](docs/llm/START.md) first (deployed as `/llms-start.txt`
 | [`@basenative/visual-builder`](packages/visual-builder)   | No-code template builder                                                                                                              |
 | [`@basenative/validate`](packages/validate)               | Structured template diagnostics a model can repair from                                                                               |
 | [`@basenative/mcp`](packages/mcp)                         | MCP server — validate, render, directive reference, scaffolding                                                                       |
-| [`@basenative/evals`](packages/evals)                     | Eval harness measuring model output correctness (private)                                                                             |
+| [`@basenative/evals`](packages/evals)                     | Eval harness measuring model output correctness                                                                                       |
 | [`@basenative/admin`](packages/admin)                     | Protected-route helpers, RBAC primitives, audit-log middleware, queue-review UI                                                       |
 | [`@basenative/auth-webauthn`](packages/auth-webauthn)     | WebAuthn (passkey) adapter for `@basenative/auth` — server, client, Workers/Pages handlers                                            |
 | [`@basenative/builder`](packages/builder)                 | Signal-based drag-and-drop layout builder that emits BaseNative template code                                                         |
@@ -191,7 +191,7 @@ Read [docs/llm/START.md](docs/llm/START.md) first (deployed as `/llms-start.txt`
 | [`@basenative/tsconfig`](packages/tsconfig)               | Shared base tsconfigs for DuganLabs projects                                                                                          |
 | [`@basenative/wrangler-preset`](packages/wrangler-preset) | Pinned Wrangler version + typed `wrangler.toml` fragment generator                                                                    |
 
-47 packages total (47 publishable, 0 private) — see
+45 packages total (45 publishable, 0 private) — see
 [docs/package-inventory.md](docs/package-inventory.md) for the generated, always-current
 list with exact versions and publish state.
 

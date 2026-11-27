@@ -2210,7 +2210,7 @@ var ready = (fn) => document.readyState === "loading" ? document.addEventListene
 var assetVersion = new URL(import.meta.url).searchParams.get("v");
 var selectTemplate = null;
 var templateText = () => selectTemplate ??= fetch(
-  assetVersion ? `/bn-css/select/index.html?v=${assetVersion}` : "/bn-css/select/index.html"
+  assetVersion ? `/bn-css/select/?v=${assetVersion}` : "/bn-css/select/"
 ).then((response) => response.text()).then((text) => text.replace(/^\s*<template>/, "").replace(/<\/template>\s*$/, ""));
 var openSelects = /* @__PURE__ */ new Set();
 document.addEventListener("pointerdown", (event) => {

@@ -179,7 +179,7 @@ function templateFor(name) {
     templateCache.set(
       name,
       (async () => {
-        const response = await fetch(versioned(`/bn-css/${name}/index.html`));
+        const response = await fetch(versioned(`/bn-css/${name}/`));
         if (!response.ok) throw new Error(`specimens: no template for ${name}`);
         const text = await response.text();
         return text.replace(/^\s*<template>/, '').replace(/<\/template>\s*$/, '');

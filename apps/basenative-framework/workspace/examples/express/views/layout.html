@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="BaseNative" />
     <title><!--TITLE--> — BaseNative</title>
     <meta name="description" content="<!--DESCRIPTION-->" />
+    <!--ROBOTS-->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="BaseNative" />
     <meta property="og:title" content="<!--OG_TITLE-->" />
@@ -25,7 +26,7 @@
     <meta name="twitter:title" content="<!--OG_TITLE-->" />
     <meta name="twitter:description" content="<!--DESCRIPTION-->" />
     <meta name="twitter:image" content="<!--OG_IMAGE-->" />
-    <link rel="canonical" href="<!--OG_URL-->" />
+    <!--CANONICAL-->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -34,49 +35,8 @@
     <meta name="theme-color" content="#f2f2f7" />
     <!--IMPORT_MAP-->
     <script src="/boot.js"></script>
-    <link rel="stylesheet" href="/bn-css/layers.css" />
-    <link rel="stylesheet" href="/bn-css/reset.css" />
-    <link rel="stylesheet" href="/bn-css/trinity.css" />
+    <link rel="stylesheet" href="/site.css" />
     <!--EXTRA_CSS-->
-    <link rel="stylesheet" href="/fonts/fonts.css" />
-    <link rel="stylesheet" href="/styles.css" />
-    <style data-bn-critical="shell">
-      /* The chrome components' own sheets (@basenative/components),
-         inlined: Pages caches linked sheets for hours and revalidates
-         this HTML immediately. */
-      <!--APP_NAV_CSS-->
-    </style>
-    <style data-bn-critical>
-      @layer components {
-        [data-bn-skip-link] {
-          position: absolute;
-          inset-inline-start: -9999px;
-          inset-block-start: -9999px;
-          z-index: 10000;
-          padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
-          background: var(--color-tint, #e8920a);
-          color: var(--color-text-on-tint, #0c0b09);
-          font-weight: var(--font-weight-semibold, 600);
-          text-decoration: none;
-          border-radius: 0 0 var(--radius-sm, 0.25rem) 0;
-        }
-        [data-bn-skip-link]:focus {
-          inset-inline-start: 0;
-          inset-block-start: 0;
-        }
-        [data-bn-visually-hidden] {
-          position: absolute;
-          inline-size: 1px;
-          block-size: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip-path: inset(50%);
-          white-space: nowrap;
-          border: 0;
-        }
-      }
-    </style>
   </head>
   <body data-active="__ACTIVE__">
     <a href="#main-content" data-bn-skip-link>Skip to main content</a>

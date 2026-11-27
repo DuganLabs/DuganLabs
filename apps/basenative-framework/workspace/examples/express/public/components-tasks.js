@@ -1,0 +1,183 @@
+import { signal, computed, effect, hydrate } from '/basenative.js';
+
+const initialData = JSON.parse(document.querySelector('[data-initial-tasks]').textContent);
+
+// Feature-detected once from the SSR-rendered flag: static hosts (Cloudflare
+// Pages) have no /api/tasks, and every request to it 405s and logs a
+// console error even when the response is caught. Skip the network
+// entirely there instead of finding out per request.
+const hasApi = document.querySelector('[data-tasks]')?.dataset.hasApi === 'true';
+
+// Without an API the list lives in this browser. localStorage keeps it across
+// reloads; the notice above says so. Every access is guarded — a private
+// window or blocked site data makes the accessor itself throw — and the
+// server-rendered seed rows are the fallback either way.
+const STORAGE_KEY = 'bn-tasks';
+function readStoredTasks() {
+  if (hasApi) return null;
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return Array.isArray(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+function storeTasks(list) {
+  if (hasApi) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch {
+    // Nothing to do: the list still works for this page view.
+  }
+}
+
+const taskSignal = signal(readStoredTasks() ?? initialData);
+const currentFilter = signal('all');
+const filterOptions = ['all', 'done', 'active', 'pending'];
+// Seeded from whatever the list actually holds, so restored tasks never
+// collide with a freshly minted id.
+let nextLocalId = taskSignal().reduce((maxId, task) => Math.max(maxId, task.id), 0) + 1;
+effect(() => storeTasks(taskSignal()));
+
+const filteredTasks = computed(() => {
+  const f = currentFilter();
+  const t = taskSignal();
+  return f === 'all' ? t : t.filter((x) => x.status === f);
+});
+const doneCount = computed(() => taskSignal().filter((x) => x.status === 'done').length);
+const activeCount = computed(() => taskSignal().filter((x) => x.status === 'active').length);
+const summaryText = computed(
+  () => `${taskSignal().length} tasks — ${doneCount()} done · ${activeCount()} active`,
+);
+
+async function requestJson(url, options) {
+  if (!hasApi) return null;
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) return null;
+    return res;
+  } catch {
+    return null;
+  }
+}
+
+async function addTask(input) {
+  const title = input.value.trim();
+  if (!title) return;
+  const res = await requestJson('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (res) {
+    const task = await res.json();
+    taskSignal.set((prev) => [...prev, task]);
+  } else {
+    const task = { id: nextLocalId++, title, status: 'active' };
+    taskSignal.set((prev) => [...prev, task]);
+  }
+  input.value = '';
+  input.focus();
+}
+
+async function deleteTask(id) {
+  await requestJson(`/api/tasks/${id}`, { method: 'DELETE' });
+  taskSignal.set((prev) => prev.filter((t) => t.id !== id));
+}
+
+const hydrateRoot = document.querySelector('[data-hydrate]');
+hydrateRoot.innerHTML = `
+  <h3>Interactive Controls</h3>
+  <nav data-controls aria-label="Add task">
+    <input type="text" placeholder="New task..." aria-label="New task title">
+    <button type="button" data-bn="bn-button" data-variant="prominent">Add Task</button>
+  </nav>
+  <nav data-controls aria-label="Filter tasks">
+    <template @for="f of filterOptions">
+      <button type="button" :aria-pressed="String(currentFilter() === f)" @click="currentFilter.set(f)">{{ f }}</button>
+    </template>
+  </nav>
+  <section data-bn="bn-list" data-grouped="true">
+    <output></output>
+    <ul role="list">
+      <template @for="task of filteredTasks(); track task.id">
+        <li data-bn="bn-list-row" data-task-item>
+          <!-- inline task title container inside flex list row -->
+          <span data-task-title>{{ task.title }}</span>
+          <!-- inline actions group paired with task title -->
+          <span data-task-actions>
+            <mark data-status="{{ task.status }}">{{ task.status }}</mark>
+            <button type="button" data-variant="danger" aria-label="Delete task" @click="deleteTask(task.id)">x</button>
+          </span>
+        </li>
+      </template>
+      <template @empty>
+        <li data-bn="bn-list-row" data-task-empty>No matching tasks</li>
+      </template>
+    </ul>
+  </section>
+`;
+
+const addInput = hydrateRoot.querySelector('input');
+const addBtn = hydrateRoot.querySelector('nav[data-controls] > button');
+addInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addTask(addInput);
+});
+addBtn.addEventListener('click', () => addTask(addInput));
+
+const outputEl = hydrateRoot.querySelector('output');
+
+hydrate(hydrateRoot, {
+  taskSignal,
+  currentFilter,
+  filterOptions,
+  filteredTasks,
+  doneCount,
+  activeCount,
+  addTask,
+  deleteTask,
+  String,
+});
+
+// The server-rendered "N tasks total" block above is static markup, not a
+// hydration target (render() only emits bn: markers in hydratable mode) —
+// keep it in sync with the same taskSignal directly instead of letting it
+// freeze at the initial count while the interactive list below moves on.
+const ssrOutput = document.querySelector('[data-tasks] output');
+const ssrList = document.querySelector('[data-tasks] ul');
+// The server-rendered list above is the catalog list-group (built in
+// site-data.js): a row is a title paragraph with the status badge — a
+// <small variant> — pinned to its end. Rebuild that same shape here, with
+// the same status → variant map the server used.
+const STATUS_VARIANT = { done: 'success', active: 'success', pending: 'default' };
+effect(() => {
+  const list = taskSignal();
+  if (ssrOutput) ssrOutput.textContent = `${list.length} tasks total`;
+  if (ssrList) {
+    ssrList.replaceChildren();
+    if (list.length === 0) {
+      const li = document.createElement('li');
+      const title = document.createElement('p');
+      title.textContent = 'No tasks yet — add one below';
+      li.appendChild(title);
+      ssrList.appendChild(li);
+    } else {
+      for (const task of list) {
+        const li = document.createElement('li');
+        const title = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = task.title;
+        title.appendChild(strong);
+        const badge = document.createElement('small');
+        badge.setAttribute('variant', STATUS_VARIANT[task.status] || 'default');
+        badge.textContent = task.status;
+        li.append(title, badge);
+        ssrList.appendChild(li);
+      }
+    }
+  }
+});
+
+effect(() => {
+  outputEl.textContent = summaryText();
+});

@@ -13,7 +13,6 @@ import { escapeText, raw } from '@basenative/runtime/shared/escape';
 import {
   renderTrinity,
   renderTrinityVm,
-  trinityChromeCss,
   trinityComponentInfo,
 } from './trinity.js';
 import { renderSiteChrome, renderSiteFooter } from './shell.js';
@@ -156,18 +155,7 @@ function getAssetVersion() {
   return assetVersion;
 }
 
-/**
- * Shell CSS inlined into every page. Pages caches stylesheets for hours
- * and revalidates HTML immediately, so the window chrome cannot depend
- * on a linked sheet arriving fresh (the 2026-10-20 phone incident).
- * The chrome is the catalog's now, so the critical block is the chrome
- * components' own sheets, assembled by trinity.js.
- */
-function shellCriticalCss() {
-  return trinityChromeCss();
-}
-
-export const SITE_URL = 'https://basenative.com';
+export const SITE_URL = (process.env.SITE_URL || 'https://basenative.com').replace(/\/+$/, '');
 export const DEFAULT_DESCRIPTION =
   'BaseNative is an open-source design system kit, fully in code: accessible components on real HTML elements, in light and dark, built on web standards. AI-safe and ready for agents.';
 
@@ -262,6 +250,7 @@ export function renderPage(viewFile, ctx, opts) {
     path = '/',
     scripts = '',
     activePage = '',
+    noindex = false,
   } = opts;
 
   const layout = read('views/layout.html');
@@ -271,14 +260,19 @@ export function renderPage(viewFile, ctx, opts) {
   // through here, so no page can ship monochrome code again.
   const content = highlightCodeBlocks(render(view, ctx));
   const version = getAssetVersion();
+  const pageUrl = SITE_URL + path;
   return (
     layout
       .replace(/<!--TITLE-->/g, escapeAttr(title))
       .replace(/<!--DESCRIPTION-->/g, escapeAttr(description))
+      .replace('<!--ROBOTS-->', noindex ? '<meta name="robots" content="noindex, nofollow" />' : '')
       .replace(/<!--OG_TITLE-->/g, escapeAttr(ogTitle))
-      .replace(/<!--OG_URL-->/g, escapeAttr(SITE_URL + path))
+      .replace(/<!--OG_URL-->/g, escapeAttr(pageUrl))
       .replace(/<!--OG_IMAGE-->/g, escapeAttr(ogImageFor(path)))
-      .replace('<!--APP_NAV_CSS-->', () => shellCriticalCss())
+      .replace(
+        '<!--CANONICAL-->',
+        noindex ? '' : `<link rel="canonical" href="${escapeAttr(pageUrl)}" />`,
+      )
       .replace('<!--APP_SHELL-->', () => {
         const { headerHtml, sidebarHtml, appBarHtml } = renderSiteChrome(activePage);
         return renderTrinity('app-shell', {
@@ -318,9 +312,71 @@ export function renderPage(viewFile, ctx, opts) {
  * bundle lacked and the specimen never opened. An import map remaps the
  * specifier for every module on the page, so one deploy is one version.
  */
-export function importMap(version) {
+export function importMapJson(version = getAssetVersion()) {
   const imports = { '/basenative.js': `/basenative.js?v=${version}` };
-  return `<script type="importmap">${JSON.stringify({ imports })}</script>`;
+  return JSON.stringify({ imports });
+}
+
+export function importMap(version = getAssetVersion()) {
+  return `<script type="importmap">${importMapJson(version)}</script>`;
+}
+
+/**
+ * Exact SHA-256 CSP hash for this deploy's deterministic <script type="importmap">.
+ * In CSP3, <script type="importmap"> is governed by script-src; hashing the
+ * static JSON payload lets every page run under strict script-src without
+ * 'unsafe-inline'.
+ */
+export function importMapCspHash(version = getAssetVersion()) {
+  const digest = createHash('sha256').update(importMapJson(version)).digest('base64');
+  return `'sha256-${digest}'`;
+}
+
+/** Strict production CSP for every site route (no 'unsafe-inline', no framing). */
+export function siteCsp(version = getAssetVersion()) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' ${importMapCspHash(version)}`,
+    "style-src 'self'",
+    "font-src 'self'",
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
+/**
+ * Scoped CSP for /playground/preview: the sandboxed preview iframe runs
+ * visitor-authored HTML, CSS and JS and is framed by /playground on the same
+ * origin.
+ */
+export function playgroundPreviewCsp() {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+  ].join('; ');
+}
+
+/** Shared security headers used by both Express (server.js) and Pages (_headers). */
+export function siteSecurityHeaders({ preview = false, version = getAssetVersion() } = {}) {
+  return {
+    'X-Frame-Options': preview ? 'SAMEORIGIN' : 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    'Content-Security-Policy': preview ? playgroundPreviewCsp() : siteCsp(version),
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+  };
 }
 
 /**
@@ -742,8 +798,9 @@ export function renderNotFoundPage() {
     },
     {
       title: 'Page not found',
-      description: 'There is nothing at this address on basenative.com.',
+      description: `There is nothing at this address on ${new URL(SITE_URL).hostname}.`,
       path: '/404.html',
+      noindex: true,
     },
   );
 }

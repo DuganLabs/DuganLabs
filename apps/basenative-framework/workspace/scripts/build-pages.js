@@ -2,7 +2,7 @@
  * Pre-renders all Express routes to static HTML for Cloudflare Pages deployment.
  * Run after `nx bundle basenative-example-express` so basenative.js exists.
  */
-import { existsSync, mkdirSync, writeFileSync, cpSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, cpSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -13,8 +13,14 @@ import {
   renderPlaygroundPreview,
   renderRoute,
   siteRoutes,
+  siteSecurityHeaders,
 } from '../examples/express/page.js';
-import { trinityComponentInfo, trinitySiteCss } from '../examples/express/trinity.js';
+import {
+  minifyStylesheet,
+  siteBundleCss,
+  trinityComponentInfo,
+  trinitySiteCss,
+} from '../examples/express/trinity.js';
 import { staticTasks } from '../examples/express/site-data.js';
 import { checkComparePage } from './check-compare-page.js';
 
@@ -115,8 +121,12 @@ writeFileSync(
 );
 console.log('  404.html');
 
-// Copy static assets
-cpSync(join(express, 'public', 'styles.css'), join(dist, 'styles.css'));
+// Copy & minify static assets
+writeFileSync(join(dist, 'site.css'), siteBundleCss());
+writeFileSync(
+  join(dist, 'styles.css'),
+  minifyStylesheet(readFileSync(join(express, 'public', 'styles.css'), 'utf8')),
+);
 cpSync(join(express, 'public', 'boot.js'), join(dist, 'boot.js'));
 cpSync(join(express, 'public', 'scrollspy.js'), join(dist, 'scrollspy.js'));
 cpSync(join(express, 'public', 'page-filter.js'), join(dist, 'page-filter.js'));
@@ -124,10 +134,14 @@ cpSync(join(express, 'public', 'more-menu.js'), join(dist, 'more-menu.js'));
 cpSync(join(express, 'public', 'specimens.js'), join(dist, 'specimens.js'));
 cpSync(join(express, 'public', 'hero-demo.js'), join(dist, 'hero-demo.js'));
 cpSync(join(express, 'public', 'copy-code.js'), join(dist, 'copy-code.js'));
+cpSync(join(express, 'public', 'components-tasks.js'), join(dist, 'components-tasks.js'));
 cpSync(join(express, 'public', 'basenative.js'), join(dist, 'basenative.js'));
 cpSync(join(express, 'public', 'builder.js'), join(dist, 'builder.js'));
 cpSync(join(express, 'public', 'compare.js'), join(dist, 'compare.js'));
-cpSync(join(express, 'public', 'playground.css'), join(dist, 'playground.css'));
+writeFileSync(
+  join(dist, 'playground.css'),
+  minifyStylesheet(readFileSync(join(express, 'public', 'playground.css'), 'utf8')),
+);
 cpSync(join(express, 'public', 'playground.js'), join(dist, 'playground.js'));
 cpSync(join(express, 'public', 'playground-preview.js'), join(dist, 'playground-preview.js'));
 // playground.js statically imports the shared highlight engine by
@@ -212,42 +226,45 @@ for (const file of componentCssFiles) {
 // Copy builder CSS (served as /bn-builder-css/ in Express, must exist in dist)
 const bnBuilderCssDir = join(dist, 'bn-builder-css');
 mkdirSync(bnBuilderCssDir, { recursive: true });
-cpSync(
-  join(root, 'packages', 'builder', 'src', 'builder.css'),
+writeFileSync(
   join(bnBuilderCssDir, 'builder.css'),
+  minifyStylesheet(readFileSync(join(root, 'packages', 'builder', 'src', 'builder.css'), 'utf8')),
 );
 
-// Copy fonts (preserve structure so fonts.css relative paths work)
-cpSync(join(root, 'packages', 'fonts'), join(dist, 'fonts'), { recursive: true });
+// Copy ONLY the web font stylesheet and the .woff2 files it actually references
+// (never package.json, test.js, README.md, generate.py, or unused font files).
+const fontsDistDir = join(dist, 'fonts');
+const fontsSrcDistDir = join(fontsDistDir, 'src');
+mkdirSync(fontsSrcDistDir, { recursive: true });
+const rawFontsCss = readFileSync(join(root, 'packages', 'fonts', 'fonts.css'), 'utf8');
+writeFileSync(join(fontsDistDir, 'fonts.css'), minifyStylesheet(rawFontsCss));
+for (const match of rawFontsCss.matchAll(/url\(['"]\.\/src\/([^'"]+\.woff2)['"]\)/g)) {
+  const fontFile = match[1];
+  cpSync(join(root, 'packages', 'fonts', 'src', fontFile), join(fontsSrcDistDir, fontFile));
+}
 
 // Copy icons
 cpSync(join(root, 'packages', 'icons', 'src'), join(dist, 'icons'), { recursive: true });
 
-// Write Cloudflare Pages _headers file for security headers. The
-// dev server sends the same set (examples/express/server.js), so the
-// e2e suite runs under the policy production serves — keep the two
-// in sync. The one exception is the playground's preview document:
-// the playground frames it, so it is frameable by the site itself
-// while every other path stays DENY. Without the exception the live
-// playground sat at "Not run yet" over a blank white frame — the
-// browser refused to render the preview at all, and no local run
-// could see it, because the dev server sent no such header.
-const csp = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'`;
-const headers = `/*
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Content-Security-Policy: ${csp}
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Cross-Origin-Opener-Policy: same-origin
-/playground/preview
-  X-Frame-Options: SAMEORIGIN
-  Content-Security-Policy: ${csp}; frame-ancestors 'self'
-/playground/preview/*
-  X-Frame-Options: SAMEORIGIN
-  Content-Security-Policy: ${csp}; frame-ancestors 'self'
-`;
+// Write Cloudflare Pages _headers file for security headers. Derived from the
+// same siteSecurityHeaders() helper Express sends (examples/express/page.js),
+// so the e2e suite and production enforce identical policies.
+const formatHeadersBlock = (route, hdrs) =>
+  `${route}\n${Object.entries(hdrs)
+    .map(([k, v]) => `  ${k}: ${v}`)
+    .join('\n')}\n`;
+const siteHeaders = siteSecurityHeaders({ preview: false });
+const previewHeaders = siteSecurityHeaders({ preview: true });
+const headers =
+  formatHeadersBlock('/*', siteHeaders) +
+  formatHeadersBlock('/playground/preview', {
+    'X-Frame-Options': previewHeaders['X-Frame-Options'],
+    'Content-Security-Policy': previewHeaders['Content-Security-Policy'],
+  }) +
+  formatHeadersBlock('/playground/preview/*', {
+    'X-Frame-Options': previewHeaders['X-Frame-Options'],
+    'Content-Security-Policy': previewHeaders['Content-Security-Policy'],
+  });
 writeFileSync(join(dist, '_headers'), headers);
 console.log('  _headers (security)');
 
@@ -296,10 +313,31 @@ writeFileSync(
 );
 console.log('  robots.txt');
 
-for (const file of ['llms.txt', 'llms-full.txt']) {
-  cpSync(join(root, file), join(dist, file));
-  console.log(`  ${file}`);
+// Ship API markdown docs alongside /docs/ so deployed /llms.txt links resolve
+// with HTTP 200 on Pages instead of 404ing on repo-relative paths.
+const docsApiSrc = join(root, 'docs', 'api');
+const docsApiDist = join(dist, 'docs', 'api');
+mkdirSync(docsApiDist, { recursive: true });
+for (const entry of readdirSync(docsApiSrc)) {
+  if (entry.endsWith('.md')) {
+    cpSync(join(docsApiSrc, entry), join(docsApiDist, entry));
+  }
 }
+
+const REPO_TREE_URL =
+  'https://github.com/DuganLabs/public/tree/main/apps/basenative-framework/workspace';
+const deployedLlmsTxt = readFileSync(join(root, 'llms.txt'), 'utf8')
+  .replaceAll('[llms-full.txt](./llms-full.txt)', `[llms-full.txt](${SITE_URL}/llms-full.txt)`)
+  .replaceAll(
+    '[docs/llm/START.md](./docs/llm/START.md). Deployed copy: https://basenative.com/llms-start.txt',
+    `[llms-start.txt](${SITE_URL}/llms-start.txt)`,
+  )
+  .replace(/→ docs\/api\/([a-z0-9-]+\.md)/g, `→ ${SITE_URL}/docs/api/$1`)
+  .replace(/→ packages\/([a-z0-9-]+\/src)/g, `→ ${REPO_TREE_URL}/packages/$1`);
+writeFileSync(join(dist, 'llms.txt'), deployedLlmsTxt);
+console.log('  llms.txt (deployed URLs)');
+cpSync(join(root, 'llms-full.txt'), join(dist, 'llms-full.txt'));
+console.log('  llms-full.txt');
 cpSync(join(root, 'docs', 'llm', 'START.md'), join(dist, 'llms-start.txt'));
 console.log('  llms-start.txt');
 

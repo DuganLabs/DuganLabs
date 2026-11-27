@@ -11,7 +11,7 @@ const root = join(__dirname, '..', '..');
 const REPORTS_DIR = join(root, 'reports');
 
 const DEPLOY_URL = process.env.DEPLOY_URL;
-const MIN_GRADE = process.env.OBSERVATORY_MIN_GRADE ?? 'B';
+const MIN_GRADE = process.env.OBSERVATORY_MIN_GRADE ?? 'A+';
 const GRADE_ORDER = ['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 
 if (!DEPLOY_URL) {

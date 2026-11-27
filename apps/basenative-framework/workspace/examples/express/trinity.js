@@ -9,16 +9,108 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { transformSync } from 'esbuild';
 import { render } from '@basenative/server';
 import { loadRegistry, renderComponent, assembleStyles } from '../../packages/components/src/loader.js';
 
-const componentsDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '../../packages/components/src',
-);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(__dirname, '../..');
+const componentsDir = join(repoRoot, 'packages/components/src');
 
 const registry = await loadRegistry();
-const siteCss = await assembleStyles(registry, [...registry.listComponents()]);
+const rawSiteCss = await assembleStyles(registry, [...registry.listComponents()]);
+
+/** Minify a CSS string with esbuild (comments, whitespace, redundant syntax). */
+export function minifyStylesheet(css) {
+  return transformSync(css, { loader: 'css', minify: true }).code;
+}
+
+const minifiedTrinityCss = minifyStylesheet(rawSiteCss);
+
+const SKIP_AND_SR_CSS = `
+@layer components {
+  [data-bn-skip-link] {
+    position: absolute;
+    inset-inline-start: -9999px;
+    inset-block-start: -9999px;
+    z-index: 10000;
+    padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
+    background: var(--color-tint, #e8920a);
+    color: var(--color-text-on-tint, #0c0b09);
+    font-weight: var(--font-weight-semibold, 600);
+    text-decoration: none;
+    border-radius: 0 0 var(--radius-sm, 0.25rem) 0;
+  }
+  [data-bn-skip-link]:focus {
+    inset-inline-start: 0;
+    inset-block-start: 0;
+  }
+  [data-bn-visually-hidden] {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+`;
+
+let cachedBundleCss = null;
+
+/**
+ * The whole catalog as one minified sheet (tokens, then every component in
+ * registry order), served at /bn-css/trinity.css.
+ */
+export function trinitySiteCss() {
+  return minifiedTrinityCss;
+}
+
+/**
+ * Swatch and radius-ladder rules for /docs's Design tokens section, derived
+ * directly from tokens.css so they ride in the external /site.css bundle
+ * instead of an inline <style> tag (strict style-src 'self' CSP).
+ */
+function docsTokenLadderCss() {
+  const tokensCss = readFileSync(join(componentsDir, 'tokens.css'), 'utf8');
+  const rootMatch = /:root\s*\{([^}]*)\}/.exec(tokensCss.replace(/\/\*[\s\S]*?\*\//g, ''));
+  if (!rootMatch) return '';
+  const names = [...rootMatch[1].matchAll(/(--(?:palette-system|size-radius)-[a-z0-9-]+)\s*:/g)].map(
+    (m) => m[1],
+  );
+  const rules = names.map((name) =>
+    name.startsWith('--palette-system-')
+      ? `[data-bn-swatch="${name}"]{background:var(${name})}`
+      : `[data-bn-radius="${name}"]{border-radius:var(${name});background:var(--color-tint)}`,
+  );
+  return `@layer components {\n${rules.join('\n')}\n}`;
+}
+
+/**
+ * The single versioned, minified stylesheet linked by layout.html (/site.css):
+ * layers, reset, the catalog sheet (tokens + all components including chrome),
+ * self-hosted font faces (rewritten to /fonts/src/), site layout styles,
+ * skip-link / visually-hidden utilities, and /docs token swatch/radius rules.
+ * Collapses five blocking CSS requests and all inline <style> blocks into one
+ * cached, strict-CSP-safe stylesheet.
+ */
+export function siteBundleCss() {
+  if (cachedBundleCss) return cachedBundleCss;
+  const layers = readFileSync(join(componentsDir, 'layers.css'), 'utf8');
+  const reset = readFileSync(join(componentsDir, 'reset.css'), 'utf8');
+  const fonts = readFileSync(join(repoRoot, 'packages/fonts/fonts.css'), 'utf8').replaceAll(
+    "url('./src/",
+    "url('/fonts/src/",
+  );
+  const siteStyles = readFileSync(join(__dirname, 'public/styles.css'), 'utf8');
+  cachedBundleCss = minifyStylesheet(
+    [layers, reset, rawSiteCss, fonts, siteStyles, SKIP_AND_SR_CSS, docsTokenLadderCss()].join('\n'),
+  );
+  return cachedBundleCss;
+}
 
 /** Render one catalog component to an HTML string. */
 export function renderTrinity(name, props) {
@@ -28,28 +120,12 @@ export function renderTrinity(name, props) {
 /**
  * The chrome components' own sheets, concatenated in cascade order
  * (app-shell last: its frame rules win ties against the pieces it
- * composes). Inlined into every page as the shell's critical CSS —
- * pages cache stylesheets for hours and revalidate HTML immediately,
- * so the window chrome cannot depend on a linked sheet arriving fresh
- * (the 2026-10-20 phone incident). The token sheet itself rides the
- * versioned /bn-css link like every other sheet.
+ * composes).
  */
 export function trinityChromeCss() {
   return ['hero', 'sidebar', 'app-bar', 'site-footer', 'app-shell']
     .map((name) => registry.getComponent(name).styles.trim())
     .join('\n');
-}
-
-/**
- * The whole catalog as one sheet (tokens, then every component in
- * registry order), served at /bn-css/trinity.css — the catalog's styles
- * for every page, versioned and cached like the other sheets. The
- * chrome subset also rides inline as critical CSS (trinityChromeCss);
- * this sheet is what dresses everything else the catalog renders,
- * hero action buttons included.
- */
-export function trinitySiteCss() {
-  return siteCss;
 }
 
 /** Render one catalog component, returning the view model alongside the HTML. */

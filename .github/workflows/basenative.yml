@@ -46,6 +46,8 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: 10
+          # The workspace pins no packageManager; read it instead of the monorepo root's.
+          package_json_file: apps/basenative/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
@@ -81,6 +83,8 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: 10
+          # The workspace pins no packageManager; read it instead of the monorepo root's.
+          package_json_file: apps/basenative/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -110,6 +114,8 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: 10
+          # The workspace pins no packageManager; read it instead of the monorepo root's.
+          package_json_file: apps/basenative/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -133,6 +139,8 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: 10
+          # The workspace pins no packageManager; read it instead of the monorepo root's.
+          package_json_file: apps/basenative/workspace/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 22

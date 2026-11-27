@@ -12,7 +12,10 @@ fail=0
 err() { echo "::error::$*"; fail=1; }
 
 # 1. No Plaid secret names in workflows, deploy tooling, or app deploy config.
-if hits=$(git grep -nI -E 'PLAID_[A-Z_]+' -- .github tools/deploy tools/audit 'apps/*/deploy.json' 'apps/*/wrangler.toml' 2>/dev/null); then
+#    Allowed: comment lines, and the non-secret KEK selector var PLAID_CREDENTIALS_KEK_CURRENT
+#    (an index into the runtime-only PLAID_CREDENTIALS_KEKS secret) in the app's wrangler.toml.
+if hits=$(git grep -nI -E 'PLAID_[A-Z_]+' -- .github tools/deploy tools/audit 'apps/*/deploy.json' 'apps/*/wrangler.toml' 2>/dev/null \
+    | grep -v -E '^[^:]+:[0-9]+:[[:space:]]*#|^[^:]+wrangler\.toml:[0-9]+:PLAID_CREDENTIALS_KEK_CURRENT = "[0-9]+"$'); then
   err "PLAID_* referenced in CI/deploy paths (must stay runtime-only, see docs/PLAID-SECRETS.md):"; echo "$hits"
 fi
 

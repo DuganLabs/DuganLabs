@@ -1,0 +1,4 @@
+# Pins `doppler run` to this repo's project and config (pendingbusiness/repository).
+setup:
+  project: pendingbusiness
+  config: repository

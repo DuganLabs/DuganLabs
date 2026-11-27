@@ -1,3 +1,4 @@
 # Imported product workspaces with their own Nx/pnpm setup. Root Nx sees only
 # their wrapper project.json (apps/<product>/project.json).
 apps/greenput-platform/workspace/
+apps/pendingbusiness-app/workspace/

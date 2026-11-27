@@ -18,3 +18,7 @@ description = "GreenPut test fixtures (fake API keys and token UUIDs in *.spec.t
 paths = ['''apps/greenput-platform/workspace/.*\.spec\.ts$''']
 regexes = ['''gp_abcdefgh12345678901234567890ab''', '''gp_0123456789abcdef0123456789abcdef''', '''123e4567-e89b-42d3-a456-426614174000''', '''3b0d1a2c-7f4e-4a5b-9c8d-0e1f2a3b4c5d''']
 condition = "AND"
+
+[[allowlists]]
+description = "PendingBusiness test fixture (fake Plaid-style plaintext in a crypto round-trip test)"
+paths = ['''apps/pendingbusiness-app/workspace/worker/test/plaid-credentials-crypto\.test\.ts$''']

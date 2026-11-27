@@ -1,0 +1,47 @@
+name = "pending-business"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "private.pendingbusiness.com/*", zone_name = "pendingbusiness.com" }
+]
+
+# Passkey (WebAuthn) auth via @basenative/auth-webauthn.
+# RP_ID stays the apex (existing passkeys keep working); RP_ORIGIN is the host the app is served on.
+# Since the 2026-11-26 cut-over the app lives at private.pendingbusiness.com behind Cloudflare Access;
+# pendingbusiness.com and www are the DuganLabs coming-soon page (DuganLabs/DuganLabs apps/pendingbusiness).
+# OWNER_EMAIL is a Worker SECRET (not a var): personal data stays out of the repo.
+#   wrangler secret put OWNER_EMAIL   (once; persists across deploys)
+[vars]
+RP_NAME = "PendingBusiness"
+RP_ID = "pendingbusiness.com"
+RP_ORIGIN = "https://private.pendingbusiness.com"
+ADMIN_HANDLES = "wmd,warren"
+SESSION_TTL_DAYS = "30"
+# Which PLAID_CREDENTIALS_KEKS entry new writes wrap under — not secret by
+# itself, bump it after adding a new key version during rotation (see the
+# doc comment in src/crypto/plaidCredentials.ts).
+PLAID_CREDENTIALS_KEK_CURRENT = "1"
+
+# PLAID_CREDENTIALS_KEKS is REQUIRED but must never be set here, in GitHub, or
+# in CI. It is the root key-encryption-key material for
+# plaid_credentials.client_id/secret at rest: one JSON object mapping key
+# version -> base64 32-byte (256-bit) AES key, e.g. {"1":"<base64>"}.
+# It lives only in the Doppler project `pendingbusiness-runtime` (config prd,
+# no GitHub sync) and is set on the Worker as a runtime secret by
+# scripts/set-plaid-secret.sh, run by the owner. Worker secrets persist across
+# deploys, so CI never touches it. Rotation: docs/PLAID-SECRETS.md.
+# Never commit a real key value.
+
+[assets]
+directory = "../dist/site"
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pendingbusiness"
+# Placeholder replaced by CI before wrangler deploy — see .github/workflows/deploy.yml.
+database_id = "PLACEHOLDER_PENDINGBUSINESS_D1_ID"
+migrations_dir = "../migrations"

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta
+      name="description"
+      content="PendingBusiness settings — household profile, income, liabilities, Plaid credentials and bank linking."
+    />
+    <meta name="theme-color" content="#0F0E0C" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PendingBusiness" />
+    <meta property="og:title" content="Settings · PendingBusiness" />
+    <meta
+      property="og:description"
+      content="Your household, income, liabilities, Plaid credentials and connected bank accounts."
+    />
+    <meta property="og:url" content="https://pendingbusiness.com/settings" />
+    <meta property="og:image" content="https://pendingbusiness.com/og-default.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PendingBusiness — treasury OS for one" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://pendingbusiness.com/og-default.png" />
+    <title>Settings · PendingBusiness</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#0F0E0C" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PendingBusiness" />
+    <link rel="canonical" href="https://pendingbusiness.com/settings" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-bn-page="settings">
+    <header>
+      <nav aria-label="primary">
+        <p data-bn="wordmark">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="6.1" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <path
+              d="M8 8 L5.2 6.2"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+            <path
+              d="M8 8 L10.4 5.4"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+            />
+          </svg>
+          PendingBusiness
+        </p>
+        <h1>Settings</h1>
+        <ul aria-label="sections">
+          <li><a href="/app">Dashboard</a></li>
+          <li><a href="/account">Account</a></li>
+          <li><a href="/settings" aria-current="page">Settings</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section aria-labelledby="household-heading">
+        <h2 id="household-heading">
+          Household <output id="household-status" aria-live="polite"></output>
+        </h2>
+        <p>
+          The monthly facts every figure on the dashboard is computed from. Until you set them the
+          waterfall runs on zeros.
+        </p>
+        <form id="household-form" novalidate autocomplete="off">
+          <!--bn:household-fields-->
+        </form>
+      </section>
+
+      <section aria-labelledby="income-heading">
+        <h2 id="income-heading">
+          Income sources <output id="income-status" aria-live="polite"></output>
+        </h2>
+        <p>Annual gross by source. W-2 wages drive the tax projection.</p>
+        <div id="income-rows"></div>
+        <form id="income-form" novalidate autocomplete="off">
+          <input type="hidden" name="id" value="" />
+          <!--bn:income-fields-->
+        </form>
+      </section>
+
+      <section aria-labelledby="liabilities-heading">
+        <h2 id="liabilities-heading">
+          Liabilities <output id="liabilities-status" aria-live="polite"></output>
+        </h2>
+        <p>Every debt the avalanche can target. Minimum payments count as fixed obligations.</p>
+        <div id="liability-rows"></div>
+        <form id="liability-form" novalidate autocomplete="off">
+          <input type="hidden" name="id" value="" />
+          <!--bn:liability-fields-->
+        </form>
+      </section>
+
+      <section aria-labelledby="plaid-creds-heading">
+        <h2 id="plaid-creds-heading">
+          Plaid credentials <output id="plaid-creds-status" aria-live="polite"></output>
+        </h2>
+        <p>
+          Stored in your D1 database. Paste from
+          <a href="https://dashboard.plaid.com/developers/keys" target="_blank" rel="noopener"
+            >dashboard.plaid.com/developers/keys</a
+          >.
+        </p>
+        <form id="plaid-creds-form" novalidate autocomplete="off">
+          <!--bn:plaid-creds-fields-->
+        </form>
+      </section>
+
+      <section aria-labelledby="connect-heading">
+        <h2 id="connect-heading">Connect a bank</h2>
+        <p>Launches Plaid Link. Accounts and balances sync into your dashboard as you finish.</p>
+        <p data-bn="actions"><!--bn:connect-buttons--></p>
+        <output id="connect-status" aria-live="polite"></output>
+      </section>
+
+      <section aria-labelledby="accounts-heading">
+        <h2 id="accounts-heading">Connected accounts <small id="accounts-meta">&mdash;</small></h2>
+        <div id="accounts-rows"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        <small>PendingBusiness · DuganLabs · <time datetime="2026">2026</time></small>
+      </p>
+    </footer>
+
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <script type="module" src="/settings.js"></script>
+  </body>
+</html>

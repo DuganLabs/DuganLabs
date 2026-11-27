@@ -1,0 +1,1900 @@
+/*
+ * PendingBusiness — global stylesheet.
+ *
+ * The specification this implements is
+ * `docs/visual-language.md`. Section references
+ * below (§2.3, §5.7, …) point into it. Short version: this is an instrument
+ * for one operator making money decisions — the figures are the loudest thing
+ * on the page, colour is reserved for financial semantics and never carries
+ * direction on its own, and density is pointer-conditional so the desk gets a
+ * dense table without a phone losing its touch targets.
+ *
+ * BaseNative house style: zero CSS classes, semantic HTML5 only, relational
+ * selectors. Variants live on `data-bn-*` / `data-*` attributes; CSS picks
+ * them up via attribute selectors. All values resolve through custom
+ * properties declared in @layer tokens.
+ *
+ * Cascade layers. The site's layer order is declared FIRST — a `@layer`
+ * statement is the one rule allowed ahead of `@import` — so that when
+ * `@basenative/components/css` brings its own
+ * `@layer reset, tokens, layout, components, states;` the shared names
+ * (`reset`, `tokens`, `layout`, `components`, `states`) slot into the
+ * positions declared here and the site-only layers (`base`, `state`)
+ * land where intended: `base` (element defaults such as `a { color }`)
+ * BELOW `components`, `state` ABOVE it. Previously the package statement
+ * ran first and `base` was appended after `components`, so the landing
+ * CTA's `a { color: var(--accent) }` beat its own button colour and the
+ * text vanished into the background.
+ *
+ * The full bundle (`css`, not just `layers.css`) is imported so the markup
+ * rendered by renderTable/renderBadge/renderAlert/renderSkeleton/renderDialog/
+ * renderButton is actually styled; the `--bn-*` bridge below maps those
+ * components onto PB's palette. esbuild resolves and inlines the import at
+ * build time (scripts/build.mjs), so the shipped CSS carries exactly this
+ * order — test/styles.test.ts bundles the file and checks it.
+ */
+@layer tokens, reset, base, layout, components, states, state;
+
+@import '@basenative/components/css';
+
+/*
+ * Token bridge: map PendingBusiness's own custom properties onto the
+ * `--bn-*` tokens the component renderers consume, so package markup
+ * matches the site palette instead of BaseNative's default theme.
+ * Deliberately unlayered (not wrapped in @layer tokens) so it wins over
+ * both `@basenative/components/tokens.css` and `theme.css` (dark-mode
+ * media query) regardless of their relative position inside the shared
+ * `tokens` layer name — unlayered author styles always beat layered ones.
+ * Not a fork: no component CSS file is modified.
+ */
+:root {
+  --bn-color-surface: var(--surface);
+  --bn-color-surface-raised: var(--surface-2);
+  --bn-color-surface-muted: var(--surface-2);
+  --bn-color-surface-subtle: var(--surface-2);
+  --bn-color-surface-inset: var(--bg);
+  --bn-color-zebra: var(--zebra);
+  --bn-color-text: var(--ink);
+  --bn-color-text-muted: var(--ink-muted);
+  --bn-color-text-subtle: var(--ink-dim);
+  --bn-color-text-inverse: var(--accent-ink);
+  --bn-color-border: var(--rule);
+  --bn-color-border-strong: var(--rule-strong);
+  --bn-color-border-focus: var(--accent);
+  /*
+   * --bn-color-border-control is the sole boundary of an input, select,
+   * checkbox or secondary button, so WCAG 1.4.11 wants 3:1 against the fill
+   * behind it. PB's decorative --border (ink at 12%) measures 1.40:1 on
+   * --surface-2 and was never going to clear that — it was fine as a table
+   * rule and wrong as a control edge. --ink-muted is 6.04:1 on --surface-2
+   * and is already the palette's "quiet but legible" step, so the controls
+   * get a compliant boundary without a grey from outside PB's palette.
+   */
+  --bn-color-border-control: var(--ink-muted);
+  /*
+   * Brand fills, and what is readable on them.
+   *
+   * The -600 steps used to be darkened mixes of the brand colours, because
+   * @basenative/components 0.7.0 hardcoded `color: var(--bn-color-white)` on
+   * the primary and destructive buttons and a darkened mix was the only way to
+   * claw any contrast back. It was not enough: the confirm dialog shipped a
+   * Confirm button at 3.66:1 (white on #429569) and a Revoke at 3.68:1, falling
+   * to 2.72:1 on hover — all under WCAG 1.4.3's 4.5:1 floor, on the one dialog
+   * that asks you to lock yourself out of your own account.
+   *
+   * components 0.8.0 reads --bn-color-on-primary / --bn-color-on-error for those
+   * foregrounds, so the fills can just be the brand colours and the text can be
+   * the near-black PB's own buttons have always used:
+   *   Confirm  #0f0e0c on #4eaf7c → 7.12:1  (hover #71bf96 → 8.82:1)
+   *   Revoke   #0f0e0c on #ff6b8a → 7.09:1  (hover #ff89a1 → 8.59:1)
+   */
+  --bn-color-primary-500: var(--accent);
+  --bn-color-primary-600: var(--accent);
+  --bn-color-primary-700: color-mix(in srgb, var(--accent) 80%, white);
+  --bn-color-on-primary: var(--accent-ink);
+  --bn-color-on-accent: var(--accent-ink);
+  --bn-color-error-500: color-mix(in srgb, var(--loss) 80%, white);
+  --bn-color-error-600: var(--loss);
+  --bn-color-on-error: var(--bg);
+
+  /*
+   * Badge and alert tints. renderBadge's five variants and renderAlert read
+   * these directly, so a variant with no token here renders unstyled — the
+   * tints are the whole reason `default | primary | success | warning | error`
+   * are the only names lib/table.ts will accept. Each is its semantic hue laid
+   * over --surface-2 rather than a flat fill, so a badge reads as a tinted
+   * chip on the card it sits on and the text keeps the hue at full strength.
+   * `primary` maps to the info pair: it is chrome, not a money direction.
+   */
+  --bn-color-success-badge-bg: color-mix(in srgb, var(--gain) 16%, var(--surface-2));
+  --bn-color-success-badge-text: var(--gain);
+  --bn-color-warning-badge-bg: color-mix(in srgb, var(--caution) 16%, var(--surface-2));
+  --bn-color-warning-badge-text: var(--caution);
+  --bn-color-error-badge-bg: color-mix(in srgb, var(--loss) 18%, var(--surface-2));
+  --bn-color-error-badge-text: var(--loss);
+  --bn-color-info-bg: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+  --bn-color-info-text: var(--accent);
+
+  /*
+   * Alert tints, and the field-error ink. renderAlert reads the first three
+   * of each triad; without them the package falls back to its own values, and
+   * those live behind a prefers-color-scheme media query — so a section-level
+   * error alert rendered #fef2f2 light-pink on PB's near-black card for anyone
+   * whose OS was set to light, which is most of the time this app is used on a
+   * borrowed machine. PB has exactly one theme, so these are declared once,
+   * unlayered, and neither media query can reach them. Measured on
+   * --surface-2: error 5.04:1, success 7.72:1, warning 8.11:1, info 5.87:1.
+   */
+  --bn-color-error-bg: color-mix(in srgb, var(--loss) 12%, var(--surface-2));
+  --bn-color-error-border: color-mix(in srgb, var(--loss) 40%, transparent);
+  --bn-color-error-text: var(--loss);
+  --bn-color-error-fg: var(--loss);
+  --bn-color-success-bg: color-mix(in srgb, var(--gain) 12%, var(--surface-2));
+  --bn-color-success-border: color-mix(in srgb, var(--gain) 40%, transparent);
+  --bn-color-success-text: var(--gain);
+  --bn-color-warning-bg: color-mix(in srgb, var(--caution) 12%, var(--surface-2));
+  --bn-color-warning-border: color-mix(in srgb, var(--caution) 40%, transparent);
+  --bn-color-warning-text: var(--caution);
+  --bn-color-info-border: color-mix(in srgb, var(--accent) 40%, transparent);
+
+  /*
+   * --bn-color-surface is both "the page" and "a filled control on the page" in
+   * 0.7.0; 0.8.0 splits the second role out. PB's inputs, selects and secondary
+   * buttons sit a step above the card they live on, so point the control token
+   * at --surface-2 — exactly what the site's own input rule used before the
+   * package started rendering them.
+   */
+  --bn-color-surface-control: var(--surface-2);
+  --bn-color-surface-card: var(--surface);
+
+  /* Control geometry: PB's 48px tap target and its input padding, so the
+     package's shared control rules land on the shapes the site already had. */
+  --bn-control-height: var(--touch-target);
+  --bn-space-component-y: var(--space-3);
+  --bn-space-component-x: var(--space-4);
+  --bn-radius-sm: var(--radius-sm);
+  --bn-radius-md: var(--radius-sm);
+  --bn-radius-lg: var(--radius);
+  --bn-radius-container: var(--radius);
+  --bn-radius-full: var(--radius-pill);
+  --bn-space-1: var(--space-1);
+  --bn-space-2: var(--space-2);
+  --bn-space-3: var(--space-3);
+  --bn-space-4: var(--space-4);
+  --bn-space-6: var(--space-6);
+  --bn-space-8: var(--space-8);
+  --bn-font-family: var(--sans);
+  --bn-font-size-xs: var(--type-micro);
+  --bn-font-size-sm: var(--type-sm);
+  --bn-focus-ring: 0 0 0 1px var(--bg), 0 0 0 3px var(--accent);
+}
+
+@layer tokens {
+  :root {
+    /*
+     * ── ground & ink ──────────────────────────────────────────────
+     * `--bg` and `--ink` are the DuganLabs parent pair, untouched: that is
+     * where family resemblance lives. The surface ramp was re-hued from the
+     * old cool navy (#141821/#1c2230/#242b3c) — navy cards floating on a warm
+     * near-black page read as pasted-on chips. These hold the ground's warm
+     * hue and lift luminance only, so a card reads as paper on the desk.
+     */
+    --bg: #0f0e0c;
+    --surface: #191714;
+    --surface-2: #221f1b;
+    --surface-3: #2c2924;
+
+    /* 16.48:1 on --bg, 12.37:1 on --surface-3. */
+    --ink: #f0ede4;
+    /* 7.46 / 6.91 / 6.34 / 5.60:1 on bg / surface / surface-2 / surface-3. */
+    --ink-muted: #a8a093;
+    /* 6.02 / 5.58 / 5.12 / 4.52:1 — the floor of the system. */
+    --ink-dim: #968f82;
+
+    /*
+     * ── accent: interactive only ──────────────────────────────────
+     * Steel-cyan. 8.58:1 on --bg, 7.30:1 on --surface-2; --accent-ink is
+     * 8.58:1 on the accent fill, so the primary button passes AA as text.
+     *
+     * It moved off #4EAF7C for two reasons. (1) That value was byte-identical
+     * to Greenput's preset, which is why the two products looked alike.
+     * (2) Green *means gain* in a money instrument; spending it on links,
+     * buttons, focus rings and every stat value burns the one hue that has to
+     * stay reserved — the old build's reductio was rendering
+     * "Total liabilities $747,490" in gain-green.
+     *
+     * Budget: focus ring, primary-button fill, active-nav underline, links.
+     * It never appears on a figure or a data mark — it would start reading
+     * as a value.
+     */
+    --accent: #6fb7ce;
+    --accent-ink: #0f0e0c;
+
+    /*
+     * ── financial semantics ───────────────────────────────────────
+     * Gain 11.05 / 10.13 / 8.95:1, loss 6.58 / 6.03 / 5.33:1,
+     * caution 11.75 / 10.78 / 9.52:1 on surface / surface-2 / surface-3.
+     *
+     * --gain is #8FDCA8 specifically: measured against --loss with the OKLab
+     * CVD model it is the step that clears deuteranopia ΔE ≥ 8 (10.2), where
+     * the old #4EAF7C scored 2.4 — indistinguishable. A pass is not a
+     * licence, so direction is *always* also carried by a rendered sign, a
+     * text badge, or a labelled column. Strip the colour and every figure
+     * still states its direction.
+     */
+    --gain: #8fdca8;
+    --loss: #ff6b8a;
+    --caution: #ffc966;
+    /* Alias kept for the component bridge and legacy selectors. */
+    --danger: var(--loss);
+
+    /* ── rules: ink at an alpha, so they track their surface ──── */
+    --rule-hair: color-mix(in srgb, var(--ink) 8%, transparent);
+    --rule: color-mix(in srgb, var(--ink) 14%, transparent);
+    --rule-strong: color-mix(in srgb, var(--ink) 26%, transparent);
+    --zebra: color-mix(in srgb, var(--ink) 2.5%, transparent);
+    --bar: color-mix(in srgb, var(--ink) 38%, transparent);
+    --track: color-mix(in srgb, var(--ink) 10%, transparent);
+    --focus-ring: var(--accent);
+    /* Kept for existing selectors that reference the old names. */
+    --border: var(--rule);
+    --border-strong: var(--rule-strong);
+
+    /* ── geometry ─────────────────────────────────────────────── */
+    --radius: 9px;
+    --radius-sm: 5px;
+    --radius-pill: 999px;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+
+    /*
+     * ── density ───────────────────────────────────────────────
+     * Pointer-conditional, not viewport-conditional: a touchscreen at 1280px
+     * still needs finger-sized targets and a trackpad at 390px does not.
+     * Table rows compress on a fine pointer; interactive controls keep the
+     * 48px target everywhere (a dense table is the win; a cramped button is
+     * not).
+     */
+    --row-y: var(--space-2);
+    --cell-x: var(--space-3);
+    --touch-target: 48px;
+
+    /* ── type ─────────────────────────────────────────────────── */
+    --type-micro: 0.6875rem;
+    --type-xs: 0.75rem;
+    --type-sm: 0.8125rem;
+    --type-base: 0.9375rem;
+    --type-md: 1.0625rem;
+    --type-lg: 1.375rem;
+    --type-readout: clamp(1.5rem, 1.1rem + 1.2vw, 1.875rem);
+    --type-page: 1.0625rem;
+    --type-hero: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+
+    --leading: 1.55;
+    --leading-tight: 1.2;
+    --tracking-tightest: -0.02em;
+    --tracking-tighter: -0.012em;
+    --tracking-tight: -0.006em;
+    --tracking-micro: 0.08em;
+    --weight-medium: 500;
+    --weight-strong: 600;
+    --weight-bold: 700;
+    --measure: 62ch;
+    --measure-narrow: 54ch;
+
+    /*
+     * Money is set in the sans, not the mono. Monospace spends a full digit
+     * advance on `$`, `,` and `.` — roughly 30% of a numeric column's width
+     * on punctuation — and makes a balance read as program output. Alignment,
+     * the reason people reach for mono, comes from OpenType `tnum` instead
+     * (see [data-num] below). --mono is reserved for genuinely machine
+     * strings: account masks, client ids, handles.
+     */
+    --sans:
+      ui-sans-serif, system-ui, -apple-system, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue',
+      Arial, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', 'DejaVu Sans Mono', monospace;
+
+    font: 400 var(--type-base) / var(--leading) var(--sans);
+    color-scheme: dark;
+  }
+
+  @media (pointer: coarse) {
+    :root {
+      --row-y: var(--space-3);
+      --cell-x: var(--space-3);
+    }
+  }
+}
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    /* The component reset sets these on body directly; inherit from :root. */
+    font-family: inherit;
+    line-height: inherit;
+    min-block-size: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    line-height: var(--leading-tight);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  dl,
+  dd,
+  dt {
+    margin: 0;
+  }
+
+  ol,
+  ul,
+  menu {
+    margin: 0;
+    padding-inline-start: 1.25rem;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  table {
+    border-collapse: collapse;
+    inline-size: 100%;
+  }
+
+  th,
+  td {
+    text-align: start;
+    padding: var(--row-y) var(--cell-x);
+    border-block-end: 1px solid var(--rule-hair);
+  }
+
+  small {
+    color: var(--ink-muted);
+    font-size: var(--type-xs);
+  }
+
+  output {
+    display: inline-block;
+  }
+
+  /*
+   * `hidden` is an attribute, not a suggestion. The UA sheet's
+   * `[hidden] { display: none }` has the lowest possible precedence, so any
+   * later rule that sets `display` beats it — and `@basenative/components`
+   * ships exactly such a rule (`[data-bn="button"] { display: inline-flex }`),
+   * which is why the signed-out /account page painted a 118x48 "Log out"
+   * button next to "Sign in" while `el.hidden === true`. `!important` is what
+   * makes the attribute authoritative again; it is the same reason the
+   * BaseNative artifact reset ships this rule.
+   *
+   * This covers every `bindHidden()` target on the site, not just that one
+   * button: #passkey-list was losing the UA rule too (it computed
+   * `display: grid`, and only escaped notice because it had no content yet).
+   */
+  [hidden] {
+    display: none !important;
+  }
+
+  svg {
+    display: block;
+  }
+
+  /*
+   * Focus: a 2px accent ring at 2px offset, plus a 1px ground ring inside it
+   * so the marker survives on every surface — including the accent-filled
+   * primary button, where an accent-on-accent outline would vanish.
+   */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 1px var(--bg);
+  }
+}
+
+@layer base {
+  /*
+   * Headings sit at the BOTTOM of the type scale. In an instrument the
+   * figures outrank the labels: "Connected accounts" used to be set at 28px
+   * bold beside a 20px $82,730, so the label shouted over the value. A
+   * section heading is now a micro-cap rule; the numbers are what you read.
+   */
+  h1 {
+    font-size: var(--type-page);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  h2 {
+    font-size: var(--type-micro);
+    font-weight: var(--weight-strong);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-micro);
+    color: var(--ink-muted);
+  }
+
+  h3 {
+    font-size: var(--type-sm);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-tight);
+    margin-block-end: var(--space-2);
+  }
+
+  a {
+    color: var(--accent);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+
+    &:hover {
+      color: color-mix(in srgb, var(--accent) 78%, white);
+    }
+  }
+
+  /*
+   * Measure. --measure was restated per section — the landing hero, the
+   * principles list and `section > p` each carried their own copy — so any
+   * text that matched none of them was uncapped and ran the full width of
+   * its container. At 1280px that was a 1.9x difference inside a single
+   * page, and the landing page's disclosure set a 148-character sentence as
+   * one line.
+   *
+   * Capping the shared text block instead of the sections means a new
+   * section is legible by default rather than by remembering to opt in. The
+   * `#about` disclosure still narrows to --measure-narrow — a higher
+   * specificity beats this, and its prose is deliberately tighter.
+   */
+  main :is(p, li) {
+    max-inline-size: var(--measure);
+  }
+
+  /*
+   * `ch` resolves against the element's own font-size, and PB's help text is
+   * a <small> at --type-xs inside a 1rem <p>. Capping only the paragraph
+   * gives that text 60ch *of the paragraph's font* — 81 characters a line,
+   * not 60. Where the <small> is the whole paragraph, let it carry the cap
+   * itself so --measure means the same number of characters everywhere.
+   * `display: block` changes no layout: it already occupies the full line.
+   */
+  main p > small:only-child {
+    display: block;
+    max-inline-size: var(--measure);
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.92em;
+  }
+
+  /*
+   * Standalone figures use the font's PROPORTIONAL lining figures.
+   * `tabular-nums` gives `1` the width of `0`; at 30px a value like $310,500
+   * develops visible gaps around the 1. Tabular is for columns only — see
+   * [data-num] / [data-numeric] below.
+   */
+  output {
+    font-variant-numeric: lining-nums;
+    font-feature-settings: 'lnum' 1;
+  }
+}
+
+@layer layout {
+  body {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /*
+   * ── app bar ──────────────────────────────────────────────────
+   * Scoped to `body > header`, not bare `header`: the passkey list on
+   * /account.html puts a <header> inside each <li>, and a bare selector gave
+   * every one of them the app bar's sticky positioning, blur and background.
+   */
+  body > header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--rule);
+
+    & > nav {
+      max-inline-size: 84rem;
+      margin-inline: auto;
+      /* Block padding is --space-1, not --space-3: the nav links carry a
+         48px --touch-target box of their own, so the bar is sized by its
+         tallest control rather than by padding stacked on top of it. */
+      padding: var(--space-1) clamp(var(--space-4), 3vw, var(--space-8));
+      display: flex;
+      align-items: center;
+      gap: var(--space-3) var(--space-5);
+      flex-wrap: wrap;
+      min-block-size: 52px;
+    }
+  }
+
+  main {
+    inline-size: 100%;
+    max-inline-size: 84rem;
+    margin-inline: auto;
+    padding: var(--space-6) clamp(var(--space-4), 3vw, var(--space-8)) var(--space-10);
+    display: grid;
+    gap: var(--space-5);
+    /* body's 1fr row stretches main; without this a lone card (login,
+       welcome) stretched to the viewport height around 60px of content. */
+    align-content: start;
+  }
+
+  body > footer {
+    max-inline-size: 84rem;
+    inline-size: 100%;
+    margin-inline: auto;
+    padding: var(--space-4) clamp(var(--space-4), 3vw, var(--space-8));
+    border-block-start: 1px solid var(--rule);
+    color: var(--ink-dim);
+  }
+
+  section,
+  aside {
+    container-type: inline-size;
+  }
+
+  /*
+   * Ledger board. Nine identical stacked slabs became a scannable two-column
+   * board; the wide tables opt back out with data-span="full".
+   */
+  @media (min-width: 78rem) {
+    body[data-bn-page='app'] main {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      /* Cards hug their content — a short ledger beside a long one should not
+         inherit its neighbour's height as empty card acreage. */
+      align-items: start;
+    }
+    body[data-bn-page='app'] main > [data-span='full'],
+    body[data-bn-page='app'] main > aside {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /*
+   * Narrow app bar: two rows instead of three. The page title is clipped
+   * (not removed) — `aria-current="page"` in the nav already names the
+   * current page for assistive tech, and 120px of permanently sticky chrome
+   * is 14% of a phone viewport.
+   */
+  @media (max-width: 40rem) {
+    body > header h1 {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    body > header nav > p:last-child {
+      margin-inline-start: auto;
+      order: 2;
+    }
+
+    body > header nav ul[aria-label='sections'] {
+      order: 3;
+      flex-basis: 100%;
+      margin-inline-start: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+  }
+
+  /* Auth pages: a narrow card, centred, not a full-width slab. */
+  body[data-bn-page='login'] main,
+  body[data-bn-page='welcome'] main {
+    max-inline-size: 30rem;
+    align-content: center;
+    padding-block: var(--space-10);
+  }
+}
+
+@layer components {
+  /* ── app bar pieces ─────────────────────────────────────────── */
+  [data-bn='wordmark'] {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-sm);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-micro);
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+
+    & > svg {
+      inline-size: 17px;
+      block-size: 17px;
+      color: var(--accent);
+      flex: none;
+    }
+  }
+
+  body > header h1 {
+    padding-inline-start: var(--space-5);
+    border-inline-start: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-weight: var(--weight-medium);
+  }
+
+  body > header nav ul[aria-label='sections'] {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    margin-inline-start: auto;
+    display: flex;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    font-size: var(--type-sm);
+
+    /*
+     * The section links are the most-used control on every signed-in page,
+     * and they are the one control that never reached --touch-target: every
+     * button on the site resolves to it through --bn-control-height (see the
+     * bridge at the top of this file), while these sized themselves from
+     * 13px text plus 8px of padding — about 36px.
+     *
+     * inline-flex + min-block-size is what gives an <a> a box to size. The
+     * bar keeps its height because `& > nav` drops its own block padding to
+     * match: 48px of link inside 4px of padding is 56px of chrome, against
+     * the 52px it was, rather than the 72px a 48px link inside 12px padding
+     * would have cost.
+     */
+    & > li > a {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--touch-target);
+      padding-inline: var(--space-3);
+      border-radius: var(--radius-sm);
+      color: var(--ink-muted);
+      text-decoration: none;
+
+      &:hover {
+        color: var(--ink);
+        background: var(--surface-2);
+      }
+    }
+
+    /*
+     * Square the bottom corners on the selected tab, and only the selected
+     * one. The underline is an INSET box-shadow, so it is clipped by the
+     * element's own border-radius: with all four corners rounded the bar
+     * curved upward and tapered away well before each end, reading as a
+     * smudge under the label rather than as the edge the tab is docked to.
+     *
+     * Rounded on top, flush on the bottom, is what makes it a tab rather than
+     * a pill that happens to be underlined. Hover keeps the full radius — it
+     * has no underline to align to, and the difference is what distinguishes
+     * "you could go here" from "you are here".
+     */
+    & a[aria-current='page'] {
+      color: var(--ink);
+      background: var(--surface-2);
+      box-shadow: inset 0 -2px 0 var(--accent);
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+    }
+  }
+
+  body > header nav > p:last-child {
+    font-size: var(--type-xs);
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+
+  /* ── card surfaces ──────────────────────────────────────────── */
+  section,
+  aside > details {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+  }
+
+  /*
+   * Section header: a micro-cap rule, with room for a right-aligned meta
+   * line (row count, sync age). The heading no longer competes with the
+   * figures beneath it.
+   */
+  section > h2,
+  aside h2 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    padding-block-end: var(--space-3);
+    margin-block-end: var(--space-4);
+    border-block-end: 1px solid var(--rule);
+
+    & > small {
+      font-size: var(--type-xs);
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--ink-dim);
+      /* Wraps rather than overflowing: at 320px a four-part meta line is
+         wider than the card. */
+      min-inline-size: 0;
+      text-align: end;
+    }
+
+    & > small[data-state='stale'] {
+      color: var(--caution);
+    }
+  }
+
+  /* Measure comes from `main :is(p, li)` in @layer base; every <section> on
+     the site is inside <main>, so restating it here would be a second copy
+     of the same number. */
+  section > p {
+    color: var(--ink-muted);
+    font-size: var(--type-sm);
+  }
+
+  section > p + form,
+  section > p + figure,
+  section > p + div,
+  section > form + p,
+  section > output + form,
+  section > div + form,
+  section > div + p {
+    margin-block-start: var(--space-4);
+  }
+
+  /* ── readout strip: the instrument face ─────────────────────── */
+  section[data-bn='readout'] {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+
+    & > h2 {
+      border-block-end: 0;
+      padding-block-end: 0;
+      margin-block-end: var(--space-3);
+    }
+
+    & > dl {
+      border-radius: var(--radius);
+    }
+  }
+
+  /*
+   * Stat grids. One hairline grid (gap:1px over a rule-coloured ground) so
+   * the cells are divided by rules rather than floated as separate chips —
+   * a single instrument face, not four widgets.
+   */
+  section[data-bn='readout'] > dl,
+  dl[data-bn='readout'] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  dl[data-bn='readout'] {
+    margin-block-end: var(--space-4);
+
+    & [data-bn='stat'] {
+      background: var(--surface-2);
+      padding: var(--space-3) var(--space-4);
+    }
+
+    & [data-bn='stat'] output {
+      font-size: var(--type-lg);
+    }
+  }
+
+  [data-bn='stat'] {
+    background: var(--surface);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    display: grid;
+    gap: var(--space-1);
+    align-content: start;
+
+    & > dt {
+      font-size: var(--type-micro);
+      font-weight: var(--weight-strong);
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-micro);
+      color: var(--ink-muted);
+    }
+
+    & > dd {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    /* Proportional lining figures — a standing number, not a column. */
+    & output {
+      font-size: var(--type-readout);
+      font-weight: var(--weight-strong);
+      line-height: 1.05;
+      letter-spacing: var(--tracking-tighter);
+      color: var(--ink);
+      font-variant-numeric: lining-nums;
+    }
+
+    & small {
+      display: block;
+      color: var(--ink-dim);
+      font-size: var(--type-xs);
+    }
+
+    & small[data-tone='gain'] {
+      color: var(--gain);
+    }
+    & small[data-tone='loss'] {
+      color: var(--loss);
+    }
+    & small[data-tone='caution'] {
+      color: var(--caution);
+    }
+  }
+
+  /* ── meter: severity, always with a text state beside it ────── */
+  [data-bn='meter'] {
+    display: block;
+    block-size: 4px;
+    inline-size: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--track);
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      display: block;
+      block-size: 100%;
+      inline-size: calc(var(--v, 0) * 100%);
+      border-radius: inherit;
+      background: color-mix(in srgb, var(--ink) 45%, transparent);
+      transition: inline-size 200ms ease;
+    }
+
+    &[data-state='caution']::before {
+      background: var(--caution);
+    }
+    &[data-state='crossed']::before {
+      background: var(--loss);
+      inline-size: 100%;
+    }
+  }
+
+  /* ── tables ─────────────────────────────────────────────────── */
+  [data-bn='table-container'] {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  table,
+  [data-bn='table'] {
+    font-size: var(--type-sm);
+    table-layout: fixed;
+
+    & caption {
+      text-align: start;
+      font-size: var(--type-xs);
+      color: var(--ink-dim);
+      padding-block-end: var(--space-2);
+    }
+
+    & thead th {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 1;
+      background: var(--surface-2);
+      font-size: var(--type-micro);
+      font-weight: var(--weight-strong);
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-micro);
+      color: var(--ink-muted);
+      border-block-end: 1px solid var(--rule-strong);
+      white-space: nowrap;
+    }
+
+    & tbody tr:nth-child(even) {
+      background: var(--zebra);
+    }
+
+    & tbody tr:hover {
+      background: var(--surface-2);
+    }
+
+    & td {
+      color: var(--ink);
+      vertical-align: baseline;
+    }
+
+    /*
+     * Numeric columns: right-aligned, tabular lining figures, never wrapped.
+     * The heading right-aligns WITH the column — a left-aligned CURRENT over
+     * right-aligned figures breaks the vertical edge the eye tracks.
+     * Decimal alignment then falls out of one precision per column (see
+     * lib/format.ts), not from a separate mechanism.
+     */
+    & [data-numeric],
+    & [data-bn='num'] {
+      text-align: end;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums lining-nums;
+      font-feature-settings:
+        'tnum' 1,
+        'lnum' 1;
+    }
+
+    /* Totals row, above the accounting double rule. */
+    & tfoot th,
+    & tfoot td {
+      border-block-end: 0;
+      border-block-start: 3px double var(--rule-strong);
+      padding-block: var(--space-3);
+      font-size: var(--type-md);
+      font-weight: var(--weight-strong);
+      color: var(--ink);
+    }
+
+    & tfoot th {
+      font-size: var(--type-micro);
+      font-weight: var(--weight-strong);
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-micro);
+      color: var(--ink-muted);
+    }
+
+    & tbody tr:last-child td {
+      border-block-end: 0;
+    }
+
+    & td[data-bn='table-empty'] {
+      text-align: center;
+      color: var(--ink-muted);
+      padding-block: var(--space-8) !important;
+    }
+  }
+
+  [data-empty-action] {
+    display: block;
+    margin-block-start: var(--space-2);
+  }
+
+  /*
+   * Emphasis marks exactly ONE row (the avalanche target, the S-Corp
+   * break-even). The old rule emphasised every S-Corp row clearing $2,000,
+   * which was all four — so the table rendered entirely green and the one
+   * interesting row disappeared. If more than one row qualifies, the rule
+   * is wrong, not the styling.
+   */
+  tr[data-row='emphasis'] {
+    background: color-mix(in srgb, var(--ink) 5%, transparent) !important;
+    box-shadow: inset 2px 0 0 var(--ink-muted);
+  }
+
+  tr[data-row='emphasis'] [data-fig-value] {
+    font-weight: var(--weight-strong);
+  }
+
+  tr[data-row='muted'] td {
+    color: var(--ink-dim);
+  }
+
+  /* ── cell content ───────────────────────────────────────────── */
+  [data-ident] {
+    display: grid;
+    gap: 1px;
+    min-inline-size: 0;
+  }
+
+  [data-ident-name] {
+    color: var(--ink);
+    font-weight: var(--weight-strong);
+    overflow-wrap: anywhere;
+  }
+
+  [data-ident-meta] {
+    font-size: var(--type-xs);
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-note] {
+    color: var(--ink-muted);
+  }
+
+  [data-fig] {
+    display: grid;
+    gap: 4px;
+    justify-items: end;
+  }
+
+  [data-fig-value] {
+    color: var(--ink);
+  }
+
+  [data-fig-note] {
+    font-size: var(--type-xs);
+    color: var(--ink-dim);
+  }
+
+  /*
+   * A figure's tone is a SECOND channel. The sign, the badge or the column
+   * heading already carries direction — see lib/format.ts. Measured
+   * deuteranopia ΔE between --gain and --loss is 10.2: a pass, not a
+   * guarantee, and forced-colors has no hue at all.
+   */
+  [data-fig][data-tone='gain'] [data-fig-value] {
+    color: var(--gain);
+  }
+  [data-fig][data-tone='loss'] [data-fig-value] {
+    color: var(--loss);
+  }
+  [data-fig][data-tone='caution'] [data-fig-value] {
+    color: var(--caution);
+  }
+
+  /*
+   * Magnitude bar: length is the encoding, so the hue is neutral and fixed.
+   * Colouring it by magnitude would double-encode, and using the accent
+   * would make the accent read as a value.
+   *
+   * No track. A track states a maximum, and the maximum here is "the widest
+   * value in this column", not the cell — drawing one made every row look
+   * the same length with a darker stub on the end. Bar length alone, so a
+   * short bar is unambiguously a small number.
+   */
+  [data-bar] {
+    display: block;
+    block-size: 3px;
+    inline-size: 100%;
+    max-inline-size: 5rem;
+    background: transparent;
+
+    &::before {
+      content: '';
+      display: block;
+      block-size: 100%;
+      inline-size: calc(var(--v, 0) * 100%);
+      margin-inline-start: auto;
+      border-radius: var(--radius-pill);
+      background: var(--bar);
+      transition: inline-size 200ms ease;
+    }
+  }
+
+  /* Skeleton rows keep the real column geometry so nothing jumps. */
+  [data-bn='skeleton'] {
+    background: var(--surface-3);
+    border-radius: var(--radius-sm);
+  }
+
+  [data-numeric] [data-bn='skeleton'] {
+    margin-inline-start: auto;
+  }
+
+  /* ── badges & alerts ────────────────────────────────────────── */
+  [data-bn='badge'] {
+    font-size: var(--type-micro);
+    font-weight: var(--weight-strong);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-micro);
+    white-space: nowrap;
+  }
+
+  [data-bn='alert'] {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--type-sm);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  [data-bn='alert'] [data-bn='button'] {
+    margin-inline-start: auto;
+  }
+
+  /*
+   * ── mobile record cards ────────────────────────────────────────
+   * Below 44rem a table is not a table. The old transform hid <thead> and
+   * pushed the heading into td::before — the right idea (labelled data, not
+   * a zig-zag) with no boundary between records, so six liabilities read as
+   * thirty-six anonymous lines.
+   *
+   * Each row now becomes a card: identity and the primary figure on the head
+   * line, everything else in a labelled two-column grid. No column is
+   * dropped — hiding data on a small screen is a decision the operator did
+   * not make.
+   *
+   * The <thead> is taken out of the picture but NOT out of the accessibility
+   * tree. `display: none` used to do this, and it deleted all 29 column
+   * headers at 390px: `columnheader` went 29 -> 0 and `rowgroup` 14 -> 7,
+   * leaving 84 cells of balances, APRs and tax thresholds with no
+   * programmatic column association on a phone. Staying in the DOM is not
+   * enough — `display: none` removes a subtree from the tree as well as from
+   * the render — and the ::before label is no substitute, because generated
+   * content is decoration, not a header.
+   *
+   * The visually-hidden recipe keeps the header row rendered (so it stays in
+   * the tree, associated with its column) while clipping it to a 1px box
+   * nothing can see, at zero height cost.
+   *
+   * It is written out here rather than reusing the `.visually-hidden` class
+   * @basenative/components' reset.css ships, for two reasons: PB's house
+   * style is zero CSS classes, and the hiding has to be scoped to this
+   * container query — the headers must stay visible on a wide container.
+   */
+  @container (max-width: 32rem) {
+    table,
+    [data-bn='table'] {
+      table-layout: auto;
+
+      & colgroup {
+        display: none;
+      }
+
+      & thead {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      & tbody,
+      & tfoot {
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      & tbody tr,
+      & tfoot tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-1);
+        background: var(--surface-2) !important;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+      }
+
+      & tfoot tr {
+        border-color: var(--rule-strong);
+        background: var(--surface-3) !important;
+      }
+
+      & td,
+      & th {
+        border-block-end: 0;
+        border-block-start: 0;
+        padding: 0;
+        white-space: normal;
+      }
+
+      /* Head line: identity on the left, the primary figure on the right. */
+      & td[data-role='identity'],
+      & td[data-role='primary'] {
+        grid-row: 1;
+      }
+      & td[data-role='identity'] {
+        grid-column: 1;
+      }
+      & td[data-role='primary'] {
+        grid-column: 2;
+        justify-self: end;
+        font-size: var(--type-md);
+      }
+      & tr:has(td[data-role='primary']) {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+      & tr:has(td[data-role='primary']) > td:not([data-role]) {
+        grid-column: 1 / -1;
+      }
+
+      /*
+       * Remaining cells: label | value. The heading the hidden <thead> no
+       * longer supplies is recovered from data-label, so a row never reads
+       * as a bare zig-zag of values.
+       */
+      & td[data-label] {
+        display: grid;
+        grid-template-columns: minmax(7rem, 45%) 1fr;
+        gap: var(--space-3);
+        align-items: baseline;
+        padding-block-start: var(--space-1);
+
+        &::before {
+          content: attr(data-label);
+          font: var(--weight-strong) var(--type-micro) / var(--leading) var(--sans);
+          color: var(--ink-muted);
+          text-transform: uppercase;
+          letter-spacing: var(--tracking-micro);
+          text-align: start;
+        }
+      }
+
+      /*
+       * …except the two cells promoted onto the card's head line, which
+       * carry the record's name and its headline figure and are separated
+       * from the detail block by one hairline.
+       */
+      & td[data-role='identity'],
+      & td[data-role='primary'] {
+        display: block;
+        padding-block: 0 var(--space-2);
+        margin-block-end: var(--space-1);
+        border-block-end: 1px solid var(--rule-hair);
+
+        &::before {
+          content: none;
+        }
+      }
+
+      & [data-fig] {
+        justify-items: end;
+      }
+
+      /* A badge is a chip, not a fill — it must not stretch to the cell. */
+      & td[data-label] > [data-bn='badge'] {
+        justify-self: start;
+      }
+      & td[data-numeric] > [data-bn='badge'],
+      & td[data-role='primary'] > [data-bn='badge'] {
+        justify-self: end;
+      }
+
+      & [data-bar] {
+        max-inline-size: 4rem;
+      }
+
+      /*
+       * The promoted head figure drops its bar: at 3% of the column max a
+       * bar renders as a stray dot next to the number, and the detail rows
+       * below already carry the comparison.
+       */
+      & td[data-role='primary'] [data-bar] {
+        display: none;
+      }
+
+      /*
+       * A totals cell for a column with no total contributes nothing.
+       * renderTable's `labelCells` stamps `data-label` on every footer cell,
+       * so the discriminator is emptiness, not the label.
+       */
+      & tfoot td:empty {
+        display: none;
+      }
+
+      & tfoot th {
+        color: var(--ink-muted);
+      }
+
+      & td[colspan],
+      & td[data-bn='table-empty'] {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
+  /*
+   * ── waterfall ──────────────────────────────────────────────────
+   * The signature feature, previously an eight-row table indistinguishable
+   * from the liabilities list. Each step's amount carries a right-anchored
+   * bar scaled to gross-in, so the routing visibly steps down to the
+   * residual; the residual row is the single emphasised row.
+   */
+  [data-bn='waterfall'] {
+    margin: 0;
+
+    & [data-bn='table'] {
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    & tbody tr:nth-child(even) {
+      background: transparent;
+    }
+
+    & [data-bar] {
+      max-inline-size: 8rem;
+    }
+  }
+
+  [data-bn='waterfall-meta'] {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--rule);
+    font-size: var(--type-sm);
+
+    & > div {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    & dt {
+      color: var(--ink-muted);
+    }
+
+    & dd {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums lining-nums;
+      text-align: end;
+    }
+  }
+
+  /*
+   * ── forms ── every site-authored form (login, welcome, account,
+   * settings, scenario). The <form method="dialog"> inside the component
+   * dialog is excluded — its layout belongs to @basenative/components.
+   *
+   * Labels are sentence case at --ink-muted: the VALUE is the emphasised
+   * thing. Uppercase micro-caps are reserved for table and section headings;
+   * the old build set every field label in them and the forms shouted.
+   * Field width now matches expected content (data-field), so a two-letter
+   * state input is 6rem rather than 640px — a field's width is information.
+   */
+  form:not([method='dialog']) {
+    display: grid;
+    gap: var(--space-4);
+    margin-block: var(--space-4) 0;
+    grid-template-columns: 1fr;
+    max-inline-size: 42rem;
+
+    /*
+     * Every field is renderInput / renderSelect output — see
+     * scripts/partials.mjs. The shape is
+     *   <div data-bn="field">
+     *     <label for>…</label>
+     *     <input data-bn="input">
+     *     <span data-bn="field-help">…</span>   (when helpText is set)
+     *   </div>
+     * and the package already paints the control itself from
+     * --bn-color-surface-control / --bn-color-border-control /
+     * --bn-radius-control / --bn-control-height, every one of which the bridge
+     * at the top of this file points at PB's own values. What is left here is
+     * what no token carries: PB's label typography and its field geometry.
+     *
+     * minmax(0, 1fr), not the implicit `auto`: with `justify-items: start` an
+     * auto column is sized to the field's *preferred* width, so a
+     * data-field="lg" (30rem) control blew the column out past a 390px
+     * viewport and `max-inline-size: 100%` resolved against the blown-out
+     * column rather than the label. Capping the column at the label's width
+     * lets the control shrink-wrap and still honour its max.
+     */
+    & [data-bn='field'] {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2);
+      justify-items: start;
+    }
+
+    /* Sentence case at --ink-muted — see the section comment above. */
+    & [data-bn='field'] > label {
+      font-size: var(--type-sm);
+      font-weight: var(--weight-medium);
+      color: var(--ink-muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /*
+     * renderInput's `helpText` — the quiet second line that used to be a
+     * hand-written <small> between the label and the control. The package
+     * renders it after the control and wires aria-describedby to it, which is
+     * the better trade: same treatment, now actually announced with the field.
+     */
+    & [data-bn='field-help'] {
+      font-size: var(--type-xs);
+      color: var(--ink-dim);
+    }
+
+    & [data-bn='input'],
+    & [data-bn='select'] {
+      inline-size: 100%;
+      min-inline-size: 0;
+    }
+
+    /*
+     * Amounts are set in the sans with OpenType tabular figures, never in the
+     * mono (visual-language §2.2): mono spends ~30% of a numeric column on
+     * punctuation advances and makes a balance read as program output. End
+     * alignment so a figure being typed grows away from its decimal.
+     */
+    & [data-bn='input'][type='number'],
+    & [data-bn='input'][inputmode='numeric'],
+    & [data-bn='input'][inputmode='decimal'] {
+      text-align: end;
+      font-variant-numeric: tabular-nums lining-nums;
+      font-feature-settings:
+        'tnum' 1,
+        'lnum' 1;
+    }
+
+    /*
+     * A field's width is information — a two-letter state field is 6rem, not
+     * 640px. The size hint rides on the control itself, through renderInput's
+     * `attrs`, so the package still renders the field and the label and help
+     * text keep the full column while only the control is sized. These come
+     * after the `inline-size: 100%` above deliberately: same specificity,
+     * later wins.
+     */
+    & [data-field] {
+      max-inline-size: 100%;
+    }
+    & [data-field='xs'] {
+      inline-size: 6rem;
+    }
+    & [data-field='sm'] {
+      inline-size: 12rem;
+    }
+    & [data-field='md'] {
+      inline-size: 20rem;
+    }
+    & [data-field='lg'] {
+      inline-size: 30rem;
+    }
+
+    /*
+     * A currency field wears its unit, and is sized like one — a monthly net
+     * is at most seven digits, so it does not need half the viewport.
+     *
+     * renderInput has no adornment slot and renderField takes no attributes
+     * for the wrapper it emits, so the `$` cannot be the sibling element it
+     * was when this markup was hand-written. It is drawn by the field wrapper
+     * instead, selected through :has() off a `data-money` hint the control
+     * carries in `attrs`, and placed into the wrapper's control row as a grid
+     * item that shares the cell — row 1 is the label, row 2 is the control, so
+     * a help or error line appearing below cannot move it. z-index lifts it
+     * over the control's own background, which paints later in DOM order.
+     *
+     * This is the one hook in the merge that the renderer genuinely cannot
+     * emit; the fix belongs upstream as a `prefix`/`suffix` option on
+     * renderInput, alongside the renderTable gaps already filed as
+     * DuganLabs/BaseNative#189. Delete this block when that option lands.
+     */
+    & [data-bn='field']:has(> [data-money]) {
+      &::before {
+        content: '$';
+        grid-row: 2;
+        grid-column: 1;
+        justify-self: start;
+        align-self: center;
+        margin-inline-start: var(--space-3);
+        color: var(--ink-dim);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      & > [data-money] {
+        grid-row: 2;
+        grid-column: 1;
+        max-inline-size: 16rem;
+        padding-inline-start: calc(var(--space-3) + 0.9em);
+      }
+    }
+
+    & > [data-bn='button'] {
+      justify-self: start;
+    }
+
+    & output {
+      align-self: center;
+    }
+  }
+
+  #scenario-form {
+    max-inline-size: none;
+    align-items: end;
+  }
+
+  @container (min-width: 34rem) {
+    #scenario-form {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    }
+    #scenario-form [data-bn='field'] > label {
+      white-space: nowrap;
+    }
+  }
+
+  /*
+   * ── buttons ── every button on the site is now renderButton output
+   * ([data-bn="button"][data-variant]), so the whole block that used to
+   * restate a button here — layout, border, radius, the accent fill for
+   * submits, the hover — is gone: the package's own rules do it, reading the
+   * --bn-* bridge at the top of this file. Only two things remain.
+   *
+   * 1. PB's roomier horizontal padding. --bn-space-component-x is a density
+   *    knob shared with inputs, which want the tighter value, so the button's
+   *    own padding is set here instead.
+   * 2. The landing CTA, which is an <a> and cannot be a <button>. It borrows
+   *    the primary variant's look from the same tokens rather than a copy of
+   *    the values — including its type size, so the one control on the landing
+   *    page is the same control the app pages use.
+   */
+  [data-bn='button'] {
+    padding-inline: var(--space-6);
+    font-weight: var(--weight-strong);
+  }
+
+  [data-bn='btn-primary'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bn-space-2);
+    min-block-size: var(--bn-control-height);
+    padding: var(--bn-space-component-y) var(--space-6);
+    border: 1px solid transparent;
+    border-radius: var(--bn-radius-control);
+    background: var(--bn-color-primary-600);
+    color: var(--bn-color-on-primary);
+    font-size: var(--bn-font-size-component);
+    font-weight: var(--weight-strong);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: var(--bn-color-primary-700);
+    }
+  }
+
+  [data-bn='button'][data-size='sm'] {
+    min-block-size: 32px;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--type-xs);
+  }
+
+  /* A row of sibling buttons. */
+  [data-bn='actions'] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+  }
+
+  /*
+   * A status line promoted into a section heading keeps the heading's
+   * baseline but drops its micro-cap treatment — it is a sentence, not a
+   * label.
+   */
+  section > h2 > output {
+    font-size: var(--type-xs);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-dim);
+  }
+
+  /* ── status outputs ─────────────────────────────────────────── */
+  output[aria-live] {
+    display: block;
+    font-size: var(--type-sm);
+    color: var(--ink-muted);
+    min-block-size: 1.25rem;
+  }
+
+  #scenario-status {
+    justify-self: start;
+  }
+
+  /*
+   * The passkey list ships its own CSS from lib/credential-styles.ts via
+   * adoptedStyleSheets — an unlayered author sheet, so it beats anything
+   * written here. Its rules live there, in the record-card language; the
+   * @scope block at the bottom of this file is only the no-JS fallback.
+   */
+
+  /* ── about (aside > details disclosure) ─────────────────────── */
+  #about {
+    & details {
+      background: var(--surface);
+      padding: 0;
+    }
+
+    & summary {
+      list-style: none;
+      cursor: pointer;
+      padding: var(--space-4) var(--space-5);
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      & h2 {
+        display: inline-flex;
+        margin: 0;
+        border: 0;
+        padding: 0;
+      }
+    }
+
+    & details[open] summary {
+      border-block-end: 1px solid var(--rule);
+    }
+
+    & article {
+      padding: var(--space-4) var(--space-5) var(--space-5);
+    }
+
+    & article + article {
+      border-block-start: 1px solid var(--rule-hair);
+    }
+
+    & p,
+    & li {
+      color: var(--ink-muted);
+      font-size: var(--type-sm);
+      max-inline-size: var(--measure-narrow);
+    }
+
+    & p {
+      margin-block-end: var(--space-3);
+    }
+
+    & strong {
+      color: var(--ink);
+    }
+  }
+
+  /* ── public landing (body[data-bn-page="public"]) ───────────── */
+  body[data-bn-page='public'] > header h1 {
+    font-size: var(--type-sm);
+    border: 0;
+    padding: 0;
+  }
+
+  /* Measure comes from the `main :is(p, li)` rule in @layer base — it used to
+     be restated per section, which is how every section that forgot to
+     restate it ended up uncapped. */
+  [data-bn='hero'] {
+    padding-block: var(--space-10);
+
+    & h2 {
+      display: block;
+      font-size: var(--type-hero);
+      font-weight: var(--weight-bold);
+      text-transform: none;
+      letter-spacing: var(--tracking-tightest);
+      color: var(--ink);
+      border: 0;
+      padding: 0;
+      margin-block-end: var(--space-5);
+    }
+
+    & p {
+      color: var(--ink-muted);
+      font-size: var(--type-base);
+      margin-block-end: var(--space-3);
+    }
+  }
+
+  [data-bn='cta'] {
+    margin-block-start: var(--space-6);
+  }
+
+  [data-bn='principles'] {
+    padding-inline-start: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-3);
+    counter-reset: principle;
+
+    & li {
+      color: var(--ink-muted);
+      font-size: var(--type-sm);
+      padding-inline-start: var(--space-6);
+      position: relative;
+      counter-increment: principle;
+
+      &::before {
+        content: counter(principle, decimal-leading-zero);
+        position: absolute;
+        inset-inline-start: 0;
+        color: var(--ink-dim);
+        font-size: var(--type-micro);
+        font-weight: var(--weight-strong);
+        letter-spacing: var(--tracking-micro);
+        line-height: 1.9;
+      }
+    }
+
+    & strong {
+      color: var(--ink);
+      font-weight: var(--weight-strong);
+    }
+
+    & code {
+      background: var(--surface-2);
+      padding: 0 var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--type-xs);
+    }
+  }
+
+  /*
+   * The confirm dialog (lib/dialog.ts) renders via @basenative/components'
+   * renderDialog()/renderButton() — its markup and styling come entirely
+   * from the imported index.css plus the --bn-* token bridge at the top of
+   * this file. No site-authored dialog CSS here; adding any would fork
+   * component styling for a selector BaseNative already owns.
+   */
+}
+
+@layer state {
+  /*
+   * Errors are per-field: the border and the message both name the field.
+   * The old whole-form box-shadow told you something was wrong without
+   * telling you where.
+   */
+  input[aria-invalid='true'],
+  select[aria-invalid='true'] {
+    border-color: var(--loss);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--loss) 45%, transparent);
+  }
+
+  output[data-state='error'] {
+    color: var(--loss);
+  }
+  output[data-state='ok'] {
+    color: var(--gain);
+  }
+
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /*
+   * Pending submissions — lib/forms.ts sets aria-busy on the <form>. The
+   * marker lives on the BUTTON, not as a 0.7 opacity fade of the whole form
+   * (which reads as "disabled" and makes the labels you are trying to read
+   * harder to read). Fields stay crisp.
+   */
+  form[aria-busy='true'] button[type='submit'] {
+    color: transparent;
+    position: relative;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inline-size: 14px;
+      block-size: 14px;
+      border-radius: 50%;
+      border: 2px solid color-mix(in srgb, var(--accent-ink) 35%, transparent);
+      border-block-start-color: var(--accent-ink);
+      animation: pb-spin 700ms linear infinite;
+    }
+  }
+
+  @keyframes pb-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  /* Loading tables: the skeleton pulse, self-clearing via aria-busy. */
+  tbody[aria-busy='true'] [data-bn='skeleton'] {
+    animation: pb-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pb-pulse {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+}
+
+/*
+ * Respect user preference for reduced motion. Matches Web Content
+ * Accessibility Guidelines 2.3.3 (Animation from Interactions). Wins
+ * against any rule because it sets duration to a near-zero value.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Cross-page navigation transitions. Modern browsers (Chrome/Edge 126+,
+ * Safari 18+) cross-fade navigation between same-origin pages with this
+ * one declaration. Older browsers ignore it — pure progressive enhancement.
+ * Gated on prefers-reduced-motion: a visitor who asked for reduced motion
+ * shouldn't get the cross-fade, and skipping it here also avoids racing a
+ * load-time auth redirect (see lib/auth-fetch.ts's navigateNow) against a
+ * transition the browser just started capturing.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+/*
+ * Forced-colors: every semantic tone falls back to the system palette, and
+ * the non-colour carriers (signs, badges, column headings) keep direction
+ * readable with no hue at all.
+ */
+@media (forced-colors: active) {
+  [data-bar],
+  [data-bn='meter'] {
+    forced-color-adjust: none;
+    background: ButtonFace;
+    border: 1px solid CanvasText;
+  }
+
+  tr[data-row='emphasis'] {
+    box-shadow: inset 3px 0 0 Highlight;
+  }
+}
+
+/*
+ * @scope keeps the credential-list reset from leaking into other menus.
+ * The micro-component itself ships its CSS via adoptedStyleSheets from
+ * lib/credential-styles.ts — this @scope rule covers the case where the
+ * stylesheet hasn't attached yet (e.g. SSR-flash / no-JS environments).
+ */
+@scope ([data-bn='credential-list']) {
+  :scope {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+}

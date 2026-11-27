@@ -1,0 +1,29 @@
+{
+  "name": "worker",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "worker/src",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm exec vitest run", "cwd": "worker" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm exec tsc --noEmit", "cwd": "worker" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm exec prettier --check .", "cwd": "worker" }
+    },
+    "dev": {
+      "continuous": true,
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm exec wrangler dev", "cwd": "worker" }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm exec wrangler deploy", "cwd": "worker" }
+    }
+  }
+}

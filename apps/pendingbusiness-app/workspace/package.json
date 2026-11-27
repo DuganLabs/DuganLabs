@@ -1,0 +1,21 @@
+{
+  "name": "pendingbusiness",
+  "private": true,
+  "description": "Sovereign financial OS — float capture, last-responsible-moment payments, deterministic cash routing.",
+  "scripts": {
+    "typecheck": "nx run-many --target=typecheck",
+    "test": "nx run-many --target=test",
+    "lint": "nx run-many --target=lint",
+    "build": "nx run-many --target=build",
+    "dev": "nx run worker:dev",
+    "deploy": "nx run worker:deploy"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "nx": "^20.3.2",
+    "prettier": "^3.4.1",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8"
+  },
+  "packageManager": "pnpm@10.0.0"
+}

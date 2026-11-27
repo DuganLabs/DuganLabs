@@ -1,8 +1,9 @@
 name: reusable · lighthouse
 
-# Reusable workflow: run Lighthouse against a deployed URL and post the four
-# scores as a PR comment. Fails the check if any score drops below threshold.
-# Use this on PRs to enforce that the showcase keeps its polish over time.
+# Reusable workflow: run Lighthouse 13.6 against a deployed URL across mobile
+# and/or desktop (all 5 categories including report-only Agentic browsing) and
+# post the scores as a PR comment + job summary. Fails if any gated category
+# (Performance, Accessibility, Best Practices, SEO) drops below threshold.
 
 on:
   workflow_call:
@@ -25,11 +26,11 @@ on:
         default: 95
       device:
         type: string
-        default: "mobile"   # mobile | desktop
+        default: "both"   # mobile | desktop | both
       runs:
         type: number
         default: 3
-        description: "Number of Lighthouse runs to average (median per metric). Default 3 absorbs CI runner variance without lowering thresholds."
+        description: "Number of Lighthouse runs per form factor (median per metric). Default 3 absorbs CI runner variance without lowering thresholds."
 
 permissions:
   contents: read
@@ -39,14 +40,14 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Lighthouse
-        run: npm install -g lighthouse@12
+      - name: Install Lighthouse 13.6
+        run: npm install -g lighthouse@13.6
 
       - name: Run Lighthouse (median of N)
         id: lh
@@ -54,79 +55,104 @@ jobs:
           URL: ${{ inputs.url }}
           DEVICE: ${{ inputs.device }}
           RUNS: ${{ inputs.runs }}
+          PERF_MIN: ${{ inputs.perf-min }}
+          A11Y_MIN: ${{ inputs.a11y-min }}
+          BP_MIN: ${{ inputs.best-practices-min }}
+          SEO_MIN: ${{ inputs.seo-min }}
         run: |
-          set -e
-          # Run Lighthouse RUNS times; collect per-metric scores; take median.
-          # This absorbs CI runner CPU/network jitter (typically ±3 perf points)
-          # without lowering the threshold target.
-          rm -f lh-*.json
-          for i in $(seq 1 "$RUNS"); do
-            echo "::group::Lighthouse run $i/$RUNS"
-            lighthouse "$URL" \
-              --quiet \
-              --chrome-flags="--headless --no-sandbox" \
-              --output=json \
-              --output-path="./lh-$i.json" \
-              --only-categories=performance,accessibility,best-practices,seo \
-              --emulated-form-factor=$DEVICE \
-              --throttling-method=simulate
-            echo "::endgroup::"
-          done
+          set -euo pipefail
+          rm -f lh-*.json comment.md
 
-          # Median per metric across the N runs. jq + bash array sort.
+          if [ "$DEVICE" = "both" ]; then
+            PRESETS="mobile desktop"
+          else
+            PRESETS="$DEVICE"
+          fi
+
           median() {
-            local key="$1"
+            local pattern="$1"
+            local key="$2"
             local vals
-            vals=$(for f in lh-*.json; do jq -r "$key" "$f"; done | sort -n)
+            vals=$(for f in $pattern; do jq -r "$key" "$f"; done | sort -n)
             local n
             n=$(echo "$vals" | wc -l | tr -d ' ')
             local mid=$(( (n + 1) / 2 ))
             echo "$vals" | sed -n "${mid}p"
           }
 
-          perf=$(median '.categories.performance.score * 100 | floor')
-          a11y=$(median '.categories.accessibility.score * 100 | floor')
-          bp=$(median '."categories"["best-practices"].score * 100 | floor')
-          seo=$(median '.categories.seo.score * 100 | floor')
-
-          # Keep the median run's full report for the upload artifact (use run 1
-          # by convention — it's the per-metric medians that gate the check, not
-          # this individual report).
-          cp lh-1.json lh.json
-
-          {
-            echo "perf=$perf"
-            echo "a11y=$a11y"
-            echo "bp=$bp"
-            echo "seo=$seo"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "## Lighthouse — $URL ($DEVICE, median of $RUNS runs)" > comment.md
+          echo "## Lighthouse 13.6 — $URL (median of $RUNS runs)" > comment.md
           echo "" >> comment.md
-          echo "| Metric | Score | Threshold | Status |" >> comment.md
-          echo "|---|---|---|---|" >> comment.md
-          status_perf=$([ "$perf" -ge ${{ inputs.perf-min }} ] && echo "✅" || echo "❌")
-          status_a11y=$([ "$a11y" -ge ${{ inputs.a11y-min }} ] && echo "✅" || echo "❌")
-          status_bp=$([ "$bp"   -ge ${{ inputs.best-practices-min }} ] && echo "✅" || echo "❌")
-          status_seo=$([ "$seo" -ge ${{ inputs.seo-min }} ] && echo "✅" || echo "❌")
-          echo "| Performance    | $perf | ${{ inputs.perf-min }} | $status_perf |" >> comment.md
-          echo "| Accessibility  | $a11y | ${{ inputs.a11y-min }} | $status_a11y |" >> comment.md
-          echo "| Best Practices | $bp   | ${{ inputs.best-practices-min }} | $status_bp |" >> comment.md
-          echo "| SEO            | $seo  | ${{ inputs.seo-min }} | $status_seo |" >> comment.md
+          echo "| Form factor | Performance | Accessibility | Best Practices | SEO | Agentic browsing (report-only) |" >> comment.md
+          echo "|---|---:|---:|---:|---:|---:|" >> comment.md
+
+          FAILED=0
+
+          for preset in $PRESETS; do
+            EXTRA_FLAGS="--form-factor=mobile"
+            if [ "$preset" = "desktop" ]; then
+              EXTRA_FLAGS="--form-factor=desktop --preset=desktop"
+            fi
+
+            for i in $(seq 1 "$RUNS"); do
+              echo "::group::Lighthouse ($preset) run $i/$RUNS"
+              lighthouse "$URL" \
+                --quiet \
+                --chrome-flags="--headless --no-sandbox" \
+                --output=json \
+                --output-path="./lh-${preset}-${i}.json" \
+                --only-categories=performance,accessibility,best-practices,seo,agentic-browsing \
+                $EXTRA_FLAGS \
+                --throttling-method=simulate
+              echo "::endgroup::"
+            done
+
+            perf=$(median "lh-${preset}-*.json" '.categories.performance.score * 100 | round')
+            a11y=$(median "lh-${preset}-*.json" '.categories.accessibility.score * 100 | round')
+            bp=$(median "lh-${preset}-*.json" '.categories["best-practices"].score * 100 | round')
+            seo=$(median "lh-${preset}-*.json" '.categories.seo.score * 100 | round')
+            agentic=$(jq -r '
+              if .categories["agentic-browsing"] then
+                (.categories["agentic-browsing"].auditRefs | map(.id) as $ids |
+                  [.audits | to_entries[] | select(.key as $k | $ids | index($k)) | .value |
+                    select((.scoreDisplayMode // "") | IN("notApplicable","manual","informative","error") | not)] |
+                  "\([.[] | select((.score // 0) >= 0.9)] | length)/\(length)")
+              else "n/a" end
+            ' "lh-${preset}-1.json")
+
+            sp=$([ "$perf" -ge "$PERF_MIN" ] && echo "✅" || echo "❌")
+            sa=$([ "$a11y" -ge "$A11Y_MIN" ] && echo "✅" || echo "❌")
+            sb=$([ "$bp"   -ge "$BP_MIN" ]   && echo "✅" || echo "❌")
+            ss=$([ "$seo"  -ge "$SEO_MIN" ]  && echo "✅" || echo "❌")
+
+            echo "| $preset | $perf ($sp) | $a11y ($sa) | $bp ($sb) | $seo ($ss) | $agentic |" >> comment.md
+
+            {
+              echo "${preset}_perf=$perf"
+              echo "${preset}_a11y=$a11y"
+              echo "${preset}_bp=$bp"
+              echo "${preset}_seo=$seo"
+            } >> "$GITHUB_OUTPUT"
+
+            if [ "$perf" -lt "$PERF_MIN" ] || [ "$a11y" -lt "$A11Y_MIN" ] || [ "$bp" -lt "$BP_MIN" ] || [ "$seo" -lt "$SEO_MIN" ]; then
+              FAILED=1
+            fi
+          done
 
           cat comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
 
-          if [ "$perf" -lt ${{ inputs.perf-min }} ] || [ "$a11y" -lt ${{ inputs.a11y-min }} ] || [ "$bp" -lt ${{ inputs.best-practices-min }} ] || [ "$seo" -lt ${{ inputs.seo-min }} ]; then
-            echo "::error::Lighthouse threshold(s) violated."
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::Lighthouse threshold(s) violated (min: perf=$PERF_MIN a11y=$A11Y_MIN bp=$BP_MIN seo=$SEO_MIN)."
             exit 1
           fi
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
+            if (!fs.existsSync('comment.md')) return;
             const body = fs.readFileSync('comment.md', 'utf8');
             const { number } = context.payload.pull_request;
             await github.rest.issues.createComment({
@@ -136,7 +162,8 @@ jobs:
               body,
             });
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: lighthouse-report
-          path: lh.json
+          path: lh-*.json

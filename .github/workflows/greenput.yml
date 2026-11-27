@@ -359,7 +359,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: build
-    if: false
     steps:
       - uses: actions/checkout@v7
 
@@ -418,32 +417,11 @@ jobs:
             e2e-output.log
           retention-days: 7
 
-  # ── ACCESSIBILITY (against staging) ─────────────────────────
-  # Previously ran against this PR's own per-PR preview Worker/Pages
-  # deploy. That preview no longer exists on every PR (see
-  # preview-env.yml — it's now a manually-claimed shared environment), and
-  # there is no zero-cost way to stand up a fresh per-PR target without
-  # reintroducing the per-PR Cloudflare resources this change removes.
-  # Pointing AUDIT_BASE_URL at the always-on staging deployment instead
-  # keeps this job on every PR with the exact script/route/assertion
-  # behavior it already had for a live target (scripts/audit/axe.mjs's
-  # AUDIT_BASE_URL branch, unchanged) and needs no new infrastructure.
-  #
-  # Trade-off, called out here deliberately: staging reflects whatever
-  # last merged to main, not this PR's own commit, so this no longer gates
-  # THIS PR's accessibility changes the way the per-PR preview did — it's
-  # now a standing canary against staging's current state. The correct
-  # fix — auditing this PR's own local build via axe.mjs's local-serve
-  # fallback — is blocked by that fallback pointing at
-  # dist/apps/platform/browser/, which no longer exists (apps/platform's
-  # Vite build outputs directly to dist/apps/platform/ — see
-  # apps/platform/vite.config.ts's outDir — a leftover from the
-  # pre-BaseNative-migration Angular build layout). scripts/audit/ is out
-  # of scope for this change; see the PR description.
+  # ── ACCESSIBILITY (against this commit's built platform) ────
   accessibility:
     name: Accessibility Audit (axe-core)
     runs-on: ubuntu-latest
-    if: false
+    needs: build
     steps:
       - uses: actions/checkout@v7
 
@@ -464,42 +442,27 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Wait for staging to be reachable
-        run: |
-          URL="${PREVIEW_URL}"
-          echo "Waiting for ${URL} to be reachable..."
-          for i in 1 2 3 4 5 6; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
-            echo "  Attempt ${i}: HTTP ${STATUS}"
-            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
-              echo "Staging is live!"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "::warning::Staging may not be reachable right now, proceeding anyway"
-        env:
-          PREVIEW_URL: https://greenput-app-staging.pages.dev
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: platform-dist
+          path: apps/greenput-platform/workspace/dist/apps/platform
 
       - name: Run axe accessibility audit
         run: node scripts/audit/axe.mjs
-        env:
-          AUDIT_BASE_URL: https://greenput-app-staging.pages.dev
 
       - name: Upload axe report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: axe-report
-          path: reports/axe-*.json
+          path: apps/greenput-platform/workspace/reports/axe-*.json
 
-  # ── LAWS OF UX (against staging) ────────────────────────────
-  # See the accessibility job above for why this targets staging instead
-  # of a per-PR preview, and the trade-off that comes with it.
+  # ── LAWS OF UX (against this commit's built platform) ───────
   laws-of-ux:
     name: Laws of UX Audit
     runs-on: ubuntu-latest
-    if: false
+    needs: build
     steps:
       - uses: actions/checkout@v7
 
@@ -520,34 +483,21 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Wait for staging to be reachable
-        run: |
-          URL="${PREVIEW_URL}"
-          echo "Waiting for ${URL} to be reachable..."
-          for i in 1 2 3 4 5 6; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
-            echo "  Attempt ${i}: HTTP ${STATUS}"
-            if [ "${STATUS}" -ge 200 ] && [ "${STATUS}" -lt 400 ]; then
-              echo "Staging is live!"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "::warning::Staging may not be reachable right now, proceeding anyway"
-        env:
-          PREVIEW_URL: https://greenput-app-staging.pages.dev
+      - name: Download build artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: platform-dist
+          path: apps/greenput-platform/workspace/dist/apps/platform
 
       - name: Run Laws of UX audit
         run: node scripts/audit/laws-of-ux.mjs
-        env:
-          AUDIT_BASE_URL: https://greenput-app-staging.pages.dev
 
       - name: Upload Laws of UX report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: laws-of-ux-report
-          path: reports/laws-of-ux-*.json
+          path: apps/greenput-platform/workspace/reports/laws-of-ux-*.json
 
   # ── SCHEMA DRIFT GUARD ──────────────────────────────────────
   schema-drift:
@@ -785,17 +735,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Generate _headers for Pages security (staging)
+      - name: Verify Pages _headers and _redirects from build (staging)
         run: |
-          HEADERS='/*
-            Content-Security-Policy: default-src '"'"'self'"'"'; script-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://static.cloudflareinsights.com; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://fonts.googleapis.com; font-src '"'"'self'"'"' https://fonts.gstatic.com; img-src '"'"'self'"'"' data:; connect-src '"'"'self'"'"' https://api.greenput.com https://api.greenput.site https://greenput-api.greenput.workers.dev wss://api.greenput.com wss://api.greenput.site wss://greenput-api.greenput.workers.dev; frame-ancestors '"'"'none'"'"'; base-uri '"'"'self'"'"'; form-action '"'"'self'"'"'; upgrade-insecure-requests
-            Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-            X-Frame-Options: DENY
-            X-Content-Type-Options: nosniff
-            Referrer-Policy: strict-origin-when-cross-origin
-            Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()
-            Cross-Origin-Opener-Policy: same-origin'
-          echo "$HEADERS" > dist/apps/platform/_headers
+          test -f dist/apps/platform/_headers
+          test -f dist/apps/platform/_redirects
 
       - name: Deploy marketing Worker (staging)
         run: |
@@ -804,9 +747,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Generate _redirects for platform SPA fallback (staging)
-        run: echo "/* /index.html 200" > dist/apps/platform/_redirects
 
       - name: Deploy platform app (staging)
         run: pnpm exec wrangler pages deploy dist/apps/platform --project-name=greenput-app-staging --commit-dirty=true
@@ -1167,26 +1107,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Generate _headers for Pages security (production)
+      - name: Verify Pages _headers and _redirects from build (production)
         run: |
-          HEADERS='/*
-            Content-Security-Policy: default-src '"'"'self'"'"'; script-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://static.cloudflareinsights.com; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"' https://fonts.googleapis.com; font-src '"'"'self'"'"' https://fonts.gstatic.com; img-src '"'"'self'"'"' data:; connect-src '"'"'self'"'"' https://api.greenput.com https://api.greenput.site https://greenput-api.greenput.workers.dev wss://api.greenput.com wss://api.greenput.site wss://greenput-api.greenput.workers.dev; frame-ancestors '"'"'none'"'"'; base-uri '"'"'self'"'"'; form-action '"'"'self'"'"'; upgrade-insecure-requests
-            Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-            X-Frame-Options: DENY
-            X-Content-Type-Options: nosniff
-            Referrer-Policy: strict-origin-when-cross-origin
-            Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()
-            Cross-Origin-Opener-Policy: same-origin'
-          echo "$HEADERS" > dist/apps/platform/_headers
+          test -f dist/apps/platform/_headers
+          test -f dist/apps/platform/_redirects
 
       - name: Deploy marketing Worker (greenput.com)
         run: cd apps/marketing && npx --no-install wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Generate _redirects for platform SPA fallback (production)
-        run: echo "/* /index.html 200" > dist/apps/platform/_redirects
 
       - name: Deploy platform app (app.greenput.com)
         run: pnpm exec wrangler pages deploy dist/apps/platform --project-name=greenput-app --commit-dirty=true

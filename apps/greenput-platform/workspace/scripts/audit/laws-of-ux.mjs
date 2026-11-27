@@ -24,7 +24,7 @@ import { join, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const DIST_DIR = join(__dirname, '../../dist/apps/platform/browser');
+const DIST_DIR = join(__dirname, '../../dist/apps/platform');
 const REPORTS_DIR = join(__dirname, '../../reports');
 const PORT = 4300;
 
@@ -53,11 +53,11 @@ function serve() {
   }).listen(PORT);
 }
 
-// When running against a live preview without auth, protected routes redirect
-// to /login. Audit only publicly accessible routes.
-const ROUTES_TO_AUDIT = process.env.AUDIT_BASE_URL
-  ? ['/login']
-  : ['/dashboard', '/leads'];
+// Without an authenticated session, protected routes redirect to /login.
+// Audit publicly accessible routes unless AUDIT_ROUTES overrides them.
+const ROUTES_TO_AUDIT = process.env.AUDIT_ROUTES
+  ? process.env.AUDIT_ROUTES.split(',').map((r) => r.trim()).filter(Boolean)
+  : ['/login'];
 
 const laws = [
   {

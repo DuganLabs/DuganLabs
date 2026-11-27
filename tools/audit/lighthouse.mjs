@@ -5,15 +5,16 @@
  * Runs the local `lighthouse` package against each target in
  * LIGHTHOUSE_TARGETS using Playwright's Chromium over a fixed CDP port.
  * Collects performance, accessibility, best-practices, seo, and
- * agentic-browsing (mobile form factor).
+ * agentic-browsing across both mobile and desktop form factors (configurable
+ * via LIGHTHOUSE_PRESETS, default "mobile,desktop").
  *
- * Writes dist/audit/<label>.html, dist/audit/<label>.json, and
- * dist/audit/lighthouse-summary.json. Appends a markdown summary table to
+ * Writes dist/audit/<label>-<preset>.html, dist/audit/<label>-<preset>.json,
+ * and dist/audit/lighthouse-summary.json. Appends a markdown summary table to
  * $GITHUB_STEP_SUMMARY when set. Exits non-zero only if a target cannot be
  * audited at all (network or Lighthouse runtime error), never on a score.
  */
 import { chromium } from 'playwright';
-import lighthouse from 'lighthouse';
+import lighthouse, { desktopConfig } from 'lighthouse';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +30,10 @@ const SCORE_CATEGORIES = [
 ];
 const AGENTIC_CATEGORY = 'agentic-browsing';
 const CATEGORIES = [...SCORE_CATEGORIES, AGENTIC_CATEGORY];
+const PRESETS = (process.env.LIGHTHOUSE_PRESETS ?? 'mobile,desktop')
+  .split(',')
+  .map((p) => p.trim().toLowerCase())
+  .filter((p) => p === 'mobile' || p === 'desktop');
 const CDP_PORT = Number(process.env.LIGHTHOUSE_CDP_PORT ?? 9423);
 const NOT_COUNTED = new Set([
   'notApplicable',
@@ -96,7 +101,7 @@ function extractAgenticBrowsing(lhr) {
   };
 }
 
-async function auditUrl(url) {
+async function auditUrl(url, preset) {
   // Playwright exposes no wsEndpoint for Lighthouse, so launch Chromium on a
   // fixed CDP port and hand Lighthouse that port. Runs are sequential.
   const browser = await chromium.launch({
@@ -104,11 +109,13 @@ async function auditUrl(url) {
     args: [`--remote-debugging-port=${CDP_PORT}`],
   });
   try {
-    const result = await lighthouse(url, {
+    const flags = {
       port: CDP_PORT,
       output: ['json', 'html'],
       onlyCategories: CATEGORIES,
-    });
+    };
+    const config = preset === 'desktop' ? desktopConfig : undefined;
+    const result = await lighthouse(url, flags, config);
     if (!result?.lhr) {
       throw new Error('Lighthouse returned no result');
     }
@@ -131,13 +138,13 @@ function buildMarkdownTable(rows) {
   const lines = [
     '### Lighthouse Audit (report-only)',
     '',
-    '| Target | URL | Performance | Accessibility | Best Practices | SEO | Agentic browsing |',
-    '| --- | --- | ---: | ---: | ---: | ---: | ---: |',
+    '| Target | Form factor | URL | Performance | Accessibility | Best Practices | SEO | Agentic browsing |',
+    '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |',
   ];
   for (const row of rows) {
     if (row.error) {
       lines.push(
-        `| ${row.label} | ${row.url} | error | error | error | error | error |`,
+        `| ${row.label} | ${row.preset} | ${row.url} | error | error | error | error | error |`,
       );
       continue;
     }
@@ -145,7 +152,7 @@ function buildMarkdownTable(rows) {
       ? `${row.agenticBrowsing.passed}/${row.agenticBrowsing.applicable}`
       : 'n/a';
     lines.push(
-      `| ${row.label} | ${row.url} | ${formatScore(row.scores.performance)} | ${formatScore(row.scores.accessibility)} | ${formatScore(row.scores['best-practices'])} | ${formatScore(row.scores.seo)} | ${agentic} |`,
+      `| ${row.label} | ${row.preset} | ${row.url} | ${formatScore(row.scores.performance)} | ${formatScore(row.scores.accessibility)} | ${formatScore(row.scores['best-practices'])} | ${formatScore(row.scores.seo)} | ${agentic} |`,
     );
   }
   lines.push('');
@@ -154,56 +161,72 @@ function buildMarkdownTable(rows) {
 
 async function main() {
   const targets = parseTargets();
+  const presets = PRESETS.length ? PRESETS : ['mobile', 'desktop'];
   mkdirSync(OUTPUT_DIR, { recursive: true });
   const summaryPath = join(OUTPUT_DIR, 'lighthouse-summary.json');
 
   const summary = {
     timestamp: new Date().toISOString(),
     categories: CATEGORIES,
+    presets,
     targets: [],
   };
   const tableRows = [];
   let hadError = false;
 
-  console.log(`Lighthouse (report-only): ${CATEGORIES.join(', ')}`);
+  console.log(
+    `Lighthouse (report-only): ${CATEGORIES.join(', ')} [${presets.join(', ')}]`,
+  );
 
   for (const target of targets) {
     const { label, url } = target;
+    let parsedUrl;
     try {
-      const parsedUrl = new URL(url);
-      if (parsedUrl.hostname.startsWith('private.')) {
-        console.log(`  skip ${label} (private host)`);
-        continue;
-      }
-
-      const { lhr, report } = await auditUrl(url);
-      const fileLabel = safeFileLabel(label);
-      writeFileSync(join(OUTPUT_DIR, `${fileLabel}.json`), report[0]);
-      writeFileSync(join(OUTPUT_DIR, `${fileLabel}.html`), report[1]);
-
-      const scores = extractScores(lhr);
-      const agenticBrowsing = extractAgenticBrowsing(lhr);
-      const entry = {
-        label,
-        url,
-        scores,
-        agenticBrowsing,
-      };
-      summary.targets.push(entry);
-      tableRows.push(entry);
-      writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
-
-      const agenticText = agenticBrowsing
-        ? `${agenticBrowsing.passed}/${agenticBrowsing.applicable}`
-        : 'n/a';
-      console.log(
-        `  ${label} (${url}): perf=${formatScore(scores.performance)} a11y=${formatScore(scores.accessibility)} bp=${formatScore(scores['best-practices'])} seo=${formatScore(scores.seo)} agentic=${agenticText}`,
-      );
+      parsedUrl = new URL(url);
     } catch (err) {
       hadError = true;
       const message = err instanceof Error ? err.message : String(err);
       console.error(`  ${label} (${url}): FAILED - ${message}`);
-      tableRows.push({ label, url, error: message });
+      tableRows.push({ label, preset: presets[0], url, error: message });
+      continue;
+    }
+    if (parsedUrl.hostname.startsWith('private.')) {
+      console.log(`  skip ${label} (private host)`);
+      continue;
+    }
+
+    for (const preset of presets) {
+      try {
+        const { lhr, report } = await auditUrl(url, preset);
+        const fileLabel = `${safeFileLabel(label)}-${preset}`;
+        writeFileSync(join(OUTPUT_DIR, `${fileLabel}.json`), report[0]);
+        writeFileSync(join(OUTPUT_DIR, `${fileLabel}.html`), report[1]);
+
+        const scores = extractScores(lhr);
+        const agenticBrowsing = extractAgenticBrowsing(lhr);
+        const entry = {
+          label,
+          preset,
+          url,
+          scores,
+          agenticBrowsing,
+        };
+        summary.targets.push(entry);
+        tableRows.push(entry);
+        writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
+
+        const agenticText = agenticBrowsing
+          ? `${agenticBrowsing.passed}/${agenticBrowsing.applicable}`
+          : 'n/a';
+        console.log(
+          `  ${label} [${preset}] (${url}): perf=${formatScore(scores.performance)} a11y=${formatScore(scores.accessibility)} bp=${formatScore(scores['best-practices'])} seo=${formatScore(scores.seo)} agentic=${agenticText}`,
+        );
+      } catch (err) {
+        hadError = true;
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`  ${label} [${preset}] (${url}): FAILED - ${message}`);
+        tableRows.push({ label, preset, url, error: message });
+      }
     }
   }
 

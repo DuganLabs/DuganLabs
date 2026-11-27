@@ -18,27 +18,18 @@ const AXE_SOURCE = readFileSync(
   require.resolve('axe-core/axe.min.js'),
   'utf-8',
 );
-const DIST_DIR = join(__dirname, '../../dist/apps/platform/browser');
+const DIST_DIR = join(__dirname, '../../dist/apps/platform');
 const REPORTS_DIR = join(__dirname, '../../reports');
 const PORT = 4299;
 
 // When AUDIT_BASE_URL is set, run against a live deployment instead of local
 const AUDIT_BASE_URL = process.env.AUDIT_BASE_URL;
 
-// When running against a live preview without auth, protected routes redirect
-// to /login. Audit only publicly accessible routes to avoid duplicating the
-// same login page audit 7 times.
-const ROUTES = process.env.AUDIT_BASE_URL
-  ? ['/login']
-  : [
-      '/',
-      '/dashboard',
-      '/leads',
-      '/jobs',
-      '/customers',
-      '/campaigns',
-      '/settings',
-    ];
+// Without an authenticated session, protected routes redirect to /login.
+// Audit publicly accessible routes unless AUDIT_ROUTES overrides them.
+const ROUTES = process.env.AUDIT_ROUTES
+  ? process.env.AUDIT_ROUTES.split(',').map((r) => r.trim()).filter(Boolean)
+  : ['/login'];
 
 const MIME_TYPES = {
   '.html': 'text/html',

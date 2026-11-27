@@ -28,8 +28,7 @@
     "accentStrong": "#2a50d0",
     "accentDark": "#8aa6ff",
     "accentInkDark": "#0a1030",
-    "accentStrongDark": "#a6bbff",
-    "ink": "#0e1530"
+    "accentStrongDark": "#a6bbff"
   },
   "privateUrl": "https://private.basenative.com/",
   "privateLabel": "the BaseNative docs",

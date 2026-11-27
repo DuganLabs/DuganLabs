@@ -9,8 +9,7 @@
     "accentStrong": "#3442c4",
     "accentDark": "#8b98ff",
     "accentInkDark": "#0b0c1a",
-    "accentStrongDark": "#a9b3ff",
-    "ink": "#111327"
+    "accentStrongDark": "#a9b3ff"
   },
   "headline": "A development blog",
   "idea": "Writing on development topics, from the work of building software.",

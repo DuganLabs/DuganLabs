@@ -21,7 +21,8 @@ function themeVars(t) {
 
 export const monogram = (c) => (c.monogram ?? c.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 1)).toUpperCase();
 
-export function layout(c, { title, description, nonce, body, noindex = false, bodyClass = '', scripts = '' }) {
+export function layout(c, { title, description, nonce, body, path = '/', noindex = false, bodyClass = '', scripts = '' }) {
+  const pageUrl = `https://${c.domain}${path}`;
   return '<!doctype html>' + html`<html lang="en">
 <head>
 <meta charset="utf-8">
@@ -33,14 +34,20 @@ ${noindex ? raw('<meta name="robots" content="noindex, nofollow">') : ''}
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0c0e">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="canonical" href="https://${c.domain}${raw(c.__path ?? '/')}">
+<link rel="alternate icon" href="/favicon.ico">
+${noindex ? '' : html`<link rel="canonical" href="${pageUrl}">`}
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://${c.domain}/">
+<meta property="og:url" content="${pageUrl}">
+<meta property="og:image" content="https://${c.domain}/og.svg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style nonce="${nonce}">${raw(CSS)}${raw(themeVars(c.theme))}</style>
 </head>
-<body class="${bodyClass}">
+<body${bodyClass ? html` class="${bodyClass}"` : ''}>
+<a class="skip" href="#main">Skip to content</a>
 ${body}
 ${raw(scripts)}
 </body>
@@ -75,16 +82,21 @@ function signupForm(c, env, state) {
     : `Email me about ${c.name}. No spam; unsubscribe anytime.`;
   if (state.joined) return joined(c);
   const err = state.error ? ERRORS[state.error] ?? ERRORS.server : '';
+  const emailInvalid = state.error === 'email';
+  const consentInvalid = state.error === 'consent';
   return html`<form id="lead" class="signup" method="post" action="/api/lead" data-sitekey="${env.TURNSTILE_SITE_KEY ?? ''}" novalidate>
   <div class="field">
     <label class="sr-only" for="email">Email address</label>
-    <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="${c.placeholder ?? 'you@example.com'}" required maxlength="254" aria-describedby="status">
+    <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="${c.placeholder ?? 'you@example.com'}" required maxlength="254" aria-describedby="status"${emailInvalid ? raw(' aria-invalid="true"') : ''}>
     <button class="btn" type="submit">${cta}</button>
   </div>
   <input type="hidden" name="consent_version" value="${CONSENT_VERSION}">
-  <label class="consent"><input type="checkbox" name="consent" value="yes" required><span>${consent} <a href="/privacy">Privacy</a>.</span></label>
+  <div class="consent">
+    <input id="consent" type="checkbox" name="consent" value="yes" required aria-describedby="status"${consentInvalid ? raw(' aria-invalid="true"') : ''}>
+    <span class="consent-text"><label for="consent">${consent}</label> <a href="/privacy">Privacy policy</a>.</span>
+  </div>
   <div id="ts"></div>
-  <p id="status" class="status${err ? ' err' : ''}" role="status" aria-live="polite">${err}</p>
+  <p id="status" class="status${err ? ' err' : ''}" role="${err ? 'alert' : 'status'}" aria-live="${err ? 'assertive' : 'polite'}">${err}</p>
 </form>
 <template id="joined-tpl">${joined(c)}</template>`;
 }
@@ -111,6 +123,7 @@ function visual(c) {
 
 export function landing(c, env, { nonce, state = {} }) {
   const todo = !!c.todo;
+  const hasForm = c.form !== false;
   const title = todo ? `${c.domain} · Coming soon` : c.headline === c.name ? c.name : `${c.name} · ${c.headline}`;
   const description = todo ? `${c.domain} is coming soon.` : c.idea;
   const hero = todo
@@ -118,29 +131,36 @@ export function landing(c, env, { nonce, state = {} }) {
   <div><p class="eyebrow"><span class="dot" aria-hidden="true"></span>${eyebrow(c)}</p>
   <h1 id="h">${c.domain}</h1>
   <p class="lede">Something new is on the way. Leave your email and you'll hear first when it opens.</p>
-  ${signupForm(c, env, state)}
+  ${hasForm ? signupForm(c, env, state) : ''}
   <p class="todo">TODO(owner): product idea not provided yet. No copy is invented here.</p></div>
 </section>`
     : html`<section class="hero${c.visual ? '' : ' solo'}" aria-labelledby="h">
   <div><p class="eyebrow"><span class="dot" aria-hidden="true"></span>${eyebrow(c)}</p>
   <h1 id="h">${c.headline}</h1>
   <p class="lede">${c.idea}</p>
-  ${c.form === false ? '' : signupForm(c, env, state)}</div>
+  ${hasForm ? signupForm(c, env, state) : ''}</div>
   ${visual(c)}
 </section>`;
   const points = todo || !c.points?.length ? '' : html`<section class="points" aria-label="What ${c.name} does">
   ${c.points.map((p, i) => html`<article class="point"><span class="num" aria-hidden="true">${p.icon ? raw(icon(p.icon, 16)) : String(i + 1)}</span><h2>${p.title}</h2><p>${p.body}</p></article>`)}
 </section>`;
-  const body = html`<a class="skip" href="#main">Skip to content</a>
-<div class="glow" aria-hidden="true"></div>
+  const body = html`<div class="glow" aria-hidden="true"></div>
 ${nav(c)}
-<main id="main" class="wrap">${hero}${points}</main>
+<main id="main" tabindex="-1" class="wrap">${hero}${points}</main>
 ${footer(c)}`;
-  return layout(c, { title, description, nonce, body, noindex: todo || !!c.noindex, scripts: `<script nonce="${esc(nonce)}">${CLIENT}</script>` });
+  return layout(c, {
+    title,
+    description,
+    nonce,
+    body,
+    path: '/',
+    noindex: todo || !!c.noindex,
+    scripts: hasForm ? `<script nonce="${esc(nonce)}">${CLIENT}</script>` : '',
+  });
 }
 
 export function login(c, { nonce }) {
-  const body = html`<main class="center"><div class="card">
+  const body = html`<main id="main" tabindex="-1" class="center"><div class="card">
   <span class="mark" aria-hidden="true">${monogram(c)}</span>
   <h1>Private access</h1>
   <p>This area of ${c.name} is restricted to its owner. Continue to verify your identity.</p>
@@ -148,27 +168,31 @@ export function login(c, { nonce }) {
   <div class="meta">${raw(icon('shield', 14))}<span>Secured by Cloudflare Access</span></div>
   <a class="back" href="/">← Back to ${c.name}</a>
 </div></main>`;
-  return layout(c, { title: `Log in · ${c.name}`, description: `Private access to ${c.name}.`, nonce, body, noindex: true });
+  return layout(c, { title: `Log in · ${c.name}`, description: `Private access to ${c.name}.`, nonce, body, path: '/login', noindex: true });
 }
 
 export function privacy(c, { nonce }) {
-  const body = html`${nav(c)}<main id="main" class="wrap prose">
-  <h1>Privacy</h1>
-  <p>When you join the ${c.name} list we store the email address you give us, the optional details you add, which site you signed up on, the time, and a one-way hash of your IP address used only to stop abuse.</p>
+  const content = c.form === false
+    ? html`<p>${c.name} does not collect visitor email addresses or run a public signup form.</p>
+  <p>Standard server logs may record technical request metadata to keep the service reliable and protected against abuse.</p>`
+    : html`<p>When you join the ${c.name} list we store the email address you give us, the optional details you add, which site you signed up on, the time, and a one-way hash of your IP address used only to stop abuse.</p>
   <p>We use it only to tell you about ${c.name}. We do not sell or share it. Every email has an unsubscribe link, and you can ask us to delete your details at any time.</p>
   <p>To leave the list, use the unsubscribe link in any email we send, or reply to it and ask us to delete your details.</p>
-  <p>Spam protection is provided by Cloudflare Turnstile.</p>
+  <p>Spam protection is provided by Cloudflare Turnstile.</p>`;
+  const body = html`${nav(c)}<main id="main" tabindex="-1" class="wrap prose">
+  <h1>Privacy</h1>
+  ${content}
 </main>${footer(c)}`;
-  return layout(c, { title: `Privacy · ${c.name}`, description: `How ${c.name} handles your data.`, nonce, body });
+  return layout(c, { title: `Privacy · ${c.name}`, description: `How ${c.name} handles your data.`, nonce, body, path: '/privacy', noindex: true });
 }
 
-export function message(c, { nonce, title, text, status = 'Not found' }) {
-  const body = html`<main class="center"><div class="card">
+export function message(c, { nonce, title, text, status = 'Not found', path = '/' }) {
+  const body = html`<main id="main" tabindex="-1" class="center"><div class="card">
   <span class="mark" aria-hidden="true">${monogram(c)}</span>
   <h1>${title}</h1><p>${text}</p>
   <a class="back" href="/">← Back to ${c.name}</a>
 </div></main>`;
-  return layout(c, { title: `${status} · ${c.name}`, description: text, nonce, body, noindex: true });
+  return layout(c, { title: `${status} · ${c.name}`, description: text, nonce, body, path, noindex: true });
 }
 
 export function hub(c, { nonce, email, total }) {
@@ -178,16 +202,16 @@ export function hub(c, { nonce, email, total }) {
   <a class="brand" href="/app/"><span class="mark" aria-hidden="true">${monogram(c)}</span><span>${c.name}</span><span class="pill">Private</span></a>
   <div class="who"><span>${email}</span><a href="/cdn-cgi/access/logout">Sign out</a></div>
 </div></header>
-<main id="main" class="wrap page">
+<main id="main" tabindex="-1" class="wrap page">
   <h1>Welcome back</h1>
   <p class="sub">Only you can see this. The public sees the coming-soon page.</p>
   <div class="hub">
-    ${card('/app/leads', 'inbox', 'Leads', `${total} signup${total === 1 ? '' : 's'} from the coming-soon page${c.leadsScope === 'all' ? 's' : ''}`)}
+    ${c.form === false && c.leadsScope !== 'all' ? '' : card('/app/leads', 'inbox', 'Leads', `${total} signup${total === 1 ? '' : 's'} from the coming-soon page${c.leadsScope === 'all' ? 's' : ''}`)}
     ${c.privateUrl ? card(c.privateUrl, 'lock', `Open ${c.privateLabel ?? 'the current site'}`, new URL(c.privateUrl).host + ' · behind the same login', true) : ''}
     ${card('/', 'spark', 'View public page', c.domain)}
   </div>
 </main></div>`;
-  return layout(c, { title: `Private · ${c.name}`, description: 'Private area.', nonce, body, noindex: true });
+  return layout(c, { title: `Private · ${c.name}`, description: 'Private area.', nonce, body, path: '/app/', noindex: true });
 }
 
 const fmt = (iso) => {
@@ -197,22 +221,27 @@ const fmt = (iso) => {
 
 export function leadsView(c, { nonce, data, email, source, q, sources }) {
   const scopeAll = c.leadsScope === 'all';
-  const qs = (s) => `?${new URLSearchParams({ ...(s ? { source: s } : {}), ...(q ? { q } : {}) })}`;
+  const qs = (s) => {
+    const p = new URLSearchParams({ ...(s ? { source: s } : {}), ...(q ? { q } : {}) }).toString();
+    return p ? `?${p}` : '';
+  };
+  const nil = raw('<span class="nil"><span aria-hidden="true">—</span><span class="sr-only">None</span></span>');
   const chips = scopeAll
     ? html`<nav class="chips" aria-label="Filter by site">
-  <a class="chip" href="/app/leads${q ? `?q=${encodeURIComponent(q)}` : ''}" ${!source ? raw('aria-current="page"') : ''}>All</a>
-  ${sources.map((s) => html`<a class="chip" href="/app/leads${qs(s)}" ${s === source ? raw('aria-current="page"') : ''}>${s}</a>`)}
+  <a class="chip" href="/app/leads${q ? `?q=${encodeURIComponent(q)}` : ''}"${!source ? raw(' aria-current="page"') : ''}>All</a>
+  ${sources.map((s) => html`<a class="chip" href="/app/leads${qs(s)}"${s === source ? raw(' aria-current="page"') : ''}>${s}</a>`)}
 </nav>`
     : html`<span class="sub">Signups on ${c.domain}</span>`;
   const rows = data.leads.length
-    ? data.leads.map((l) => html`<tr><td>${l.email}</td><td>${l.name || raw('<span class="nil" aria-label="none">—</span>')}</td><td>${l.interest || raw('<span class="nil" aria-label="none">—</span>')}</td><td><span class="src">${l.source}</span></td><td><time datetime="${l.created_at}">${fmt(l.created_at)}</time></td></tr>`)
+    ? data.leads.map((l) => html`<tr><td>${l.email}</td><td>${l.name || nil}</td><td>${l.interest || nil}</td><td><span class="src">${l.source}</span></td><td><time datetime="${l.created_at}">${fmt(l.created_at)}</time></td></tr>`)
     : [html`<tr><td colspan="5" class="empty">No signups yet.</td></tr>`];
   const body = html`<div class="app">
 <header class="bar"><div class="wrap">
-  <a class="brand" href="/app/leads"><span class="mark" aria-hidden="true">${monogram(c)}</span><span>${c.name}</span><span class="pill">Private</span></a>
+  <a class="brand" href="/app/"><span class="mark" aria-hidden="true">${monogram(c)}</span><span>${c.name}</span><span class="pill">Private</span></a>
   <div class="who"><span>${email}</span><a href="/cdn-cgi/access/logout">Sign out</a></div>
 </div></header>
-<main id="main" class="wrap page">
+<main id="main" tabindex="-1" class="wrap page">
+  <a class="back-link" href="/app/">← Private hub</a>
   <h1>Leads</h1>
   <p class="sub">Interest captured by the coming-soon pages. Times are Pacific.</p>
   <dl class="stats">
@@ -223,36 +252,43 @@ export function leadsView(c, { nonce, data, email, source, q, sources }) {
   </dl>
   <div class="tools">
     ${chips}
-    <form class="search" method="get" action="/app/leads" role="search">
-      ${source ? html`<input type="hidden" name="source" value="${source}">` : ''}
-      <label class="sr-only" for="q">Search leads</label>
-      <input id="q" name="q" type="search" value="${q ?? ''}" placeholder="Search email or name">
-      <a class="btn ghost" href="/app/leads.csv${qs(source)}">Export CSV</a>
-    </form>
+    <search>
+      <form class="search" method="get" action="/app/leads">
+        ${source ? html`<input type="hidden" name="source" value="${source}">` : ''}
+        <label class="sr-only" for="q">Search leads</label>
+        <input id="q" name="q" type="search" value="${q ?? ''}" placeholder="Search email or name" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search">
+        <button class="btn ghost" type="submit">Search</button>
+        <a class="btn ghost" href="/app/leads.csv${qs(source)}">Export CSV</a>
+      </form>
+    </search>
   </div>
-  <div class="scroll"><table class="table">
+  <div class="scroll" tabindex="0" role="region" aria-label="Leads table"><table class="table">
     <caption class="sr-only">Leads, newest first</caption>
     <thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Interested in</th><th scope="col">Site</th><th scope="col">Signed up</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>
 </main></div>`;
-  return layout(c, { title: `Leads · ${c.name}`, description: 'Private leads view.', nonce, body, noindex: true });
+  return layout(c, { title: `Leads · ${c.name}`, description: 'Private leads view.', nonce, body, path: '/app/leads', noindex: true });
 }
 
 // Progressive enhancement for the lead form. Turnstile's script is loaded
 // only when someone starts filling the form, so the landing itself makes no
-// third-party request. Without JS the form still posts; the server answers
-// with a redirect and a readable message.
-const CLIENT = `(()=>{const f=document.getElementById('lead');if(!f)return;const s=document.getElementById('status');const key=f.dataset.sitekey;let wid,ready;
-const load=()=>ready||(ready=new Promise((res,rej)=>{if(!key){res();return}window.__ts=()=>{wid=turnstile.render('#ts',{sitekey:key,action:'lead',appearance:'interaction-only'});res()};const sc=document.createElement('script');sc.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__ts&render=explicit';sc.async=true;sc.onerror=rej;document.head.append(sc)}));
+// third-party request. Without JS, validation and redirects work via 303;
+// Turnstile verification requires JS when TURNSTILE_SITE_KEY is configured.
+const CLIENT = `(()=>{const f=document.getElementById('lead');if(!f)return;const s=document.getElementById('status');const em=f.email;const co=f.consent;const key=f.dataset.sitekey;let wid,ready;
+const say=(msg,isErr)=>{s.className=isErr?'status err':'status';s.setAttribute('role',isErr?'alert':'status');s.setAttribute('aria-live',isErr?'assertive':'polite');s.textContent=msg};
+const load=()=>ready||(ready=new Promise((res,rej)=>{if(!key){res();return}window.__ts=()=>{wid=turnstile.render('#ts',{sitekey:key,action:'lead',appearance:'interaction-only'});res()};const sc=document.createElement('script');sc.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__ts&render=explicit';sc.async=true;sc.onerror=()=>{ready=null;rej(new Error('verify'))};document.head.append(sc)}));
 const token=()=>new Promise((res,rej)=>{if(!key){res('');return}let n=0;const t=setInterval(()=>{const v=turnstile.getResponse(wid);if(v){clearInterval(t);res(v)}else if(++n>150){clearInterval(t);rej(new Error('verify'))}},100)});
-f.addEventListener('focusin',load,{once:true});
-f.addEventListener('submit',async(e)=>{e.preventDefault();const em=f.email;s.className='status';s.textContent='';
-if(!em.value||!em.checkValidity()){s.className='status err';s.textContent=${JSON.stringify(ERRORS.email)};em.focus();return}
-if(!f.consent.checked){s.className='status err';s.textContent=${JSON.stringify(ERRORS.consent)};f.consent.focus();return}
-const b=f.querySelector('button');b.disabled=true;s.textContent='Sending…';
+em.addEventListener('input',()=>{em.removeAttribute('aria-invalid');if(s.classList.contains('err'))say('',false)});
+co.addEventListener('change',()=>{co.removeAttribute('aria-invalid');if(s.classList.contains('err'))say('',false)});
+f.addEventListener('focusin',()=>{load().catch(()=>{})},{once:true});
+f.addEventListener('submit',async(e)=>{e.preventDefault();em.removeAttribute('aria-invalid');co.removeAttribute('aria-invalid');say('',false);
+if(!em.value||!em.checkValidity()){em.setAttribute('aria-invalid','true');say(${JSON.stringify(ERRORS.email)},true);em.focus();return}
+if(!co.checked){co.setAttribute('aria-invalid','true');say(${JSON.stringify(ERRORS.consent)},true);co.focus();return}
+const b=f.querySelector('button[type="submit"]');b.disabled=true;say('Sending…',false);
 try{await load();const tk=await token();const fd=new FormData(f);if(tk)fd.set('cf-turnstile-response',tk);
 const r=await fetch(f.action,{method:'POST',body:fd,headers:{accept:'application/json'}});const j=await r.json().catch(()=>({}));
 if(r.ok&&j.ok){const tpl=document.getElementById('joined-tpl');f.replaceWith(tpl.content.cloneNode(true));document.querySelector('.joined').focus();return}
-s.className='status err';s.textContent=j.message||${JSON.stringify(ERRORS.server)};if(key&&wid!==undefined)turnstile.reset(wid)}
-catch(err){s.className='status err';s.textContent=${JSON.stringify(ERRORS.verify)}}finally{b.disabled=false}});})();`;
+if(j.error==='email')em.setAttribute('aria-invalid','true');if(j.error==='consent')co.setAttribute('aria-invalid','true');
+say(j.message||${JSON.stringify(ERRORS.server)},true);if(key&&wid!==undefined)turnstile.reset(wid)}
+catch{say(${JSON.stringify(ERRORS.verify)},true)}finally{b.disabled=false}});})();`;

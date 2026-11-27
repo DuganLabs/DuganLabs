@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Scaffold a standard DuganLabs domain app from the coming-soon kit.
-//   node tools/scripts/new-app.mjs <domain> [--todo]
+//   node tools/scripts/new-app.mjs <domain> [--todo] [--live]
 // Writes apps/<name>/{content.json,src/index.js,wrangler.toml,deploy.json,project.json,package.json}.
 // Existing files are never overwritten.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
@@ -8,12 +8,12 @@ import { join } from 'node:path';
 
 const [domain, ...flags] = process.argv.slice(2);
 if (!domain || !/^[a-z0-9-]+\.[a-z]{2,}$/.test(domain)) {
-  console.error('usage: new-app.mjs <domain> [--todo]');
+  console.error('usage: new-app.mjs <domain> [--todo] [--live]');
   process.exit(2);
 }
 const name = domain.split('.')[0];
 const dir = join('apps', name);
-const todo = flags.includes('--todo');
+const todo = flags.includes('--todo') || !flags.includes('--ready');
 const live = flags.includes('--live'); // domain has a live site today; prod cut-over waits for its move to private.<domain>
 mkdirSync(join(dir, 'src'), { recursive: true });
 const put = (f, s) => {
@@ -23,10 +23,10 @@ const put = (f, s) => {
   console.log(`write ${p}`);
 };
 
-const NEUTRAL = { accent: '#1d1d1f', accentInk: '#ffffff', accentDark: '#f5f5f7', accentInkDark: '#111113', accentStrongDark: '#f5f5f7', ink: '#1d1d1f' };
+const NEUTRAL = { accent: '#1d1d1f', accentInk: '#ffffff', accentDark: '#f5f5f7', accentInkDark: '#111113', accentStrongDark: '#f5f5f7' };
 put('content.json', JSON.stringify(todo
   ? { name: domain, domain, source: name, status: 'coming-soon', todo: true, theme: NEUTRAL }
-  : { name, domain, source: name, status: 'coming-soon', headline: 'TODO', idea: 'TODO', points: [{ title: 'TODO', body: 'TODO' }, { title: 'TODO', body: 'TODO' }, { title: 'TODO', body: 'TODO' }], theme: NEUTRAL }, null, 2) + '\n');
+  : { name, domain, source: name, status: 'coming-soon', headline: `${name} is coming soon`, idea: `${domain} is currently in development.`, theme: NEUTRAL }, null, 2) + '\n');
 
 put('src/index.js', `import { createSite } from '@duganlabs/coming-soon';
 import content from '../content.json';

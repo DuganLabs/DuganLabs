@@ -10,15 +10,21 @@ Validated by `tools/scripts/check-content.mjs` (Nx `check` target):
 |---|---|---|
 | `name`, `domain` | Required | |
 | `source` | Required | Lead tag, `[a-z0-9-]` |
-| `status` | Required | `coming-soon`, `private-beta` or `todo`. A `todo` app carries no copy. |
-| `theme.accent`, `theme.accentInk` | Required | `accentInk` on `accent` must be at least 4.5:1. Dark variants are optional. |
-| `headline`, `idea` | | One line each. Real facts only. |
+| `status` | Required | `coming-soon` or `private-beta`. Set `"todo": true` on placeholder apps with no copy. |
+| `theme.accent` | Required | `#rrggbb`. Optional `accentInk`, `accentStrong`, `accentDark`, `accentInkDark`, `accentStrongDark` must also be `#rrggbb`. `accentInk` on `accent` (and `accentInkDark` on `accentDark`) must be at least 4.5:1 (WCAG AA). |
+| `headline`, `idea` | | One line each. Real facts only (never literal `"TODO"`). |
 | `points` | | None, or exactly 3 `{icon,title,body}` |
-| `visual.rows` | | Optional, 2–4 |
-| `form` | | `false` hides the lead form (for example theduganhouse) |
-| `noindex`, `eyebrow`, `cta`, `placeholder`, `parentLabel` | | Optional |
+| `visual.rows` | | Optional, 2–4 `{icon,title,detail}` |
+| `form` | | `false` hides the lead form, rejects `POST /api/lead` with 404, and omits client JS and Turnstile CSP (for example `theduganhouse`). |
+| `noindex`, `eyebrow`, `cta`, `placeholder`, `parentLabel`, `parentUrl`, `monogram` | | Optional (`parentUrl` must be `https://`; `monogram` 1–3 alphanumeric chars) |
 | `privateUrl` / `privateLabel` | | Where the previous site lives (`https://private.<domain>/`) |
 | `leadsScope` | | `self` (default) or `all` (duganlabs: every source) |
+
+## Assets & Metadata
+- `/favicon.svg`: dark-mode-aware SVG monogram using light/dark accent tokens.
+- `/favicon.ico`: 16×16 ICO derived from the brand accent/ink (no 404 on legacy requests).
+- `/og.svg`: 1200×630 Open Graph card generated from `content.json`.
+- `/privacy`, `/login`, `/app/*`, 404, and `todo`/`noindex` apps emit `noindex, nofollow` and omit `rel="canonical"`.
 
 ## Lead capture
 - Form: `POST /api/lead` on the site Worker. The server sets `source`, `host`, IP and UA, and

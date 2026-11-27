@@ -8,8 +8,8 @@ const b64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/
 const LOCAL = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 let jwksCache = { at: 0, keys: null, team: '' };
-async function jwks(team, fetchImpl) {
-  if (jwksCache.keys && jwksCache.team === team && Date.now() - jwksCache.at < 10 * 60 * 1000) return jwksCache.keys;
+async function jwks(team, fetchImpl, force = false) {
+  if (!force && jwksCache.keys && jwksCache.team === team && Date.now() - jwksCache.at < 10 * 60 * 1000) return jwksCache.keys;
   const r = await fetchImpl(`https://${team}/cdn-cgi/access/certs`);
   if (!r.ok) throw new Error('certs ' + r.status);
   const { keys } = await r.json();
@@ -23,7 +23,8 @@ export async function verifyAccessJwt(token, { team, aud, now = Date.now(), fetc
   const header = JSON.parse(new TextDecoder().decode(b64url(h)));
   const payload = JSON.parse(new TextDecoder().decode(b64url(p)));
   if (header.alg !== 'RS256') return null;
-  const jwk = (await jwks(team, fetchImpl)).find((k) => k.kid === header.kid);
+  let jwk = (await jwks(team, fetchImpl)).find((k) => k.kid === header.kid);
+  if (!jwk) jwk = (await jwks(team, fetchImpl, true)).find((k) => k.kid === header.kid);
   if (!jwk) return null;
   const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
   const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64url(s), enc.encode(`${h}.${p}`));

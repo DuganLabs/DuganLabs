@@ -64,6 +64,14 @@ Tailscale is the private link between all of them. The tailnet is up and connect
 - **Note:** The home server hardware decision is paused pending Warren's parts inventory. Do not buy or build anything for this task until Warren says go. This task is parked until the server exists.
 - **Done when:** The home server exists, OpenClaw runs on it as the Server Gateway, and this file says so.
 
+### T-005 — File GitHub Support data-removal request
+- **Owner:** Muse
+- **Status:** todo
+- **Why:** The old commit SHAs from before the history rewrite are still reachable through pull-request refs and cached views.
+- **Do this:** File GitHub Support data-removal request for DuganLabs/public (formerly DuganLabs/DuganLabs) as warrendugan via https://support.github.com/contact, Warren approved 6:17 PM PT Nov 26. Ticket text: docs/support/github-purge-request.txt
+- **Note:** Submitting needs Warren's GitHub sign-in (2FA, then passkey) in a browser. Do not store or ask for his password in a shared file or message.
+- **Done when:** The ticket is filed and its number is recorded here.
+
 ## Closed tasks
 
 (None yet.)

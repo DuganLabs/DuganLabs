@@ -1,0 +1,158 @@
+**Subject:** Please purge old commits and cached views after history rewrite: DuganLabs/DuganLabs, being renamed to DuganLabs/public (personal email in commit metadata)
+
+**Body:**
+
+Hello,
+
+I am an owner of the DuganLabs organization. On Nov 26, 2026 (about 11:55 AM Pacific) I rewrote the history of the public repository https://github.com/DuganLabs/DuganLabs with git filter-repo to remove my personal email addresses from commit author/committer metadata. All 12 branches were force-pushed with new commit IDs, and every commit reachable from a branch now uses my GitHub noreply address (23459839+warrendugan@users.noreply.github.com).
+
+The old commits are still reachable through read-only pull request refs (refs/pull/<n>/head and /merge), and may still be served from cached views and the commit and PR pages by SHA. I cannot remove those myself. Please:
+
+1. Remove or garbage-collect the unreferenced old commits listed below so they are no longer reachable or viewable by SHA (including through the pull request refs).
+2. Purge cached views and PR diffs/commit lists that still show them.
+3. Tell me if it is easier to do this by resetting the stale refs/pull refs for the closed pull requests listed below.
+
+This is personal data (email addresses) in commit metadata, not a credential, so no secret rotation is needed. The repository has no forks (forks_count 0). Note: on Nov 26, 2026 the repository is being renamed from DuganLabs/DuganLabs to DuganLabs/public; it is the same repository.
+
+**Current state of the repo (verified after the push):**
+- Branches: all 12 rewritten, 0 of the 99 old SHAs below are reachable from any branch.
+- Pull requests with refs that still point directly at old commits (all other PR refs only descend from them, so the same purge covers them): #1, #9, #10, #11, #12, #13, #14, #15, #20, #21, #22, #23, #24, #25, #26, #27, #28, #29, #30, #31, #32, #33, #34, #37 (closed/merged unless noted; #35 and #36 are open dependabot PRs).
+- A new PR (#38) was opened on the rewritten history and is clean.
+
+
+**Addendum (Nov 26, 2026, ~1:15 PM Pacific):** after the rewrite, PR #38 was squash-merged in the web UI, which created main commit 5cf2a799311fb12d3a952699a742491ceb40c349 with my personal email as author. I replaced it with a force-push (main is now on noreply commits only), but 5cf2a79 is still reachable via refs/pull/38 and by SHA. The synthetic test-merge commit for open PR #39 (refs/pull/39/merge, currently 6ff4e11c25d9659aa7c5b18ec5e08a7964cc0950) is also authored with my personal email; please purge it as well. Both SHAs are added to the list below.
+
+**Old commit SHAs to purge (101):**
+```
+003491970a06e7375525872cea8734af53e76dd7
+01153d674ec1759d12cbb0ea66ef8cce861e3409
+01e5c111756dce31fc80739bb3f7a618a5731642
+0507a98e7a03df5b61119a4957332c24f0b7bfd3
+09e20ebc60a90e156e300e2c8e055423db45405c
+0a17d8052be0f8acf3462863151dc602beb6ec44
+0dd7da9456eebb687c43eb53388cd918fd66e17b
+0eb42c60ebd6d78e65028fd7a9604c6db18b6071
+0f506887d73b05d270069d02c89763f7914e9f3c
+0fe67d2767fb8adbefc4271726cfd407a5217e87
+10e82a0ab9cb7c20b958ba7f2b4e006ee7c65e5a
+123b574a644cb00e664a5ac3480e5a3d1f76a59a
+143eab109d7e8c266779442db46516aab39dfeae
+16a15a8cc266c6893f640884f8c066a85ea98be5
+1dc40013ab704d7b5e0a88e33016231b4c64697c
+24aa1c496872361dd5027bd5014ce114c3120364
+26ee634d7fc8e24e1388795fd5e1fc246eb16226
+290fe381ac6b5fee5d5cca68198787349a8a8fea
+2d498c1178984bd4b708562ac81bd3ffcac7c135
+34ef77926bcf36b9b44907774ec8a9f982b21cbf
+367d2639468ddc9989b768fbb9bba92b86af8d48
+3694159f92d85b1569d3b1b5c46ea7c910582f54
+37f3c927347ffdab5557ce7ed23be0327723fb6c
+39809e686c2a3d443b3f68b8b46daa0bf0f5e215
+3df9c6e8a8060e292e43a6d859252f1d7e371ad3
+41eb55d89ed28eead8a8ecd172f6003664e646ec
+43ac42eda54d4268eef664dfb2920a079a200f82
+47de09a705a84f060c0ac6351b47e07aea62a107
+48ee2512380822b2103640e63be079c5624f73d9
+4b1271baaa8e0a5b11ce6741a3b334b8891b70c3
+4fa1d5cdf59618a07bdabb5f928cdf5255cc143f
+5cf2a799311fb12d3a952699a742491ceb40c349
+5d34443a6db6cf2942e2093ad46c958acd54bcaf
+5d5125026b725d942d28d3061e793ab54767b15f
+5d604e62ce3fa5f7243f6242a9d5fb60b598eb00
+5f17ceb014f180b922e86d126607c53a1f98549b
+62cc7ba0eeee3ebb00aac679c1a2af21b6111db6
+62eabc1e5ea4e384e6b7b2f39ea326f6ee9b0afc
+640e30039650ef67468878d9091d99be75581b91
+64fbcdf83b2d04ad3c75142ac835930dc34795cf
+68c74aef83b785fe153807f97251aaa4707e2b10
+6a361fc6381898231704d60b849c315f8c31df2f
+6a4c321dc6a869ad7b5cad3c0db0c32de5b36016
+6a781b2a731af7f04564dcee63e47715b20dfb7d
+6c67d1f9e257b4d149e6ee57fabd6a4cadd11cbf
+6d5260830a103b8ac47713e0cce5c3e8ad1f8c1b
+6d74f83e1351def185d8f59663c04b2f0ad3db82
+6e195db7fef5f20799175e35db83eb5f6a365918
+6ff4e11c25d9659aa7c5b18ec5e08a7964cc0950
+709c2b86de00ac8d892b58468a9b6af403c83133
+72fad469a1a14f4ef12f4c1bd45102d5c4c7c6b9
+7607860d7d9a3f8a4c122f9408e08bda21045f26
+76e4c52820992c1d8750c75854a8223cc920b600
+79e74e440d7710a95892c93f04dedf357566eb2c
+7d5d0a15c6721d4e63e1e3a809a8b7fc6d21e46d
+800e9ea07fdffc06e6fd4007572c2a973ba5edc2
+801cd169a302377e122b720498a97aaaf7969a07
+8149f95608aa16b5f5ec46be2a3fc9bda642e6ac
+825d28569cb198de736fba9d265b72e8b21a6ea2
+869ce63dcfe349af1ec93382811b6857b5a17296
+89782616c2069247cde6d793fe40c2967b2bdc42
+89860cff88837a58de39489b9c9cdd444945ec27
+8dac5edd22241f916d11f8007bbff200fcc3ab6e
+904b1a2b000d917d5733d22565db39a2b951401a
+930b57c06a02233b5f864b0a914a3f1bb4cff336
+9334381bf36f49c58db053a47730ba84908bb710
+98e97ca6647177551827e8eeba9b6dbdae3d0971
+9ebb38f12df9eb9a2b8a1cc827a6ae6c15927ed1
+a1ab13261cc7f38726cffdee31da33a6fdf5685f
+a42d3715c519970682425841e550b0c5a22c374e
+a9bf11f40634457259ad2b6fcf2a0ea144f68274
+b2dbc5d128d59d82a541cc8afc375badb90787d0
+b619eb2b3012814fb48d461ecd4f7b4dedbc3e65
+b84526a339d00ba034d511545136a45ccf9399dc
+bad750f5dca4eedd6bb5ba248f3c0d012f53cb05
+bc24e4be43b762b216cc0b94ec315270bfacbac8
+bc4d12bd0035018fefc0fea2fe39bb9dee230b01
+bf2f4214336abda4fb6389d1a0dd11bd1019caeb
+bfa0f2d2bd5b6dbbb8663d2dc7c3bf65e2e79473
+bfa13434edb17e4113b66f851c223c82a22d161b
+c1e88154b642f0703aa1eb7950a5e69e94dce8a6
+c290921b4f8630f63e9c7140c5abed659a555426
+c42a162b00f579d8c4ef014c73f811bad1be81e9
+c644ccaa4034b7ba82c053f3fdb7b071f231af22
+c99bec46beed8751b0940ea854c5d7590b7373b7
+d03c776bf25576d51f52965300c82cbec379b21d
+d1f1f3607bc907eb86edc53429fa3c5cfec4d11a
+d3e53329054f8967ac792a86003215b57fe3b4d9
+d496794ca08c2e68a9428bc322a9a24e9f98afdb
+d75c8e16f0cd0cf5a69c5921d13d8c99b10af510
+d9796f40ec28a72518b2a3bcc8889857dfdd83bf
+dc30115b7082c01b28f7b730511e424003503721
+e040ed0cba984d71b4e7dc501fcdcba93092f1c1
+e59219f723d8289cf36e26ea5ab2d959976916ce
+e855c24558f5aafb44bda04a0cf6076bbf836b8e
+ec9767ccaad4ed886d8e393528b0bbe3918a2b4b
+f28ce9ed6f3436b09f14970b13ef89448a73c836
+f5fbc487918f26251ff8eae96d307018f9ae585b
+f5fdb6dccbb88ac67f4abb25cb471749401100fd
+f98d30e83e601691798ae1ce66dbe0d479ef8adc
+fe2a200adee94aa71cfd0a4ba3b8876a2aec6947
+```
+
+**Old pull request refs still pointing at old commits (ref, old SHA):**
+```
+refs/pull/1/head 68c74aef83b785fe153807f97251aaa4707e2b10
+refs/pull/10/head 37f3c927347ffdab5557ce7ed23be0327723fb6c
+refs/pull/11/head bfa13434edb17e4113b66f851c223c82a22d161b
+refs/pull/12/head ec9767ccaad4ed886d8e393528b0bbe3918a2b4b
+refs/pull/13/head 930b57c06a02233b5f864b0a914a3f1bb4cff336
+refs/pull/14/head 41eb55d89ed28eead8a8ecd172f6003664e646ec
+refs/pull/15/head 10e82a0ab9cb7c20b958ba7f2b4e006ee7c65e5a
+refs/pull/20/head e040ed0cba984d71b4e7dc501fcdcba93092f1c1
+refs/pull/21/head 0f506887d73b05d270069d02c89763f7914e9f3c
+refs/pull/22/head 290fe381ac6b5fee5d5cca68198787349a8a8fea
+refs/pull/23/head dc30115b7082c01b28f7b730511e424003503721
+refs/pull/24/head 16a15a8cc266c6893f640884f8c066a85ea98be5
+refs/pull/25/head 904b1a2b000d917d5733d22565db39a2b951401a
+refs/pull/26/head 367d2639468ddc9989b768fbb9bba92b86af8d48
+refs/pull/27/head 64fbcdf83b2d04ad3c75142ac835930dc34795cf
+refs/pull/28/head 98e97ca6647177551827e8eeba9b6dbdae3d0971
+refs/pull/29/head 1dc40013ab704d7b5e0a88e33016231b4c64697c
+refs/pull/30/head f28ce9ed6f3436b09f14970b13ef89448a73c836
+refs/pull/31/head 62cc7ba0eeee3ebb00aac679c1a2af21b6111db6
+refs/pull/32/head 76e4c52820992c1d8750c75854a8223cc920b600
+refs/pull/33/head 800e9ea07fdffc06e6fd4007572c2a973ba5edc2
+refs/pull/34/head c99bec46beed8751b0940ea854c5d7590b7373b7
+refs/pull/37/head a9bf11f40634457259ad2b6fcf2a0ea144f68274
+refs/pull/9/head 5f17ceb014f180b922e86d126607c53a1f98549b
+```
+
+Thank you.

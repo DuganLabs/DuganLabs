@@ -1,4 +1,5 @@
-import { AutoRouter, cors, error } from 'itty-router';
+import { AutoRouter, error } from 'itty-router';
+import { requireOwner } from '../../../libs/coming-soon/src/access.js';
 import { parse } from '@basenative/markdown';
 import { parseBlogFrontmatter, readingMinutes, indexEntry } from './blog-content.js';
 // The SSR tree renders through exactly the modules the browser renders
@@ -8,8 +9,6 @@ import {
   renderPostsList, renderPostHeader, renderPostNav, neighbours,
 } from '../pages/js/post-view.js';
 import { renderPackageCard } from '../pages/vendor/basenative/marketplace/card.js';
-
-const { preflight, corsify } = cors({ origin: '*' });
 
 const SECURITY_HEADERS = {
   // script-src / connect-src additions allow Cloudflare Web Analytics, which the
@@ -51,7 +50,15 @@ async function notFound(env, origin, requestHeaders) {
   });
 }
 
-const router = AutoRouter({ before: [preflight], finally: [corsify] });
+const router = AutoRouter();
+
+async function requireAdmin(request, env) {
+  const who = await requireOwner(request, env);
+  if (who.deny) {
+    return error(403, who.deny === 'not-configured' ? 'Admin writes are not configured' : 'Forbidden');
+  }
+  return null;
+}
 
 // ─── Health ───────────────────────────────────────────────
 
@@ -107,11 +114,16 @@ router.get('/api/posts/:slug', async (request, env) => {
 });
 
 router.post('/api/posts', async (request, env) => {
+  const denied = await requireAdmin(request, env);
+  if (denied) return denied;
   const body = await request.json();
   if (!body.slug || !body.content) {
     return error(400, 'slug and content are required');
   }
-  const slug = body.slug.replace(/[^a-z0-9-]/g, '');
+  const slug = String(body.slug).replace(/[^a-z0-9-]/g, '');
+  if (!slug) {
+    return error(400, 'valid slug is required');
+  }
   await env.BLOG.put(`post:${slug}`, body.content);
 
   const index = (await env.BLOG.get('posts:index', 'json')) || [];
@@ -127,6 +139,8 @@ router.post('/api/posts', async (request, env) => {
 });
 
 router.delete('/api/posts/:slug', async (request, env) => {
+  const denied = await requireAdmin(request, env);
+  if (denied) return denied;
   const slug = request.params.slug;
   await env.BLOG.delete(`post:${slug}`);
   const index = (await env.BLOG.get('posts:index', 'json')) || [];
@@ -276,7 +290,7 @@ async function renderBlogPage(env, shellResponse) {
   let html = await shellResponse.text();
   html = html
     .replace('<section class="post-feed" id="posts-list" aria-label="Blog posts">', '<section class="post-feed" id="posts-list" aria-label="Blog posts" data-ssr="1">')
-    .replace('<p id="posts-loading">Loading posts...</p>', renderPostsList(posts));
+    .replace('<p id="posts-loading">Loading posts...</p>', () => renderPostsList(posts));
   const headers = new Headers(shellResponse.headers);
   headers.delete('content-length');
   return new Response(html, { status: shellResponse.status, headers });
@@ -288,14 +302,14 @@ async function renderEcosystemPage(env, shellResponse) {
   let html = await shellResponse.text();
   html = html
     .replace('<div class="eco-grid" id="eco-grid">', '<div class="eco-grid" id="eco-grid" data-ssr="1">')
-    .replace('<p class="eco-empty">Loading packages...</p>', renderPackagesGridHtml(packages))
+    .replace('<p class="eco-empty">Loading packages...</p>', () => renderPackagesGridHtml(packages))
     .replace(
       '<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>',
-      `<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>${renderCategoryButtonsHtml(categories)}`
+      () => `<button class="eco-cat-btn" aria-pressed="true" data-category="">All</button>${renderCategoryButtonsHtml(categories)}`
     )
     .replace(
       '<p class="eco-count" id="eco-count"></p>',
-      `<p class="eco-count" id="eco-count">${packages.length} package${packages.length !== 1 ? 's' : ''}</p>`
+      () => `<p class="eco-count" id="eco-count">${packages.length} package${packages.length !== 1 ? 's' : ''}</p>`
     );
   const headers = new Headers(shellResponse.headers);
   headers.delete('content-length');
@@ -334,16 +348,16 @@ async function renderPostPage(env, slug, shellResponse) {
 
   let out = await shellResponse.text();
   out = out
-    .replace('<title id="page-title">Post — DuganLabs</title>', `<title id="page-title">${escapeXml(pageTitle)}</title>`)
-    .replace('<meta name="description" content="DuganLabs blog post">', `<meta name="description" content="${escapeXml(description)}">`)
-    .replace('<link rel="canonical" id="canonical-link" href="https://duganlabs.com/blog">', `<link rel="canonical" id="canonical-link" href="${escapeXml(url)}">`)
-    .replace('<meta property="og:title" id="og-title" content="Post — DuganLabs">', `<meta property="og:title" id="og-title" content="${escapeXml(pageTitle)}">`)
-    .replace('<meta property="og:description" id="og-description" content="DuganLabs blog post">', `<meta property="og:description" id="og-description" content="${escapeXml(description)}">`)
-    .replace('<meta property="og:url" id="og-url" content="https://duganlabs.com/blog">', `<meta property="og:url" id="og-url" content="${escapeXml(url)}">`)
-    .replace('<meta name="twitter:title" id="twitter-title" content="Post — DuganLabs">', `<meta name="twitter:title" id="twitter-title" content="${escapeXml(pageTitle)}">`)
-    .replace('<meta name="twitter:description" id="twitter-description" content="DuganLabs blog post">', `<meta name="twitter:description" id="twitter-description" content="${escapeXml(description)}">`)
+    .replace('<title id="page-title">Post — DuganLabs</title>', () => `<title id="page-title">${escapeXml(pageTitle)}</title>`)
+    .replace('<meta name="description" content="DuganLabs blog post">', () => `<meta name="description" content="${escapeXml(description)}">`)
+    .replace('<link rel="canonical" id="canonical-link" href="https://duganlabs.com/blog">', () => `<link rel="canonical" id="canonical-link" href="${escapeXml(url)}">`)
+    .replace('<meta property="og:title" id="og-title" content="Post — DuganLabs">', () => `<meta property="og:title" id="og-title" content="${escapeXml(pageTitle)}">`)
+    .replace('<meta property="og:description" id="og-description" content="DuganLabs blog post">', () => `<meta property="og:description" id="og-description" content="${escapeXml(description)}">`)
+    .replace('<meta property="og:url" id="og-url" content="https://duganlabs.com/blog">', () => `<meta property="og:url" id="og-url" content="${escapeXml(url)}">`)
+    .replace('<meta name="twitter:title" id="twitter-title" content="Post — DuganLabs">', () => `<meta name="twitter:title" id="twitter-title" content="${escapeXml(pageTitle)}">`)
+    .replace('<meta name="twitter:description" id="twitter-description" content="DuganLabs blog post">', () => `<meta name="twitter:description" id="twitter-description" content="${escapeXml(description)}">`)
     .replace('<article class="post" id="post-article">', '<article class="post" id="post-article" data-ssr="1">')
-    .replace('<p id="post-loading">Loading post...</p>', articleHtml);
+    .replace('<p id="post-loading">Loading post...</p>', () => articleHtml);
 
   const headers = new Headers(shellResponse.headers);
   headers.delete('content-length');

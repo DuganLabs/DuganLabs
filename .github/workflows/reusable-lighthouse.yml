@@ -1,0 +1,142 @@
+name: reusable · lighthouse
+
+# Reusable workflow: run Lighthouse against a deployed URL and post the four
+# scores as a PR comment. Fails the check if any score drops below threshold.
+# Use this on PRs to enforce that the showcase keeps its polish over time.
+
+on:
+  workflow_call:
+    inputs:
+      url:
+        type: string
+        required: true
+        description: "Deployed URL to audit (e.g. https://t4bs.com)"
+      perf-min:
+        type: number
+        default: 95
+      a11y-min:
+        type: number
+        default: 95
+      best-practices-min:
+        type: number
+        default: 95
+      seo-min:
+        type: number
+        default: 95
+      device:
+        type: string
+        default: "mobile"   # mobile | desktop
+      runs:
+        type: number
+        default: 3
+        description: "Number of Lighthouse runs to average (median per metric). Default 3 absorbs CI runner variance without lowering thresholds."
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install Lighthouse
+        run: npm install -g lighthouse@12
+
+      - name: Run Lighthouse (median of N)
+        id: lh
+        env:
+          URL: ${{ inputs.url }}
+          DEVICE: ${{ inputs.device }}
+          RUNS: ${{ inputs.runs }}
+        run: |
+          set -e
+          # Run Lighthouse RUNS times; collect per-metric scores; take median.
+          # This absorbs CI runner CPU/network jitter (typically ±3 perf points)
+          # without lowering the threshold target.
+          rm -f lh-*.json
+          for i in $(seq 1 "$RUNS"); do
+            echo "::group::Lighthouse run $i/$RUNS"
+            lighthouse "$URL" \
+              --quiet \
+              --chrome-flags="--headless --no-sandbox" \
+              --output=json \
+              --output-path="./lh-$i.json" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --emulated-form-factor=$DEVICE \
+              --throttling-method=simulate
+            echo "::endgroup::"
+          done
+
+          # Median per metric across the N runs. jq + bash array sort.
+          median() {
+            local key="$1"
+            local vals
+            vals=$(for f in lh-*.json; do jq -r "$key" "$f"; done | sort -n)
+            local n
+            n=$(echo "$vals" | wc -l | tr -d ' ')
+            local mid=$(( (n + 1) / 2 ))
+            echo "$vals" | sed -n "${mid}p"
+          }
+
+          perf=$(median '.categories.performance.score * 100 | floor')
+          a11y=$(median '.categories.accessibility.score * 100 | floor')
+          bp=$(median '."categories"["best-practices"].score * 100 | floor')
+          seo=$(median '.categories.seo.score * 100 | floor')
+
+          # Keep the median run's full report for the upload artifact (use run 1
+          # by convention — it's the per-metric medians that gate the check, not
+          # this individual report).
+          cp lh-1.json lh.json
+
+          {
+            echo "perf=$perf"
+            echo "a11y=$a11y"
+            echo "bp=$bp"
+            echo "seo=$seo"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "## Lighthouse — $URL ($DEVICE, median of $RUNS runs)" > comment.md
+          echo "" >> comment.md
+          echo "| Metric | Score | Threshold | Status |" >> comment.md
+          echo "|---|---|---|---|" >> comment.md
+          status_perf=$([ "$perf" -ge ${{ inputs.perf-min }} ] && echo "✅" || echo "❌")
+          status_a11y=$([ "$a11y" -ge ${{ inputs.a11y-min }} ] && echo "✅" || echo "❌")
+          status_bp=$([ "$bp"   -ge ${{ inputs.best-practices-min }} ] && echo "✅" || echo "❌")
+          status_seo=$([ "$seo" -ge ${{ inputs.seo-min }} ] && echo "✅" || echo "❌")
+          echo "| Performance    | $perf | ${{ inputs.perf-min }} | $status_perf |" >> comment.md
+          echo "| Accessibility  | $a11y | ${{ inputs.a11y-min }} | $status_a11y |" >> comment.md
+          echo "| Best Practices | $bp   | ${{ inputs.best-practices-min }} | $status_bp |" >> comment.md
+          echo "| SEO            | $seo  | ${{ inputs.seo-min }} | $status_seo |" >> comment.md
+
+          cat comment.md
+
+          if [ "$perf" -lt ${{ inputs.perf-min }} ] || [ "$a11y" -lt ${{ inputs.a11y-min }} ] || [ "$bp" -lt ${{ inputs.best-practices-min }} ] || [ "$seo" -lt ${{ inputs.seo-min }} ]; then
+            echo "::error::Lighthouse threshold(s) violated."
+            exit 1
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('comment.md', 'utf8');
+            const { number } = context.payload.pull_request;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body,
+            });
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lh.json

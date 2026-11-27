@@ -1,0 +1,165 @@
+name: reusable · cf-deploy
+
+# Reusable workflow: Cloudflare Pages deploy.
+#
+# Cloudflare credentials come from ONE of two places, and every caller uses
+# the exact same steps below regardless of which:
+#   - Doppler (preferred): pass secrets.DOPPLER_TOKEN — a read-only Doppler
+#     service token scoped to the calling project's config. The workflow
+#     wraps its build/deploy commands in `doppler run --`, which injects
+#     CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID (and anything else in that
+#     Doppler config) into the command's environment.
+#   - Direct GitHub Actions secrets (fallback, while a project hasn't been
+#     migrated into Doppler yet): pass secrets.CLOUDFLARE_API_TOKEN and
+#     secrets.CLOUDFLARE_ACCOUNT_ID directly.
+#
+# See dotgithub's DOPPLER.md for the project/config naming convention and
+# which secrets belong in Doppler.
+#
+# The workflow itself still knows nothing of any project's actual account id
+# or API token value — only which of the two sourcing paths to take, decided
+# at run time by whether DOPPLER_TOKEN is non-empty.
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        type: string
+        required: true
+      build-command:
+        type: string
+        default: "build"
+      build-output-dir:
+        type: string
+        default: "dist"
+      branch:
+        type: string
+        default: "main"
+      node-version:
+        type: string
+        default: "20"
+      package-manager:
+        type: string
+        default: "pnpm"        # pnpm | npm | bun
+      pnpm-version:
+        type: string
+        default: ""
+        description: >
+          pnpm version for pnpm/action-setup. Leave empty to let the action read
+          `packageManager` from the caller's package.json, which is the better
+          place to pin it. Set this only for a repo that cannot declare one —
+          without either, the action fails outright with "No pnpm version is
+          specified".
+      environment:
+        type: string
+        default: "production"
+      environment-url:
+        type: string
+        default: ""
+    secrets:
+      DOPPLER_TOKEN:
+        required: false
+        description: |
+          Preferred. A read-only Doppler service token scoped to this
+          project's config. When set, CLOUDFLARE_API_TOKEN and
+          CLOUDFLARE_ACCOUNT_ID come from that Doppler config via
+          `doppler run --` and the two secrets below are ignored even if
+          also provided.
+      CLOUDFLARE_API_TOKEN:
+        required: false
+        description: |
+          Fallback, used only when DOPPLER_TOKEN is not set. Pages:Edit +
+          (optionally) D1:Edit scope.
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
+        description: Fallback, used only when DOPPLER_TOKEN is not set.
+      NX_CLOUD_ACCESS_TOKEN:
+        required: false
+        description: Optional. Enables Nx Cloud remote caching during the build, when the project uses Nx.
+      NPM_TOKEN:
+        required: false
+        description: |
+          Optional. PAT or fine-grained token with `read:packages` scope, used
+          to install scoped packages from GitHub Packages (e.g. `@basenative/*`).
+          When provided, an auth line is appended to ~/.npmrc before install.
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Exported for the whole job so a consumer's project .npmrc line
+      # `//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}` resolves during
+      # install/build/deploy (a project .npmrc shadows the user-level one written
+      # below; with the variable unset npm sends an empty token and gets a 401).
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.environment-url }}
+    permissions:
+      contents: read
+      deployments: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      # pnpm/action-setup needs a version from somewhere: this input, or a
+      # `packageManager` field in the caller's package.json. With neither it
+      # fails the job at setup, before anything is built.
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ inputs.pnpm-version }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Auth to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN}" ]; then
+            echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+          fi
+
+      - name: Install dependencies
+        run: |
+          case "${{ inputs.package-manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            npm)  npm ci ;;
+            bun)  curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install --frozen-lockfile ;;
+          esac
+
+      - name: Build
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "${DOPPLER_TOKEN}" ]; then
+            doppler run -- ${{ inputs.package-manager }} run ${{ inputs.build-command }}
+          else
+            ${{ inputs.package-manager }} run ${{ inputs.build-command }}
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          DEPLOY_CMD="npx wrangler pages deploy ${{ inputs.build-output-dir }} \
+            --project-name=${{ inputs.project-name }} \
+            --branch=${{ inputs.branch }} \
+            --commit-dirty=true"
+          if [ -n "${DOPPLER_TOKEN}" ]; then
+            doppler run -- bash -c "${DEPLOY_CMD}"
+          else
+            bash -c "${DEPLOY_CMD}"
+          fi

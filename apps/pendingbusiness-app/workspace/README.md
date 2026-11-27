@@ -1,4 +1,4 @@
-> **Archived 2026-11-26.** The public pendingbusiness.com is now the DuganLabs coming-soon page, built from [DuganLabs/DuganLabs](https://github.com/DuganLabs/DuganLabs) (`apps/pendingbusiness`). This app still runs, unchanged, at **private.pendingbusiness.com** behind Cloudflare Access (owner only). To change it, unarchive this repo first. Plaid key handling: `docs/PLAID-SECRETS.md`.
+> **Archived 2026-11-26.** The public pendingbusiness.com is now the DuganLabs coming-soon page, built from [DuganLabs/public](https://github.com/DuganLabs/public) (`apps/pendingbusiness`). This app still runs, unchanged, at **private.pendingbusiness.com** behind Cloudflare Access (owner only). To change it, unarchive this repo first. Plaid key handling: `docs/PLAID-SECRETS.md`.
 
 # PendingBusiness
 

@@ -1,0 +1,114 @@
+name: reusable · bundle-size
+
+# Reusable workflow: assert build output stays under a budget.
+# Useful for SPA-style projects (t4bs etc.) and library bundles.
+
+on:
+  workflow_call:
+    secrets:
+      NPM_TOKEN:
+        description: Token for GitHub Packages (@basenative/*). Falls back to github.token.
+        required: false
+    inputs:
+      build-command:
+        type: string
+        default: "build"
+      build-output-dir:
+        type: string
+        default: "dist"
+      package-manager:
+        type: string
+        default: "pnpm"
+      node-version:
+        type: string
+        default: "20"
+      js-budget-kb:
+        type: number
+        default: 100
+        description: "Total gzipped JS budget in KB"
+      css-budget-kb:
+        type: number
+        default: 50
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  size:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          registry-url: https://npm.pkg.github.com
+          scope: "@basenative"
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || github.token }}
+        run: |
+          case "${{ inputs.package-manager }}" in
+            pnpm) pnpm install --frozen-lockfile ;;
+            npm)  npm ci ;;
+            bun)  curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install --frozen-lockfile ;;
+          esac
+
+      - name: Build
+        run: ${{ inputs.package-manager }} run ${{ inputs.build-command }}
+
+      - name: Measure
+        id: measure
+        env:
+          OUT: ${{ inputs.build-output-dir }}
+          JS_BUDGET: ${{ inputs.js-budget-kb }}
+          CSS_BUDGET: ${{ inputs.css-budget-kb }}
+        run: |
+          set -e
+          js_bytes=$(find "$OUT" -name '*.js' -exec gzip -c {} \; | wc -c)
+          css_bytes=$(find "$OUT" -name '*.css' -exec gzip -c {} \; | wc -c)
+          js_kb=$(( js_bytes / 1024 ))
+          css_kb=$(( css_bytes / 1024 ))
+          echo "JS:  ${js_kb}KB gzipped (budget ${JS_BUDGET}KB)"
+          echo "CSS: ${css_kb}KB gzipped (budget ${CSS_BUDGET}KB)"
+          {
+            echo "## Bundle size"
+            echo ""
+            echo "| Asset | Size | Budget | Status |"
+            echo "|---|---|---|---|"
+            js_status="✅"; [ "$js_kb" -gt "$JS_BUDGET" ] && js_status="❌"
+            css_status="✅"; [ "$css_kb" -gt "$CSS_BUDGET" ] && css_status="❌"
+            echo "| JS (gzip)  | ${js_kb}KB | ${JS_BUDGET}KB | $js_status |"
+            echo "| CSS (gzip) | ${css_kb}KB | ${CSS_BUDGET}KB | $css_status |"
+          } > comment.md
+          cat comment.md
+          if [ "$js_kb" -gt "$JS_BUDGET" ] || [ "$css_kb" -gt "$CSS_BUDGET" ]; then
+            echo "::error::Bundle size budget violated."
+            exit 1
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('comment.md', 'utf8');
+            const { number } = context.payload.pull_request;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body,
+            });

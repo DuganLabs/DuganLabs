@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "url": "git+https://github.com/DuganLabs/public.git",
     "directory": "apps/basenative-framework/workspace/packages/eslint-config"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/eslint-config#readme",

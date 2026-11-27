@@ -1,6 +1,6 @@
 # T4BS
 
-> **Monorepo:** this game now lives in `DuganLabs/DuganLabs` at `apps/t4bs-game` (imported with full
+> **Monorepo:** this game now lives in `DuganLabs/public` at `apps/t4bs-game` (imported with full
 > history from `DuganLabs/t4bs`). Nx targets: `install`, `check` (lint + typecheck), `test`, `build`
 > (`scripts/monorepo-build.sh` → `dist/apps/t4bs-game`, Functions prebuilt to `_worker.js`), `deploy`.
 > CI deploys production to the `t4bs` Pages project on push to `main`, then applies D1 migrations and

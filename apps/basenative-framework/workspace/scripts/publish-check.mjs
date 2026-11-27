@@ -32,7 +32,7 @@ import ts from 'typescript';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY = 'https://registry.npmjs.org/';
-const REPO_URL = 'git+https://github.com/DuganLabs/DuganLabs.git';
+const REPO_URL = 'git+https://github.com/DuganLabs/public.git';
 // Path of this workspace inside the DuganLabs monorepo; npm provenance records
 // repository.directory relative to the repo root.
 const REPO_DIR_PREFIX = 'apps/basenative-framework/workspace/';

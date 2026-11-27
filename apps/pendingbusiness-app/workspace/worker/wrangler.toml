@@ -10,7 +10,7 @@ routes = [
 # Passkey (WebAuthn) auth via @basenative/auth-webauthn.
 # RP_ID stays the apex (existing passkeys keep working); RP_ORIGIN is the host the app is served on.
 # Since the 2026-11-26 cut-over the app lives at private.pendingbusiness.com behind Cloudflare Access;
-# pendingbusiness.com and www are the DuganLabs coming-soon page (DuganLabs/DuganLabs apps/pendingbusiness).
+# pendingbusiness.com and www are the DuganLabs coming-soon page (DuganLabs/public apps/pendingbusiness).
 # OWNER_EMAIL is a Worker SECRET (not a var): personal data stays out of the repo.
 #   wrangler secret put OWNER_EMAIL   (once; persists across deploys)
 [vars]

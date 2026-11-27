@@ -23,7 +23,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "url": "git+https://github.com/DuganLabs/public.git",
     "directory": "apps/basenative-framework/workspace/packages/forms"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/forms#readme",

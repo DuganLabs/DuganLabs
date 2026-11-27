@@ -25,11 +25,11 @@ paths = ['''apps/pendingbusiness-app/workspace/worker/test/plaid-credentials-cry
 
 [[allowlists]]
 description = "BaseNative: public Figma Community file keys in the platform token kit"
-paths = ['''apps/basenative/workspace/packages/platform/(src/kit\.js|data/tokens\.json)$''']
+paths = ['''apps/basenative-framework/workspace/packages/platform/(src/kit\.js|data/tokens\.json)$''']
 regexes = ['''figmaFileKey''']
 regexTarget = "line"
 condition = "AND"
 
 [[allowlists]]
 description = "BaseNative: self-signed throwaway TLS key and a fake CSRF token in unit tests"
-paths = ['''apps/basenative/workspace/packages/notify/src/notify\.test\.js$''', '''apps/basenative/workspace/packages/middleware/src/middleware\.test\.js$''']
+paths = ['''apps/basenative-framework/workspace/packages/notify/src/notify\.test\.js$''', '''apps/basenative-framework/workspace/packages/middleware/src/middleware\.test\.js$''']

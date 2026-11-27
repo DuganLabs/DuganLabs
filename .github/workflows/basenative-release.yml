@@ -2,7 +2,7 @@
 # DuganLabs/BaseNative's release.yml.
 #
 # npm's trusted publisher for every @basenative package must name:
-#   repository  DuganLabs/DuganLabs
+#   repository  DuganLabs/public
 #   workflow    basenative-release.yml
 #   environment prd   (this repo's `prd` environment admits only main)
 #

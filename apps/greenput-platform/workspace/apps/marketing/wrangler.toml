@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 routes = [
   # greenput.com and www now serve the DuganLabs coming-soon page (Worker
-  # dl-greenput, DuganLabs/DuganLabs apps/greenput). This marketing site lives
+  # dl-greenput, DuganLabs/public apps/greenput). This marketing site lives
   # at private.greenput.com behind Cloudflare Access (owner only).
   { pattern = "private.greenput.com/*", zone_name = "greenput.com" }
 ]

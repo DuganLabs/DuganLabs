@@ -99,7 +99,7 @@ const transport = createSmtpTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
-  auth: { user: 'me@gmail.com', pass: 'app-password' },
+  auth: { user: 'me@example.com', pass: 'app-password' },
 });
 ```
 

@@ -20,8 +20,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/date"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/date"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/date#readme",
   "bugs": {

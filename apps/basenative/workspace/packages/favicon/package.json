@@ -49,8 +49,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/favicon"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/favicon"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/favicon#readme",
   "bugs": {

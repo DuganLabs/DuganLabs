@@ -1,0 +1,161 @@
+# BaseNative (apps/basenative/workspace): checks on every push/PR that touches it,
+# ported from DuganLabs/BaseNative's ci.yml + deploy.yml.
+#
+# CUT-OVER GATE: the deploy and audit jobs only run when the repository variable
+# BASENATIVE_DEPLOY_ENABLED is 'true'. Until then basenative.com keeps deploying from
+# DuganLabs/BaseNative. Flip the variable (and stop the old repo's deploy) to cut over.
+name: BaseNative (apps/basenative)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/basenative/workspace/**'
+      - '.github/workflows/basenative.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/basenative/workspace/**'
+      - '.github/workflows/basenative.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Nx Cloud is off for the imported workspace (no token in this repo).
+  NX_NO_CLOUD: 'true'
+
+defaults:
+  run:
+    working-directory: apps/basenative/workspace
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm exec nx run-many --target=lint
+      - name: Lint workspace
+        run: pnpm exec eslint .
+      - name: Test
+        run: pnpm exec nx run-many --target=test
+      - name: Integration tests
+        run: node --test tests/integration/integration.test.js
+      - name: Bundle size check
+        run: node scripts/bundle-size.js
+      - name: Package inventory up to date
+        run: node scripts/package-inventory.js --check
+      - name: LLM docs up to date
+        run: node scripts/llms-txt.js --check
+      - name: Axiom check
+        run: node scripts/axiom-check.js
+      - name: Site composition
+        run: node scripts/site-composition.js
+      - name: Publish gate
+        run: node scripts/publish-check.mjs
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build
+        run: pnpm exec nx bundle basenative-example-express
+      - name: Run E2E tests
+        run: pnpm exec playwright test tests/e2e/
+
+  deploy:
+    name: Deploy basenative.com (Pages project basenative)
+    needs: [test, e2e]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.BASENATIVE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://basenative.com
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build:pages:no-cloud
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler pages deploy dist --project-name basenative --branch main --commit-hash "$GITHUB_SHA"
+
+  audit:
+    name: Post-deploy audits (report-only Lighthouse)
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm build:pages:no-cloud
+      - name: Accessibility audit (axe-core)
+        run: pnpm audit:axe
+      - name: UX audit (Laws of UX)
+        run: pnpm audit:ux
+      - name: Security audit (Mozilla Observatory)
+        run: pnpm audit:observatory
+        env:
+          DEPLOY_URL: https://basenative.com
+      - name: Lighthouse audit (Agentic browsing)
+        run: pnpm audit:lighthouse
+        env:
+          LIGHTHOUSE_URLS: https://basenative.com/,https://basenative.com/docs/
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: basenative-audit-reports
+          path: apps/basenative/workspace/reports/

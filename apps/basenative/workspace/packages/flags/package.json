@@ -26,8 +26,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/flags"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/flags"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/flags#readme",
   "bugs": {

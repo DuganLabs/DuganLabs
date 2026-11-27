@@ -1,4 +1,4 @@
-# Pins `doppler run` to this repo's project and config (basenative/repository).
+# Pins `doppler run` to the monorepo's single project and config (duganlabs/repository).
 setup:
-  project: basenative
+  project: duganlabs
   config: repository

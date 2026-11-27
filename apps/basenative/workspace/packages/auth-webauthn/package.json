@@ -41,8 +41,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/auth-webauthn"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/auth-webauthn"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/auth-webauthn#readme",
   "bugs": {

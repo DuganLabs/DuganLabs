@@ -1,0 +1,87 @@
+# BaseNative release (changesets + npm trusted publishing), ported from
+# DuganLabs/BaseNative's release.yml.
+#
+# npm's trusted publisher for every @basenative package must name:
+#   repository  DuganLabs/DuganLabs
+#   workflow    basenative-release.yml
+#   environment prd   (this repo's `prd` environment admits only main)
+#
+# CUT-OVER GATE: the job runs only when the repository variable
+# BASENATIVE_RELEASE_ENABLED is 'true'. Leave it unset until every package's
+# trusted publisher has been switched on npmjs.com; until then releases keep
+# coming from DuganLabs/BaseNative.
+#
+# Publishing is over OIDC. The one token, NPM_BOOTSTRAP_TOKEN (Doppler
+# duganlabs/repository, synced to this repo), is stage-only: it can
+# `npm stage publish` a never-published package and cannot `npm publish`.
+# See apps/basenative/workspace/scripts/publish-release.mjs.
+name: BaseNative release (apps/basenative)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/basenative/workspace/**'
+      - '.github/workflows/basenative-release.yml'
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  NX_NO_CLOUD: 'true'
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+defaults:
+  run:
+    working-directory: apps/basenative/workspace
+
+jobs:
+  release:
+    if: vars.BASENATIVE_RELEASE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: prd
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          # Trusted publishing needs npm >= 11.5.1; `npm stage publish` needs >= 11.15.
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          cache-dependency-path: apps/basenative/workspace/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm exec nx run-many --target=lint
+
+      - name: Test
+        run: pnpm exec nx run-many --target=test
+
+      - name: Publish gate
+        run: node scripts/publish-check.mjs
+
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          cwd: apps/basenative/workspace
+          publish-script: node scripts/publish-release.mjs
+          version-script: pnpm run version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_BOOTSTRAP_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+
+      - name: Clean-install smoke test from npmjs.org
+        if: steps.changesets.outputs.published == 'true'
+        run: node scripts/npm-smoke.mjs

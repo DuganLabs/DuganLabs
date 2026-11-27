@@ -32,8 +32,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/db"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/db"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/db#readme",
   "bugs": {

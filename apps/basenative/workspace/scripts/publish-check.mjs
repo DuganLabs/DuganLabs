@@ -32,7 +32,10 @@ import ts from 'typescript';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY = 'https://registry.npmjs.org/';
-const REPO_URL = 'git+https://github.com/DuganLabs/BaseNative.git';
+const REPO_URL = 'git+https://github.com/DuganLabs/DuganLabs.git';
+// Path of this workspace inside the DuganLabs monorepo; npm provenance records
+// repository.directory relative to the repo root.
+const REPO_DIR_PREFIX = 'apps/basenative/workspace/';
 
 // Packages that legitimately ship no TypeScript types: they export
 // configuration consumed by a tool, not an API a program calls.
@@ -134,9 +137,9 @@ function checkOne(dir, manifest, privateNames, versions, tmp) {
   // npm trusted publishing rejects a provenance claim unless repository.url
   // matches the publishing repo exactly, so the URL is pinned, not just present.
   const repo = manifest.repository;
-  if (!repo || typeof repo !== 'object' || repo.url !== REPO_URL || repo.directory !== dir) {
+  if (!repo || typeof repo !== 'object' || repo.url !== REPO_URL || repo.directory !== REPO_DIR_PREFIX + dir) {
     errors.push(
-      `"repository" must be { "type": "git", "url": "${REPO_URL}", "directory": "${dir}" }`,
+      `"repository" must be { "type": "git", "url": "${REPO_URL}", "directory": "${REPO_DIR_PREFIX}${dir}" }`,
     );
   }
   if (manifest.sideEffects === undefined) errors.push('"sideEffects" is not declared');

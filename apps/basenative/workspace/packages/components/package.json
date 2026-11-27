@@ -237,8 +237,8 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DuganLabs/BaseNative.git",
-    "directory": "packages/components"
+    "url": "git+https://github.com/DuganLabs/DuganLabs.git",
+    "directory": "apps/basenative/workspace/packages/components"
   },
   "homepage": "https://github.com/DuganLabs/BaseNative/tree/main/packages/components#readme",
   "bugs": {

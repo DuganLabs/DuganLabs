@@ -22,3 +22,14 @@ condition = "AND"
 [[allowlists]]
 description = "PendingBusiness test fixture (fake Plaid-style plaintext in a crypto round-trip test)"
 paths = ['''apps/pendingbusiness-app/workspace/worker/test/plaid-credentials-crypto\.test\.ts$''']
+
+[[allowlists]]
+description = "BaseNative: public Figma Community file keys in the platform token kit"
+paths = ['''apps/basenative/workspace/packages/platform/(src/kit\.js|data/tokens\.json)$''']
+regexes = ['''figmaFileKey''']
+regexTarget = "line"
+condition = "AND"
+
+[[allowlists]]
+description = "BaseNative: self-signed throwaway TLS key and a fake CSRF token in unit tests"
+paths = ['''apps/basenative/workspace/packages/notify/src/notify\.test\.js$''', '''apps/basenative/workspace/packages/middleware/src/middleware\.test\.js$''']

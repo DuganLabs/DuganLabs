@@ -330,7 +330,6 @@ export async function handleContactForm(
   } catch (err) {
     console.error('marketing contact submission failed', {
       code: err instanceof ContactPersistError ? err.code : 'INTERNAL',
-      email: validated.data.email,
       error: err instanceof Error ? err.message : String(err),
     });
     return html

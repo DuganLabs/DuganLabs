@@ -320,6 +320,9 @@ describe('marketing POST /contact', () => {
         error: expect.stringContaining('does-not-exist'),
       }),
     );
+    const loggedPayload = errorSpy.mock.calls[0]?.[1];
+    expect(loggedPayload).not.toHaveProperty('email');
+    expect(JSON.stringify(loggedPayload)).not.toContain(VALID_FORM.email);
     expect(sqlite.rows('leads')).toHaveLength(0);
   });
 

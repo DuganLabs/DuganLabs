@@ -6,10 +6,11 @@
 - **No build-time framework for landings.** The server renders HTML from `content.json`;
   one inlined stylesheet; the client script is progressive enhancement (the form works
   without JS via a 303).
-- **Budgets (Lighthouse 12, mobile and desktop):** Performance, Accessibility, Best Practices
+- **Budgets (Lighthouse 13, mobile and desktop):** Performance, Accessibility, Best Practices
   and SEO are each at least 95. Pages that are intentionally `noindex` (`/login`, `/privacy`,
   `/app`, noindex apps) are exempt from SEO. Local baseline (Nov 26, 2026) is 100 for all
   four on greenput, warrenmd, t4bs and duganlabs.
+  Agentic browsing is report-only, not a budget.
 - **Security headers (kit default):**
   - CSP with a per-request nonce;
   - `frame-ancestors 'none'`;

@@ -1,0 +1,9 @@
+{
+  "name": "@duganlabs/audit",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "lighthouse": "^13.6.0",
+    "playwright": "^1.63.0"
+  }
+}

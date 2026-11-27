@@ -55,3 +55,67 @@ bash tools/deploy/deploy.sh greenput staging --dry-run
 ```
 `apps/leads/.dev.vars` (gitignored) holds Cloudflare's always-pass Turnstile **test**
 secret and a local salt. `DEV_ACCESS_EMAIL` works only on localhost.
+
+## Browser support: Baseline target
+
+This repo's Baseline target is Baseline Widely available.
+
+Use a web platform feature (HTML, CSS, JavaScript or a Web API) without a
+fallback only when it is Baseline Widely available (see `standards/web-platform.md`).
+Anything newer is allowed only as progressive enhancement or with a fallback,
+and the PR should say so.
+
+## Modern Web Guidance
+
+Install the [Modern Web Guidance](https://github.com/GoogleChrome/modern-web-guidance)
+skill locally before writing or reviewing HTML, CSS or front-end JavaScript,
+and follow it within the Baseline target above:
+
+```sh
+DISABLE_TELEMETRY=1 npx modern-web-guidance@latest install
+```
+
+It writes `.agents/skills/modern-web-guidance/` and `skills-lock.json`.
+Both are gitignored (see `.gitignore`); never commit its output. Before
+opening a PR that changes a page, also run the local browser check in
+[Chrome DevTools MCP: local pre-deploy check](#chrome-devtools-mcp-local-pre-deploy-check).
+
+## Chrome DevTools MCP: local pre-deploy check
+
+Before opening a PR that changes a page, check it in a real browser with
+[Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp).
+It is a local check only; CI never runs it.
+
+Always run it against a fresh, throwaway Chrome profile:
+
+- Pass `--isolated`, which creates a temporary user-data-dir and deletes it
+  when the browser closes.
+- Pass `--no-performance-crux`, so performance traces do not send page URLs
+  to the CrUX API.
+- Pass `--headless` optionally (drop `--headless` to watch the browser).
+- Never pass `--autoConnect`, never point it at an everyday or signed-in
+  Chrome profile, and do not use an agent's attach-to-running-Chrome browser
+  mode for this check.
+- Point it at local dev or staging URLs (use production only for read-only
+  checks).
+
+Example MCP config (lives in the user's MCP config, e.g.
+`~/.gemini/config/mcp_config.json` for Antigravity or `.cursor/mcp.json`,
+never committed):
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--isolated",
+        "--headless",
+        "--no-performance-crux"
+      ]
+    }
+  }
+}
+```

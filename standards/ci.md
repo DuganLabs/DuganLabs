@@ -17,7 +17,7 @@ This replaces the org's Sep 14 manual-only (`workflow_dispatch`) rule **for this
 - **deploy-staging -> deploy-production:**
   - an affected-only matrix using the same artifact;
   - production waits for the `production` environment approval.
-- **audit:** one post-deploy Lighthouse job, report-only.
+- **audit:** one post-deploy Lighthouse 13.6 job (including Agentic browsing), report-only.
 
 ## Nx Cloud (Team plan: $29/mo with a $29 usage credit; $19 per extra contributor)
 A contributor is any **commit author** of a CI pipeline execution, bots included. So:

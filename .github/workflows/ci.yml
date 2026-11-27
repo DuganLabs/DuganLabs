@@ -186,12 +186,43 @@ jobs:
     needs: [verify, deploy-production]
     if: always() && github.ref == 'refs/heads/main' && needs.deploy-production.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - run: bash tools/audit/post-deploy.sh "$APPS"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @duganlabs/audit exec playwright install --with-deps chromium
+      - name: Resolve workers.dev subdomain
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "::warning::Cloudflare credentials unavailable; skipping greenput-staging-demo target."
+            exit 0
+          fi
+          SUBDOMAIN=$(curl -sf \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/subdomain" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['result']['subdomain'])" 2>/dev/null || true)
+          if [ -n "${SUBDOMAIN}" ]; then
+            echo "CF_WORKERS_SUBDOMAIN=${SUBDOMAIN}" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Could not resolve the account's workers.dev subdomain; skipping greenput-staging-demo target."
+          fi
+      - name: Run post-deploy Lighthouse audit
+        run: bash tools/audit/post-deploy.sh "$APPS"
         env:
           APPS: ${{ needs.verify.outputs.deploy_apps }}
+      - name: Upload Lighthouse audit reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-audit-${{ github.sha }}
+          path: dist/audit/
+          retention-days: 7

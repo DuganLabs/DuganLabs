@@ -3,5 +3,6 @@ packages:
   - 'apps/duganlabs-private/worker'
   - 'apps/duganlabs-private/pages'
   - 'libs/*'
+  - 'tools/audit'
   # t4bs-game keeps its own npm lockfile (imported product, installed by its Nx `install` target)
   - '!apps/t4bs-game'

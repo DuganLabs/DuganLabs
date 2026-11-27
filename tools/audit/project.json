@@ -1,0 +1,16 @@
+{
+  "name": "audit",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "tools/audit",
+  "tags": ["scope:tools", "type:audit"],
+  "targets": {
+    "lighthouse": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node tools/audit/lighthouse.mjs"
+      }
+    }
+  }
+}

@@ -525,6 +525,8 @@ a[data-bn-variant="leave"]:hover { border-color: #E8920A; color: #E8920A; }
    directly on the class (theme.css sets the token too), same
    #1A0A00/7.86:1 pairing --bn-color-on-primary carries. */
 .bn-kb-key--enter { color: #1A0A00; }
+.bn-kb-key--wide { flex: 1.5; }
+.bn-confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
 
 /* Non-colour cues for the four keyboard states (WCAG 1.4.1 — state
    can't be conveyed by colour alone). Each state gets its own small

@@ -316,24 +316,33 @@ describe("inline-content hashes are current", () => {
   });
 });
 
-describe("Web Analytics beacon (T4-033)", () => {
+describe("Web Analytics beacon & live CSP/a11y guards", () => {
   const layout = readFileSync(
     new URL("../src/bn/views/layout.js", import.meta.url),
     "utf8",
   );
 
-  it("ships the beacon as an external script from the origin the CSP allows", () => {
-    assert.match(
-      layout,
-      /<script\s+defer\s+src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/,
-    );
-    assert.equal(layout.includes("static.cloudflareinsights.com"), true);
+  it("does not ship the broken automatic-setup manual beacon token that fails CORS on /cdn-cgi/rum", () => {
+    assert.doesNotMatch(layout, /a6eb162865bb4319b158800e0b97b5cb/);
   });
 
-  it("carries a 32-hex public site token, and nothing inline", () => {
-    const m = layout.match(/data-cf-beacon='\{"token":"([0-9a-f]{32})"\}'/);
-    assert.ok(m, "beacon tag must carry the site token");
-    // The tag is `defer src=…` only: no inline body for the CSP to refuse.
-    assert.doesNotMatch(layout, /beacon\.min\.js"[^>]*>\s*[^<\s]/);
+  it("normalizes play keyboard HTML to strip inline styles and match ENTER visible label to aria-label", async () => {
+    const { renderPlayKeyboard } = await import("../src/lib/keyboard-layout.js");
+    const html = renderPlayKeyboard();
+    assert.doesNotMatch(html, /\sstyle="/, "normalized play keyboard must not emit inline style=");
+    assert.match(html, /data-kb-key="ENTER"[^>]*aria-label="ENTER key"[^>]*><span aria-hidden="true">ENTER<\/span>/);
+  });
+
+  it("confetti avoids style.cssText (CSP style-src violation) and hides canvas from AT", () => {
+    const confettiSrc = readFileSync(new URL("../src/lib/confetti.js", import.meta.url), "utf8");
+    assert.doesNotMatch(confettiSrc, /\.style\.cssText/);
+    assert.match(confettiSrc, /bn-confetti-canvas/);
+    assert.match(confettiSrc, /aria-hidden/);
+  });
+
+  it("bnSkeleton applies width/height via CSSOM rather than inline style= from renderSkeleton", () => {
+    const domSrc = readFileSync(new URL("../src/lib/dom.js", import.meta.url), "utf8");
+    assert.match(domSrc, /const\s*\{\s*width,\s*height,\s*\.\.\.renderOpts\s*\}\s*=\s*options/);
+    assert.match(domSrc, /renderSkeleton\(renderOpts\)/);
   });
 });

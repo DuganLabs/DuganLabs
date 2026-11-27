@@ -194,8 +194,15 @@ export function bnPending(label) {
  * @returns {HTMLElement}
  */
 export function bnSkeleton(options = {}) {
+  const { width, height, ...renderOpts } = options;
   const el = h("div", { "data-bn-region": "skeleton", "aria-hidden": "true" });
-  el.innerHTML = renderSkeleton(options);
+  el.innerHTML = renderSkeleton(renderOpts);
+  if (width || height) {
+    for (const item of el.querySelectorAll('[data-bn="skeleton"]')) {
+      if (width) /** @type {HTMLElement} */ (item).style.width = width;
+      if (height) /** @type {HTMLElement} */ (item).style.height = height;
+    }
+  }
   return el;
 }
 

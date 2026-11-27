@@ -28,7 +28,7 @@ import {
   openSlots, fullCount, computeKeyStatus, knowledgeSummary, historyFor, KEY_STATE_INFO,
   isKeyBlocked,
 } from "../lib/game.js";
-import { PLAY_LAYOUT } from "../lib/keyboard-layout.js";
+import { PLAY_LAYOUT, normalizeKeyboardHtml } from "../lib/keyboard-layout.js";
 import { confetti } from "../lib/confetti.js";
 
 export function createPlay({
@@ -612,7 +612,7 @@ export function createPlay({
   });
 
   const kbActions = h("footer", { "data-bn-region": "kb-actions" }, allInBtn, stakeLbl);
-  const kbHost = h("div", { html: kb.html });
+  const kbHost = h("div", { html: normalizeKeyboardHtml(kb.html) });
   const keyboard = h("section", { "data-bn-region": "keyboard" }, kbActions, kbHost);
   bindAttr(keyboard, "data-allin", () => allInMode() ? "" : null);
   bindHidden(keyboard, () => !playing());

@@ -13,7 +13,8 @@ export function confetti(opts = {}) {
   const originY = opts.y ?? window.innerHeight / 3;
 
   const canvas = document.createElement("canvas");
-  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;";
+  canvas.className = "bn-confetti-canvas";
+  canvas.setAttribute("aria-hidden", "true");
   canvas.width  = window.innerWidth  * devicePixelRatio;
   canvas.height = window.innerHeight * devicePixelRatio;
   canvas.style.width  = window.innerWidth  + "px";

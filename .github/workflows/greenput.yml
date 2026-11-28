@@ -15,12 +15,20 @@ on:
     paths:
       - 'apps/greenput-platform/workspace/**'
       - '.github/workflows/greenput.yml'
+      # Docs-only changes don't start a run (no runner minutes, no Nx Cloud credits).
+      # Negated paths: GitHub forbids combining paths and paths-ignore on one event.
+      - '!**/*.md'
+      - '!**/docs/**'
   pull_request:
     branches:
       - main
     paths:
       - 'apps/greenput-platform/workspace/**'
       - '.github/workflows/greenput.yml'
+      # Docs-only changes don't start a run (no runner minutes, no Nx Cloud credits).
+      # Negated paths: GitHub forbids combining paths and paths-ignore on one event.
+      - '!**/*.md'
+      - '!**/docs/**'
 
 permissions:
   contents: read

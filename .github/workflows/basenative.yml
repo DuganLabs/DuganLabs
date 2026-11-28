@@ -43,6 +43,9 @@ jobs:
         node-version: [20, 22]
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history so `nx affected` can diff a pull request against its base.
+          fetch-depth: 0
       - uses: pnpm/action-setup@v6
         with:
           version: 10
@@ -55,11 +58,21 @@ jobs:
           cache-dependency-path: apps/basenative-framework/workspace/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - name: Lint
-        run: pnpm exec nx run-many --target=lint
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            pnpm exec nx affected --target=lint --base="origin/$GITHUB_BASE_REF" --head=HEAD
+          else
+            pnpm exec nx run-many --target=lint
+          fi
       - name: Lint workspace
         run: pnpm exec eslint .
       - name: Test
-        run: pnpm exec nx run-many --target=test
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            pnpm exec nx affected --target=test --base="origin/$GITHUB_BASE_REF" --head=HEAD
+          else
+            pnpm exec nx run-many --target=test
+          fi
       - name: Integration tests
         run: node --test tests/integration/integration.test.js
       - name: Bundle size check
